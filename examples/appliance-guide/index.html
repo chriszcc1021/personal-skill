@@ -5,208 +5,156 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>家电选购指南</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --black:#1d1d1f;--gray-dark:#424245;--gray:#6e6e73;--gray-light:#86868b;
   --gray-border:#d2d2d7;--bg:#fff;--bg-alt:#f5f5f7;--blue:#0071e3;
 }
-body{font-family:-apple-system,'SF Pro Text','SF Pro Display','Noto Sans SC','Helvetica Neue',sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.47;font-size:17px;letter-spacing:-0.374px}
+body{font-family:'Noto Sans SC',-apple-system,'Helvetica Neue',sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.6;font-size:16px}
 a{color:var(--blue);text-decoration:none}
 
-/* HERO */
-.hero{
-  background:#000;color:#fff;
-  text-align:center;padding:120px 40px 100px;min-height:60vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
+/* HEADER */
+.header{
+  border-bottom:1px solid var(--gray-border);padding:20px 24px;
+  display:flex;justify-content:space-between;align-items:center;max-width:1200px;margin:0 auto;
 }
-.hero-label{font-size:17px;font-weight:600;letter-spacing:-0.374px;color:rgba(255,255,255,0.8);margin-bottom:20px;opacity:0;animation:fadeUp 0.8s ease 0.05s forwards}
-.hero-title{
-  font-size:clamp(40px,8vw,72px);font-weight:600;letter-spacing:-0.28px;line-height:1.07;
-  margin-bottom:20px;color:#fff;opacity:0;animation:fadeUp 0.8s ease 0.1s forwards;
-}
-.hero-sub{
-  font-size:clamp(17px,2.5vw,24px);color:rgba(255,255,255,0.8);max-width:680px;line-height:1.4;font-weight:400;letter-spacing:0.231px;
-  opacity:0;animation:fadeUp 0.8s ease 0.3s forwards;
-}
-.hero-cta{margin-top:32px;opacity:0;animation:fadeUp 0.8s ease 0.5s forwards}
-.hero-cta a{display:inline-block;padding:10px 22px;border-radius:980px;background:var(--blue);color:#fff;font-size:17px;font-weight:400;letter-spacing:-0.374px;margin:0 4px;transition:filter 0.2s}
-.hero-cta a:hover{filter:brightness(1.1)}
-.hero-cta a.ghost{background:transparent;color:#2997ff;border:1px solid rgba(255,255,255,0.3)}
-.hero-cta a.ghost:hover{filter:brightness(1.2)}
+.logo{font-size:18px;font-weight:600;color:var(--black)}
+.meta{font-size:13px;color:var(--gray)}
 
-/* SECTIONS */
-.section{padding:80px 24px;max-width:1200px;margin:0 auto}
-.section-label{font-size:14px;font-weight:600;letter-spacing:-0.224px;color:var(--blue);margin-bottom:12px;text-align:center}
-.section-title{font-size:clamp(28px,5vw,40px);font-weight:600;letter-spacing:normal;line-height:1.10;margin-bottom:16px;text-align:center}
-.section-subtitle{font-size:17px;color:var(--gray);max-width:600px;margin:0 auto 56px;text-align:center;line-height:1.47}
+/* INTRO */
+.intro{max-width:760px;margin:0 auto;padding:80px 24px 40px}
+.intro h1{font-size:clamp(32px,5vw,42px);font-weight:600;margin-bottom:16px;line-height:1.2}
+.intro p{font-size:17px;color:var(--gray-dark);line-height:1.6;max-width:600px}
+.intro .summary{margin-top:24px;font-size:14px;color:var(--gray);display:flex;gap:24px;flex-wrap:wrap}
+.intro .summary span strong{color:var(--black);font-weight:600;margin-right:4px}
 
-/* GRID */
-.cat-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;
-}
+/* LIST */
+.list{max-width:1100px;margin:0 auto;padding:20px 24px 60px;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--gray-border);border:1px solid var(--gray-border);border-radius:4px;overflow:hidden}
 .cat-card{
-  border:none;border-radius:18px;padding:36px 28px;
-  background:var(--bg-alt);display:flex;flex-direction:column;gap:10px;
-  transition:all 0.3s;cursor:pointer;text-decoration:none;color:inherit;
-  opacity:0;transform:translateY(20px);min-height:280px;position:relative;overflow:hidden;
-  box-shadow:rgba(0,0,0,0.04) 0px 2px 12px 0px;
+  background:var(--bg);padding:28px 24px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:background 0.15s;text-decoration:none;color:inherit;
 }
-.cat-card.visible{opacity:1;transform:translateY(0);transition:opacity 0.6s ease,transform 0.6s ease}
-.cat-card:hover{box-shadow:rgba(0,0,0,0.22) 3px 5px 30px 0px;transform:translateY(-2px);text-decoration:none}
-.cat-card:hover .cat-arrow{transform:translateX(4px)}
-.cat-icon{font-size:56px;line-height:1;margin-bottom:8px;filter:saturate(1.2)}
-.cat-name{font-size:24px;font-weight:600;letter-spacing:-0.4px;color:var(--black)}
-.cat-desc{font-size:15px;color:var(--gray-dark);line-height:1.5;flex:1}
-.cat-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(0,0,0,0.06)}
-.cat-arrow{font-size:15px;font-weight:500;color:var(--blue);transition:transform 0.2s;letter-spacing:-0.24px}
-.cat-count{font-size:12px;color:var(--gray);background:rgba(0,0,0,0.06);padding:4px 12px;border-radius:980px;font-weight:500}
-
-/* FEATURED ROW (special: big hero card on top) */
-.featured-card{
-  grid-column:1 / -1;background:linear-gradient(135deg,#1d1d1f 0%,#3a3a3c 100%);
-  color:#fff;padding:48px 40px;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;
-  min-height:240px;
-}
-.featured-card .cat-icon{font-size:80px}
-.featured-card .cat-name{color:#fff;font-size:32px}
-.featured-card .cat-desc{color:rgba(255,255,255,0.75);font-size:17px}
-.featured-card .cat-arrow{color:#2997ff}
-.featured-card .cat-count{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)}
-.featured-card .cat-bottom{border-top-color:rgba(255,255,255,0.15)}
+.cat-card:hover{background:var(--bg-alt);text-decoration:none}
+.cat-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:4px}
+.cat-name{font-size:19px;font-weight:600;color:var(--black)}
+.cat-count{font-size:13px;color:var(--gray-light);white-space:nowrap}
+.cat-desc{font-size:14px;color:var(--gray-dark);line-height:1.6}
+.cat-tiers{font-size:13px;color:var(--gray);line-height:1.7;margin-top:4px}
+.cat-tiers span{display:inline-block;margin-right:14px}
+.cat-tiers span b{color:var(--black);font-weight:500;margin-right:6px}
+.cat-link{font-size:13px;color:var(--blue);margin-top:6px}
 
 /* FOOTER */
-.footer{text-align:center;padding:60px 24px 80px;color:var(--gray-light);font-size:12px;letter-spacing:-0.24px;background:var(--bg-alt)}
-.footer p{margin-top:6px}
+.footer{border-top:1px solid var(--gray-border);padding:32px 24px;color:var(--gray-light);font-size:12px;line-height:1.8;text-align:center;max-width:1200px;margin:0 auto}
 
-/* ANIMATIONS */
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
-@media(max-width:768px){
-  .featured-card{grid-template-columns:1fr;padding:32px 24px}
-  .featured-card .cat-icon{font-size:60px}
-  .featured-card .cat-name{font-size:24px}
-}
 @media(max-width:640px){
-  .cat-grid{grid-template-columns:1fr}
-  .hero{padding:80px 20px 60px;min-height:auto}
-  .section{padding:48px 16px}
+  .list{grid-template-columns:1fr}
+  .intro{padding:48px 20px 24px}
+  .header{padding:16px 20px}
 }
 </style>
 </head>
 <body>
 
-<section class="hero">
-  <p class="hero-label">理性消费，从选对开始</p>
-  <h1 class="hero-title">家电选购指南</h1>
-  <p class="hero-sub">不废话，直接告诉你买哪个。<br>7 个品类、200+ 款机型，全部横向对比。</p>
-  <div class="hero-cta">
-    <a href="#categories">开始选购</a>
-    <a href="/appliance-guide/helper.html" class="ghost">智能推荐</a>
+<div class="header">
+  <div class="logo">家电选购指南</div>
+  <div class="meta">更新于 2026-05-14</div>
+</div>
+
+<section class="intro">
+  <h1>给牛子哥自己用的选购笔记</h1>
+  <p>整理了 7 个品类、200 多款机型，按价格段排好，每款都标了能不能买、为什么买。不收任何广告费，不写 SEO 软文，看得下去就看。</p>
+  <div class="summary">
+    <span><strong>7</strong>个品类</span>
+    <span><strong>200+</strong>款机型</span>
+    <span><strong>京东实时价</strong>参考</span>
   </div>
 </section>
 
-<section class="section" id="categories">
-  <p class="section-label">All Categories</p>
-  <h2 class="section-title">选一个开始。</h2>
-  <p class="section-subtitle">数据持续更新，价格来源京东官方旗舰店</p>
-  <div class="cat-grid" id="catGrid">
+<div class="list">
 
-    <a class="cat-card featured-card" href="/appliance-guide/categories/robot-vacuum.html">
-      <div>
-        <div class="cat-icon">🤖</div>
-        <div class="cat-name">扫地机器人</div>
-      </div>
-      <div style="display:flex;flex-direction:column;height:100%">
-        <p class="cat-desc">圆盘、滚筒、履带三种拖布方案。<br><strong style="color:#fff">两千档</strong> 云鲸 J4·追觅 S10　<strong style="color:#fff">五千档</strong> 石头 G20S·科沃斯 X2 Pro　<strong style="color:#fff">旗舰</strong> 追觅 X40·大疆 Romo</p>
-        <div class="cat-bottom">
-          <span class="cat-arrow">查看对比 →</span>
-          <span class="cat-count">33 款机型</span>
-        </div>
-      </div>
-    </a>
+  <a class="cat-card" href="/appliance-guide/categories/robot-vacuum.html">
+    <div class="cat-head"><div class="cat-name">扫地机器人</div><div class="cat-count">33 款</div></div>
+    <div class="cat-desc">圆盘、滚筒、履带三种拖布方案对比。</div>
+    <div class="cat-tiers">
+      <span><b>2K</b>云鲸 J4 / 追觅 S10</span>
+      <span><b>5K</b>石头 G20S / 科沃斯 X2 Pro</span>
+      <span><b>旗舰</b>追觅 X40 / 大疆 Romo</span>
+    </div>
+    <div class="cat-link">查看对比 →</div>
+  </a>
 
-    <a class="cat-card" href="/appliance-guide/categories/washer-dryer.html">
-      <div class="cat-icon">👕</div>
-      <div class="cat-name">洗烘机</div>
-      <p class="cat-desc">洗烘一体 vs 热泵套装 vs 冷凝套装。<br><strong>5000档</strong> 小天鹅 TG100　<strong>1万档</strong> 松下罗密欧　<strong>2万+</strong> 博世/西门子套装</p>
-      <div class="cat-bottom">
-        <span class="cat-arrow">查看对比 →</span>
-        <span class="cat-count">32 款机型</span>
-      </div>
-    </a>
+  <a class="cat-card" href="/appliance-guide/categories/washer-dryer.html">
+    <div class="cat-head"><div class="cat-name">洗烘机</div><div class="cat-count">32 款</div></div>
+    <div class="cat-desc">一体机 vs 热泵套装 vs 冷凝套装。</div>
+    <div class="cat-tiers">
+      <span><b>5K</b>小天鹅 TG100</span>
+      <span><b>1W</b>松下罗密欧</span>
+      <span><b>2W+</b>博世 / 西门子套装</span>
+    </div>
+    <div class="cat-link">查看对比 →</div>
+  </a>
 
-    <a class="cat-card" href="/appliance-guide/categories/dishwasher.html">
-      <div class="cat-icon">🍽️</div>
-      <div class="cat-name">洗碗机</div>
-      <p class="cat-desc">全嵌入可换门板、独立、台式。<br><strong>4-5千</strong> 美的 RX600·海尔 X10000　<strong>8-10千</strong> 博世/西门子旗舰</p>
-      <div class="cat-bottom">
-        <span class="cat-arrow">查看对比 →</span>
-        <span class="cat-count">36 款机型</span>
-      </div>
-    </a>
+  <a class="cat-card" href="/appliance-guide/categories/dishwasher.html">
+    <div class="cat-head"><div class="cat-name">洗碗机</div><div class="cat-count">36 款</div></div>
+    <div class="cat-desc">全嵌入可换门板 / 独立 / 台式三类。</div>
+    <div class="cat-tiers">
+      <span><b>4-5K</b>美的 RX600 / 海尔 X10000</span>
+      <span><b>8-10K</b>博世 / 西门子旗舰</span>
+    </div>
+    <div class="cat-link">查看对比 →</div>
+  </a>
 
-    <a class="cat-card" href="/appliance-guide/categories/steam-oven.html">
-      <div class="cat-icon">🍞</div>
-      <div class="cat-name">微蒸烤一体机</div>
-      <p class="cat-desc">嵌入式 vs 台面式，三合一。<br><strong>3-4千</strong> 美的/松下台面　<strong>7-9千</strong> 方太 EMD9220·老板 CQ976A</p>
-      <div class="cat-bottom">
-        <span class="cat-arrow">查看对比 →</span>
-        <span class="cat-count">31 款机型</span>
-      </div>
-    </a>
+  <a class="cat-card" href="/appliance-guide/categories/steam-oven.html">
+    <div class="cat-head"><div class="cat-name">微蒸烤一体机</div><div class="cat-count">31 款</div></div>
+    <div class="cat-desc">嵌入式 vs 台面式，蒸烤微三合一。</div>
+    <div class="cat-tiers">
+      <span><b>3-4K</b>美的 / 松下台面</span>
+      <span><b>7-9K</b>方太 EMD9220 / 老板 CQ976A</span>
+    </div>
+    <div class="cat-link">查看对比 →</div>
+  </a>
 
-    <a class="cat-card" href="/appliance-guide/categories/induction-cooker.html">
-      <div class="cat-icon">🔥</div>
-      <div class="cat-name">电陶炉</div>
-      <p class="cat-desc">不挑锅、明火感。<br><strong>百元</strong> 美的/苏泊尔　<strong>千元</strong> 钛古 IH·WMF　<strong>高端</strong> 米技双头</p>
-      <div class="cat-bottom">
-        <span class="cat-arrow">查看对比 →</span>
-        <span class="cat-count">15 款机型</span>
-      </div>
-    </a>
+  <a class="cat-card" href="/appliance-guide/categories/induction-cooker.html">
+    <div class="cat-head"><div class="cat-name">电陶炉</div><div class="cat-count">15 款</div></div>
+    <div class="cat-desc">不挑锅、明火感，可代替明火灶。</div>
+    <div class="cat-tiers">
+      <span><b>百元</b>美的 / 苏泊尔</span>
+      <span><b>千元</b>钛古 IH / WMF</span>
+      <span><b>高端</b>米技双头</span>
+    </div>
+    <div class="cat-link">查看对比 →</div>
+  </a>
 
-    <a class="cat-card" href="/appliance-guide/categories/underwear-washer.html">
-      <div class="cat-icon">🧦</div>
-      <div class="cat-name">内衣洗衣机</div>
-      <p class="cat-desc">壁挂/台面/落地。<br><strong>千元下</strong> 小吉 G02C　<strong>1-2千</strong> 小天鹅 V1·海尔壁挂</p>
-      <div class="cat-bottom">
-        <span class="cat-arrow">查看对比 →</span>
-        <span class="cat-count">17 款机型</span>
-      </div>
-    </a>
+  <a class="cat-card" href="/appliance-guide/categories/underwear-washer.html">
+    <div class="cat-head"><div class="cat-name">内衣洗衣机</div><div class="cat-count">17 款</div></div>
+    <div class="cat-desc">壁挂 / 台面 / 落地小型三种安装。</div>
+    <div class="cat-tiers">
+      <span><b>千元下</b>小吉 G02C</span>
+      <span><b>1-2K</b>小天鹅 V1 / 海尔壁挂</span>
+    </div>
+    <div class="cat-link">查看对比 →</div>
+  </a>
 
-    <a class="cat-card" href="/appliance-guide/categories/hiking-backpack.html">
-      <div class="cat-icon">🎒</div>
-      <div class="cat-name">户外登山包</div>
-      <p class="cat-desc">日常/轻量/重装三个容量档。<br><strong>百元</strong> 迪卡侬 MH100　<strong>1千</strong> Osprey Talon 33·Deuter Futura　<strong>3千</strong> Osprey Atmos AG 65</p>
-      <div class="cat-bottom">
-        <span class="cat-arrow">查看对比 →</span>
-        <span class="cat-count">41 款</span>
-      </div>
-    </a>
+  <a class="cat-card" href="/appliance-guide/categories/hiking-backpack.html">
+    <div class="cat-head"><div class="cat-name">户外登山包</div><div class="cat-count">41 款</div></div>
+    <div class="cat-desc">日常 / 轻量 / 重装三个容量档。</div>
+    <div class="cat-tiers">
+      <span><b>百元</b>迪卡侬 MH100</span>
+      <span><b>1K</b>Osprey Talon 33 / Deuter Futura</span>
+      <span><b>3K</b>Osprey Atmos AG 65</span>
+    </div>
+    <div class="cat-link">查看对比 →</div>
+  </a>
 
-  </div>
-</section>
+</div>
 
-<footer class="footer">
-  <p>价格来源：京东官方旗舰店及主流电商渠道，实际售价以商品页面为准。</p>
-  <p>数据更新于 2026 年 5 月</p>
-</footer>
+<div class="footer">
+  价格来源：京东官方旗舰店及主流电商渠道，仅供参考。<br>
+  最新更新：2026-05-14
+</div>
 
-<script>
-// Scroll reveal
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('visible'), i * 80);
-      observer.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.1 });
-document.querySelectorAll('.cat-card').forEach(c => observer.observe(c));
-
-
-</script>
 </body>
 </html>
