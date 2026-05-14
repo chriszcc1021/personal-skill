@@ -269,6 +269,24 @@
     .model-title{font-size:17px}
     .compare-drawer{padding:12px 16px}
   }
+
+  /* IMG PLACEHOLDER + TMALL LINK (injected) */
+  .model-img-wrap.placeholder{
+    background:linear-gradient(135deg, var(--ph-from, #f5f5f7) 0%, var(--ph-to, #e8e8ed) 100%);
+    border-radius:8px;padding:24px 16px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;min-height:140px;margin-bottom:14px;
+  }
+  .model-img-wrap.placeholder .ph-brand{
+    font-size:24px;font-weight:700;color:rgba(0,0,0,0.45);letter-spacing:-0.5px;line-height:1;margin-bottom:8px;
+  }
+  .model-img-wrap.placeholder .ph-model{
+    font-size:13px;color:rgba(0,0,0,0.4);letter-spacing:-0.2px;font-weight:500;
+  }
+  .model-shop-links{display:flex;gap:10px;align-items:center}
+  .model-shop-link{font-size:13px;font-weight:500;color:var(--blue);text-decoration:none;white-space:nowrap;letter-spacing:-0.2px}
+  .model-shop-link:hover{text-decoration:underline}
+  .model-shop-link.tmall{color:#ff0036}
+
 </style>
 </head>
 <body>
@@ -407,6 +425,44 @@
 </div>
 
 <script>
+
+// === SHARED HELPERS (injected) ===
+const __BRAND_COLORS__ = {"石头": ["#dbeafe", "#bfdbfe"], "石头科技": ["#dbeafe", "#bfdbfe"], "追觅": ["#fef3c7", "#fde68a"], "科沃斯": ["#fce7f3", "#fbcfe8"], "云鲸": ["#e0f2fe", "#bae6fd"], "大疆": ["#f3f4f6", "#d1d5db"], "博世": ["#ede9fe", "#ddd6fe"], "西门子": ["#e0e7ff", "#c7d2fe"], "松下": ["#dcfce7", "#bbf7d0"], "海尔": ["#dbeafe", "#bfdbfe"], "小天鹅": ["#fce7f3", "#fbcfe8"], "LG": ["#fee2e2", "#fecaca"], "美的": ["#fef3c7", "#fde68a"], "方太": ["#fee2e2", "#fecaca"], "老板": ["#fef3c7", "#fde68a"], "凯度": ["#f3e8ff", "#e9d5ff"], "慧曼": ["#cffafe", "#a5f3fc"], "苏泊尔": ["#fee2e2", "#fecaca"], "米技": ["#e5e7eb", "#d1d5db"], "钛古": ["#f3f4f6", "#d1d5db"], "WMF": ["#fef3c7", "#fde68a"], "九阳": ["#fef3c7", "#fde68a"], "小吉": ["#fce7f3", "#fbcfe8"], "大宇": ["#f0fdf4", "#dcfce7"], "比依": ["#fff7ed", "#fed7aa"], "云米": ["#dbeafe", "#bfdbfe"], "华凌": ["#dbeafe", "#bfdbfe"], "COLMO": ["#1f2937", "#374151"], "Osprey": ["#ecfccb", "#d9f99d"], "Gregory": ["#dbeafe", "#bfdbfe"], "Deuter": ["#fee2e2", "#fecaca"], "Mammut": ["#fef3c7", "#fde68a"], "Salomon": ["#dbeafe", "#bfdbfe"], "萨洛蒙": ["#dbeafe", "#bfdbfe"], "始祖鸟": ["#e5e7eb", "#d1d5db"], "Arc'teryx": ["#e5e7eb", "#d1d5db"], "北面": ["#fee2e2", "#fecaca"], "The North Face": ["#fee2e2", "#fecaca"], "迪卡侬": ["#dbeafe", "#bfdbfe"], "凯乐石": ["#fef3c7", "#fde68a"], "探路者": ["#fee2e2", "#fecaca"], "骆驼": ["#fff7ed", "#fed7aa"], "攀山鼠": ["#e0f2fe", "#bae6fd"], "Klattermusen": ["#e0f2fe", "#bae6fd"], "格里高利": ["#dbeafe", "#bfdbfe"]};
+function __brandColor(brand){
+  if(!brand) return ['#f5f5f7','#e8e8ed'];
+  if(__BRAND_COLORS__[brand]) return __BRAND_COLORS__[brand];
+  for(const k in __BRAND_COLORS__){
+    if(brand.indexOf(k)>=0 || k.indexOf(brand)>=0) return __BRAND_COLORS__[k];
+  }
+  return ['#f5f5f7','#e8e8ed'];
+}
+function __escAttr(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function __placeholderHTML(brand, name){
+  const c = __brandColor(brand);
+  return '<div class="model-img-wrap placeholder" style="--ph-from:'+c[0]+';--ph-to:'+c[1]+'"><div class="ph-brand">'+__escAttr(brand||'')+'</div><div class="ph-model">'+__escAttr(name||'')+'</div></div>';
+}
+function __imgFallback(imgEl, brand, name){
+  if(imgEl && imgEl.parentElement){
+    imgEl.parentElement.outerHTML = __placeholderHTML(brand, name);
+  }
+}
+function __renderImg(m){
+  if(m.img){
+    return '<div class="model-img-wrap"><img class="model-img" src="'+m.img+'" alt="'+__escAttr(m.name||'')+'" loading="lazy" data-brand="'+__escAttr(m.brand||'')+'" data-name="'+__escAttr(m.name||'')+'" onerror="__imgFallback(this, this.dataset.brand, this.dataset.name)"></div>';
+  }
+  return __placeholderHTML(m.brand||'', m.name||'');
+}
+function __renderShopLinks(m){
+  const brand = m.brand || '';
+  const name = m.name || '';
+  const keyword = encodeURIComponent((brand + ' ' + name).trim());
+  const jd = m.jd || ('https://search.jd.com/Search?keyword=' + keyword);
+  const tmall = m.tmall || ('https://list.tmall.com/search_product.htm?q=' + keyword);
+  return '<div class="model-shop-links"><a class="model-shop-link" href="'+jd+'" target="_blank" rel="noopener">京东</a><a class="model-shop-link tmall" href="'+tmall+'" target="_blank" rel="noopener">天猫</a></div>';
+}
+
 // ===== MODEL DATA =====
 const models = [
   // 米技 Miji
@@ -497,7 +553,7 @@ function cardHTML(m) {
   const catClass = 'cat-' + m.cat;
   return '<div class="model-card" data-idx="' + idx + '">' +
     '<div class="compare-check ' + (checked?'checked':'') + '" onclick="toggleCompare(' + idx + ',this)" title="\u52a0\u5165\u5bf9\u6bd4">\u2713</div>' +
-    (m.img ? '<div class="model-img-wrap"><img class="model-img" src="' + m.img + '" alt="' + m.name + '" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></div>' : '') +
+    __renderImg(m) +
     '<span class="model-tier">' + m.tier + '</span>' +
     (sortActive ? '<span class="brand-tag">' + m.brand + '</span>' : '') +
     '<h4 class="model-title">' + m.name + '</h4>' +
@@ -508,7 +564,7 @@ function cardHTML(m) {
         '<div class="model-price">' + m.priceText + '</div>' +
         (m.priceNote ? '<div class="model-price-note">' + m.priceNote + '</div>' : '') +
       '</div>' +
-      '<a class="model-jd-link" href="' + m.jd + '" target="_blank" rel="noopener">\u4eac\u4e1c\u8d2d\u4e70</a>' +
+      __renderShopLinks(m) +
     '</div>' +
   '</div>';
 }
