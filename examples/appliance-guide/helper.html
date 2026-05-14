@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>智能推荐 · 家电选购指南</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#1d1d1f;--gray-dark:#424245;--gray:#6e6e73;--gray-light:#86868b;
+  --gray-border:#d2d2d7;--bg:#fff;--bg-alt:#f5f5f7;--blue:#0071e3;
+}
+body{font-family:-apple-system,'SF Pro Text','SF Pro Display','Noto Sans SC','Helvetica Neue',sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.47;font-size:17px;letter-spacing:-0.374px}
+a{color:var(--blue);text-decoration:none}
+
+/* NAV */
+.topnav{
+  position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8);
+  backdrop-filter:saturate(180%) blur(20px);
+  display:flex;align-items:center;justify-content:center;gap:0;
+  padding:0 20px;height:48px;
+}
+.topnav a{font-size:12px;color:rgba(255,255,255,0.8);padding:0 12px;line-height:48px;letter-spacing:-0.12px}
+.topnav a:hover{color:#fff}
+
+/* HERO */
+.hero{
+  background:#000;color:#fff;text-align:center;padding:100px 40px 80px;
+}
+.hero-label{font-size:17px;font-weight:600;color:rgba(255,255,255,0.8);margin-bottom:16px}
+.hero h1{font-size:clamp(40px,7vw,56px);font-weight:600;letter-spacing:-0.28px;line-height:1.07;color:#fff}
+.hero p{font-size:clamp(17px,2.5vw,21px);color:rgba(255,255,255,0.8);margin-top:16px;max-width:600px;margin-left:auto;margin-right:auto}
+
+/* MAIN */
+.wizard{max-width:760px;margin:0 auto;padding:60px 24px}
+.step{display:none;animation:fadeIn 0.4s ease}
+.step.active{display:block}
+.step-num{font-size:14px;font-weight:600;color:var(--blue);letter-spacing:-0.224px;margin-bottom:12px}
+.step h2{font-size:clamp(28px,5vw,40px);font-weight:600;letter-spacing:-0.5px;line-height:1.1;margin-bottom:16px}
+.step .helper{font-size:17px;color:var(--gray);margin-bottom:40px}
+
+.options{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:40px}
+.option-card{
+  border:1.5px solid var(--gray-border);border-radius:14px;padding:20px;
+  cursor:pointer;transition:all 0.2s;background:var(--bg);text-align:left;
+  font-family:inherit;font-size:inherit;color:inherit;
+}
+.option-card:hover{border-color:var(--blue);background:rgba(0,113,227,0.04)}
+.option-card.selected{border-color:var(--blue);background:rgba(0,113,227,0.08)}
+.option-card .icon{font-size:36px;line-height:1;margin-bottom:10px}
+.option-card .name{font-size:17px;font-weight:600;margin-bottom:4px}
+.option-card .sub{font-size:13px;color:var(--gray);line-height:1.4}
+
+/* slider */
+.range-wrap{margin:40px 0}
+.range-display{text-align:center;font-size:32px;font-weight:600;color:var(--black);margin-bottom:20px;letter-spacing:-0.5px}
+.range-display .currency{font-size:20px;color:var(--gray);font-weight:400}
+input[type="range"]{
+  width:100%;height:6px;-webkit-appearance:none;appearance:none;
+  background:linear-gradient(to right,var(--blue) var(--p,50%),var(--gray-border) var(--p,50%));
+  border-radius:6px;outline:none;
+}
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:28px;height:28px;background:#fff;
+  border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.15);cursor:pointer;border:1px solid var(--gray-border);
+}
+.range-labels{display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:var(--gray-light)}
+
+/* buttons */
+.actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:12px}
+.btn{
+  padding:12px 28px;border-radius:980px;font-size:17px;font-weight:400;
+  cursor:pointer;font-family:inherit;letter-spacing:-0.374px;border:none;transition:filter 0.2s;
+}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-primary:disabled{background:var(--gray-border);color:var(--gray-light);cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--gray-dark);border:1px solid var(--gray-border)}
+.btn-ghost:hover{color:var(--black);border-color:var(--black)}
+
+/* progress */
+.progress{display:flex;gap:6px;margin-bottom:48px;justify-content:center}
+.progress .step-dot{width:32px;height:4px;border-radius:2px;background:var(--gray-border);transition:background 0.3s;display:inline-block}
+.progress .step-dot.done{background:var(--blue)}
+
+/* result */
+.result-card{
+  background:var(--bg-alt);border-radius:18px;padding:32px;margin-bottom:16px;
+  box-shadow:rgba(0,0,0,0.04) 0px 2px 12px 0px;
+}
+.result-card.top{
+  background:linear-gradient(135deg,#1d1d1f 0%,#3a3a3c 100%);color:#fff;
+}
+.result-card.top .price{color:#2997ff}
+.result-card.top .reason{color:rgba(255,255,255,0.75)}
+.result-rank{font-size:13px;font-weight:600;color:var(--blue);letter-spacing:-0.224px;margin-bottom:8px}
+.result-card.top .result-rank{color:#2997ff}
+.result-name{font-size:24px;font-weight:600;letter-spacing:-0.4px;margin-bottom:6px}
+.price{font-size:22px;font-weight:500;color:var(--blue);margin-bottom:14px}
+.reason{font-size:15px;color:var(--gray-dark);line-height:1.6;margin-bottom:16px}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{font-size:12px;padding:4px 10px;border-radius:980px;background:rgba(0,0,0,0.06);color:var(--gray-dark)}
+.result-card.top .tag{background:rgba(255,255,255,0.12);color:#fff}
+.result-link{display:inline-block;margin-top:14px;font-size:15px;color:var(--blue);font-weight:500}
+.result-card.top .result-link{color:#2997ff}
+.empty-state{text-align:center;padding:80px 24px;color:var(--gray)}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:640px){
+  .wizard{padding:40px 16px}
+  .options{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="/appliance-guide/index.html">← 返回首页</a>
+</nav>
+
+<section class="hero">
+  <p class="hero-label">智能推荐</p>
+  <h1>3 步选定。</h1>
+  <p>告诉牛子哥你的预算和需求，<br>直接给你 Top 3 推荐。</p>
+</section>
+
+<div class="wizard">
+
+  <div class="progress">
+    <span class="step-dot done"></span>
+    <span class="step-dot"></span>
+    <span class="step-dot"></span>
+    <span class="step-dot"></span>
+  </div>
+
+  <!-- STEP 1: 品类 -->
+  <div class="step active" data-step="1">
+    <p class="step-num">第 1 步</p>
+    <h2>买什么？</h2>
+    <p class="helper">先选一个品类。</p>
+    <div class="options" id="catOpts">
+      <button class="option-card" data-cat="robot-vacuum"><div class="icon">🤖</div><div class="name">扫地机器人</div><div class="sub">33 款 · ¥1500-9000</div></button>
+      <button class="option-card" data-cat="washer-dryer"><div class="icon">👕</div><div class="name">洗烘机</div><div class="sub">32 款 · ¥3000-30000</div></button>
+      <button class="option-card" data-cat="dishwasher"><div class="icon">🍽️</div><div class="name">洗碗机</div><div class="sub">36 款 · ¥2000-12000</div></button>
+      <button class="option-card" data-cat="steam-oven"><div class="icon">🍞</div><div class="name">微蒸烤一体机</div><div class="sub">31 款 · ¥3000-15000</div></button>
+      <button class="option-card" data-cat="induction-cooker"><div class="icon">🔥</div><div class="name">电陶炉</div><div class="sub">15 款 · ¥200-5000</div></button>
+      <button class="option-card" data-cat="underwear-washer"><div class="icon">🧦</div><div class="name">内衣洗衣机</div><div class="sub">17 款 · ¥600-4000</div></button>
+      <button class="option-card" data-cat="hiking-backpack"><div class="icon">🎒</div><div class="name">登山包</div><div class="sub">41 款 · ¥89-3980</div></button>
+    </div>
+    <div class="actions"><span></span><button class="btn btn-primary" id="nextBtn1" disabled>下一步</button></div>
+  </div>
+
+  <!-- STEP 2: 预算 -->
+  <div class="step" data-step="2">
+    <p class="step-num">第 2 步</p>
+    <h2>预算多少？</h2>
+    <p class="helper">滑动选择心理价位，左右各 ±20% 都会被推荐。</p>
+    <div class="range-wrap">
+      <div class="range-display"><span class="currency">¥</span><span id="priceVal">3000</span></div>
+      <input type="range" id="priceRange" min="200" max="15000" step="100" value="3000">
+      <div class="range-labels"><span>¥200</span><span>¥15,000+</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" data-back>返回</button>
+      <button class="btn btn-primary" id="nextBtn2">下一步</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: 场景/痛点 -->
+  <div class="step" data-step="3">
+    <p class="step-num">第 3 步</p>
+    <h2>最在意什么？</h2>
+    <p class="helper">可多选，影响推荐排序。</p>
+    <div class="options" id="needOpts"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" data-back>返回</button>
+      <button class="btn btn-primary" id="nextBtn3">看推荐</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="step" data-step="4">
+    <p class="step-num">推荐结果</p>
+    <h2>这 3 款值得看。</h2>
+    <p class="helper" id="resultHelper">基于预算和需求匹配</p>
+    <div id="results"></div>
+    <div class="actions" style="margin-top:32px">
+      <button class="btn btn-ghost" id="restart">重新选</button>
+      <a href="/appliance-guide/index.html" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">返回首页</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// =============================
+// PRODUCT DATABASE (compact)
+// 每个商品: name, price, cat, tags(用于场景匹配), reason, url
+// =============================
+const PRODUCTS = {
+  'robot-vacuum': [
+    {name:'石头 G20S',price:4499,tags:['强清洁','基站全能','扫拖'],reason:'滚筒拖布+热水洗+基站抽水，毛发不缠绕，扫拖一站到位',url:'robot-vacuum.html'},
+    {name:'追觅 X40 Pro Ultra',price:6299,tags:['强清洁','基站全能','扫拖','智能避障'],reason:'仿生机械臂深入边角，AI 识别避障最强，旗舰首选',url:'robot-vacuum.html'},
+    {name:'科沃斯 X2 Pro',price:5299,tags:['扫拖','智能避障'],reason:'方形机身贴边覆盖率行业第一，OZMO 拖布常态拖洗',url:'robot-vacuum.html'},
+    {name:'云鲸 J4',price:2999,tags:['性价比','扫拖','基站全能'],reason:'三千档拖布自清洁最稳，老用户口碑机',url:'robot-vacuum.html'},
+    {name:'石头 P10 Pro',price:2599,tags:['性价比','扫拖'],reason:'石头入门款基站全能，扫拖+热水洗+自烘干一应俱全',url:'robot-vacuum.html'},
+    {name:'追觅 S10',price:1899,tags:['预算友好','扫拖'],reason:'1899 档不到 2000 的扫拖一体，振动拖把 + 基站',url:'robot-vacuum.html'},
+    {name:'大疆 Romo',price:6999,tags:['新品','智能避障'],reason:'大疆首款扫地机，激光雷达+视觉双重感知',url:'robot-vacuum.html'}
+  ],
+  'washer-dryer': [
+    {name:'博世 11 公斤 热泵套装',price:18999,tags:['烘干强','大容量','静音'],reason:'热泵低温烘干不伤衣，11 公斤大容量，欧洲主流方案',url:'washer-dryer.html'},
+    {name:'西门子 iQ500 套装',price:14999,tags:['烘干强','大容量'],reason:'热泵套装首选，自清洁滚筒，A+++ 能效',url:'washer-dryer.html'},
+    {name:'松下 罗密欧',price:7999,tags:['一体机','省空间','性价比'],reason:'洗烘一体省空间，纳米水离子除菌，热泵烘干',url:'washer-dryer.html'},
+    {name:'小天鹅 TG100ELITE',price:5499,tags:['一体机','性价比'],reason:'国产洗烘一体性价比之王，5000 档热泵',url:'washer-dryer.html'},
+    {name:'海尔 纤美 376',price:4299,tags:['一体机','预算友好','省空间'],reason:'46 厘米超薄机身，洗烘一体，租房友好',url:'washer-dryer.html'},
+    {name:'LG TWINWash',price:13999,tags:['大容量','双桶'],reason:'上桶小件分洗，下桶大件主洗，独居家庭神器',url:'washer-dryer.html'}
+  ],
+  'dishwasher': [
+    {name:'西门子 SJ43HB01MC',price:7999,tags:['全嵌入','可换门板','大容量','静音'],reason:'14 套全嵌入+可换门板，三层碗篮，静音 39dB',url:'dishwasher.html'},
+    {name:'博世 SJM68IX00C',price:9999,tags:['全嵌入','可换门板','大容量'],reason:'14 套全嵌入旗舰，沸石烘干，氙气灯',url:'dishwasher.html'},
+    {name:'美的 RX600 Pro',price:4499,tags:['全嵌入','性价比','可换门板'],reason:'国产全嵌入性价比之王，13 套+热风烘干',url:'dishwasher.html'},
+    {name:'方太 V6',price:6999,tags:['全嵌入','可换门板'],reason:'高温煮洗模式杀菌强，国产高端代表',url:'dishwasher.html'},
+    {name:'海尔 X10000',price:5499,tags:['全嵌入','大容量'],reason:'15 套超大容量，洗烘存一体',url:'dishwasher.html'},
+    {name:'松下 NP-WB1S1R5',price:3999,tags:['独立式','预算友好'],reason:'8 套水槽款，租房/小厨房友好',url:'dishwasher.html'}
+  ],
+  'steam-oven': [
+    {name:'方太 EMD9220',price:8999,tags:['嵌入式','大容量'],reason:'56L 大空间，蒸烤微三合一，方太招牌',url:'steam-oven.html'},
+    {name:'老板 CQ976A',price:7299,tags:['嵌入式'],reason:'蒸烤独立腔体，互不串味',url:'steam-oven.html'},
+    {name:'西门子 CS589ABS0W',price:14999,tags:['嵌入式','高端'],reason:'欧标嵌入式蒸烤，烘焙最强',url:'steam-oven.html'},
+    {name:'凯度 SR60BE-FD',price:5499,tags:['嵌入式','性价比'],reason:'国产嵌入蒸烤微，五千档配置最丰富',url:'steam-oven.html'},
+    {name:'美的 G3 Pro',price:4299,tags:['台面式','性价比'],reason:'台式蒸烤微，35L 中型容量，搬家友好',url:'steam-oven.html'},
+    {name:'松下 NU-SC360B',price:3299,tags:['台面式','预算友好'],reason:'松下水波炉入门，蒸烤一体台面式',url:'steam-oven.html'}
+  ],
+  'induction-cooker': [
+    {name:'米技 MASTER 2.0',price:3980,tags:['高端','双头'],reason:'德国米技双头电陶炉，专业厨师同款',url:'induction-cooker.html'},
+    {name:'钛古 IH C2103',price:1980,tags:['性价比','双头'],reason:'国产高端电陶炉，外观设计精致',url:'induction-cooker.html'},
+    {name:'WMF 单灶',price:1299,tags:['高端','单头'],reason:'德国厨具品牌单头电陶炉，做工精致',url:'induction-cooker.html'},
+    {name:'苏泊尔 DT22R201-2200',price:399,tags:['预算友好','单头'],reason:'国产入门，400 元搞定不挑锅',url:'induction-cooker.html'},
+    {name:'美的 C22-RT2202',price:299,tags:['预算友好','单头'],reason:'最便宜的电陶炉选择，基础功能够用',url:'induction-cooker.html'}
+  ],
+  'underwear-washer': [
+    {name:'小天鹅 V1',price:2199,tags:['壁挂','高温杀菌'],reason:'壁挂式不占地，95°C 高温煮洗',url:'underwear-washer.html'},
+    {name:'大宇 XQB30-D1',price:1399,tags:['壁挂','颜值高'],reason:'颜值担当，墙面安装小户型友好',url:'underwear-washer.html'},
+    {name:'小吉 G02C',price:999,tags:['台面','预算友好'],reason:'台面式小型洗，千元档热门',url:'underwear-washer.html'},
+    {name:'海尔 EBM33-R178U1',price:1599,tags:['壁挂','高温杀菌'],reason:'海尔壁挂款，巴氏除菌精准',url:'underwear-washer.html'},
+    {name:'松下 XQG30-A30001U',price:1299,tags:['台面','静音'],reason:'松下小型款，纳米水离子除味',url:'underwear-washer.html'}
+  ],
+  'hiking-backpack': [
+    {name:'Osprey Atmos AG 65',price:2580,tags:['重装穿越','大容量','背负舒适'],reason:'Anti-Gravity 网背舒适标杆，65L 重装首选',url:'hiking-backpack.html'},
+    {name:'Gregory Baltoro 65',price:2980,tags:['重装穿越','大容量','背负舒适'],reason:'美式背负之王，65L 超长徒步金标',url:'hiking-backpack.html'},
+    {name:'Osprey Stratos 36',price:1380,tags:['轻量登山','中等容量'],reason:'36L 一日轻装+周末两日，性价比之选',url:'hiking-backpack.html'},
+    {name:'Deuter Futura 32',price:1280,tags:['轻量登山','中等容量','背负舒适'],reason:'德国 Deuter 30L 入门款，AirComfort 背架透气',url:'hiking-backpack.html'},
+    {name:'始祖鸟 Aerios 30',price:1980,tags:['轻量登山','高端'],reason:'始祖鸟轻量徒步包，30L 精致小巧',url:'hiking-backpack.html'},
+    {name:'迪卡侬 MH100 20L',price:89,tags:['日常通勤','预算友好','小容量'],reason:'89 元入门通勤包，性价比之王',url:'hiking-backpack.html'},
+    {name:'Osprey Talon 33',price:1280,tags:['轻量登山','中等容量'],reason:'男士轻量黄金 33L，徒步骑行通吃',url:'hiking-backpack.html'},
+    {name:'Salomon Out Night 30',price:1380,tags:['轻量登山','越野'],reason:'萨洛蒙越野跑+轻徒步混合包',url:'hiking-backpack.html'}
+  ]
+};
+
+// 不同品类的需求选项
+const NEEDS = {
+  'robot-vacuum': [
+    {key:'强清洁',icon:'💪',name:'清洁力',sub:'家有宠物/重污染'},
+    {key:'基站全能',icon:'🚿',name:'基站全能',sub:'自动洗布烘干'},
+    {key:'智能避障',icon:'🤖',name:'智能避障',sub:'家有小孩玩具多'},
+    {key:'预算友好',icon:'💰',name:'够用就行',sub:'2000以下'},
+    {key:'性价比',icon:'⚖️',name:'性价比',sub:'2-3000'}
+  ],
+  'washer-dryer': [
+    {key:'烘干强',icon:'🔥',name:'烘干强',sub:'热泵不伤衣物'},
+    {key:'省空间',icon:'📐',name:'省空间',sub:'小户型/卫生间'},
+    {key:'一体机',icon:'🔄',name:'一体机',sub:'洗烘一台搞定'},
+    {key:'大容量',icon:'📦',name:'大容量',sub:'多人家庭'},
+    {key:'静音',icon:'🔇',name:'静音',sub:'夜间运行'}
+  ],
+  'dishwasher': [
+    {key:'全嵌入',icon:'🔲',name:'全嵌入',sub:'橱柜统一面板'},
+    {key:'可换门板',icon:'🎨',name:'可换门板',sub:'定制装修'},
+    {key:'大容量',icon:'📦',name:'大容量',sub:'多人家庭/聚餐'},
+    {key:'静音',icon:'🔇',name:'静音',sub:'开放厨房'},
+    {key:'性价比',icon:'⚖️',name:'性价比',sub:'5000档'}
+  ],
+  'steam-oven': [
+    {key:'嵌入式',icon:'🔲',name:'嵌入式',sub:'橱柜内安装'},
+    {key:'台面式',icon:'📦',name:'台面式',sub:'放台面/可搬家'},
+    {key:'大容量',icon:'📦',name:'大容量',sub:'50L+'},
+    {key:'高端',icon:'👑',name:'高端',sub:'10000+'},
+    {key:'性价比',icon:'⚖️',name:'性价比',sub:'5000档'}
+  ],
+  'induction-cooker': [
+    {key:'双头',icon:'🔥',name:'双头',sub:'同时两锅'},
+    {key:'单头',icon:'🍳',name:'单头',sub:'够用就行'},
+    {key:'高端',icon:'👑',name:'高端',sub:'米技/WMF'},
+    {key:'预算友好',icon:'💰',name:'预算友好',sub:'500以下'}
+  ],
+  'underwear-washer': [
+    {key:'壁挂',icon:'🧱',name:'壁挂',sub:'墙面安装'},
+    {key:'台面',icon:'📐',name:'台面',sub:'放台面'},
+    {key:'高温杀菌',icon:'🔥',name:'高温杀菌',sub:'95°C 煮洗'},
+    {key:'静音',icon:'🔇',name:'静音',sub:'夜间运行'},
+    {key:'颜值高',icon:'✨',name:'颜值高',sub:'外观加分'}
+  ],
+  'hiking-backpack': [
+    {key:'日常通勤',icon:'🏙️',name:'日常通勤',sub:'<25L'},
+    {key:'轻量登山',icon:'⛰️',name:'轻量登山',sub:'30-40L 一日'},
+    {key:'重装穿越',icon:'🏔️',name:'重装穿越',sub:'50L+ 多日'},
+    {key:'背负舒适',icon:'🦴',name:'背负舒适',sub:'网背/腰带'},
+    {key:'轻量',icon:'🪶',name:'轻量',sub:'<1kg'}
+  ]
+};
+
+// =============================
+// STATE
+// =============================
+const state = {step:1, cat:null, price:3000, needs:new Set()};
+
+// =============================
+// UI HELPERS
+// =============================
+function showStep(n) {
+  state.step = n;
+  document.querySelectorAll('.step').forEach(s=>{
+    s.classList.toggle('active', s.dataset.step === String(n));
+  });
+  document.querySelectorAll('.step-dot').forEach((d,i)=>{
+    d.classList.toggle('done', i < n);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// STEP 1: cat selection
+document.querySelectorAll('#catOpts .option-card').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#catOpts .option-card').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.cat = btn.dataset.cat;
+    document.getElementById('nextBtn1').disabled = false;
+  });
+});
+document.getElementById('nextBtn1').addEventListener('click', ()=>{
+  // Adjust price range based on cat
+  const range = document.getElementById('priceRange');
+  const ranges = {
+    'robot-vacuum':{min:1000,max:9000,def:3000},
+    'washer-dryer':{min:3000,max:30000,def:8000},
+    'dishwasher':{min:2000,max:15000,def:6000},
+    'steam-oven':{min:2000,max:15000,def:6000},
+    'induction-cooker':{min:200,max:5000,def:1000},
+    'underwear-washer':{min:600,max:4000,def:1500},
+    'hiking-backpack':{min:80,max:4000,def:1500}
+  };
+  const r = ranges[state.cat];
+  range.min = r.min; range.max = r.max; range.value = r.def;
+  state.price = r.def;
+  document.getElementById('priceVal').textContent = r.def.toLocaleString();
+  updateRangeBg(range);
+  showStep(2);
+});
+
+// STEP 2: price
+const priceRange = document.getElementById('priceRange');
+function updateRangeBg(r){
+  const p = (r.value-r.min)/(r.max-r.min)*100;
+  r.style.setProperty('--p', p+'%');
+}
+priceRange.addEventListener('input', e=>{
+  state.price = parseInt(e.target.value);
+  document.getElementById('priceVal').textContent = state.price.toLocaleString();
+  updateRangeBg(e.target);
+});
+document.getElementById('nextBtn2').addEventListener('click', ()=>{
+  // Build needs options
+  const optsEl = document.getElementById('needOpts');
+  optsEl.innerHTML = '';
+  state.needs = new Set();
+  (NEEDS[state.cat]||[]).forEach(n=>{
+    const btn = document.createElement('button');
+    btn.className = 'option-card';
+    btn.dataset.need = n.key;
+    btn.innerHTML = `<div class="icon">${n.icon}</div><div class="name">${n.name}</div><div class="sub">${n.sub}</div>`;
+    btn.addEventListener('click', ()=>{
+      if(state.needs.has(n.key)){
+        state.needs.delete(n.key);
+        btn.classList.remove('selected');
+      } else {
+        state.needs.add(n.key);
+        btn.classList.add('selected');
+      }
+    });
+    optsEl.appendChild(btn);
+  });
+  showStep(3);
+});
+
+// STEP 3 -> 4: compute
+document.getElementById('nextBtn3').addEventListener('click', ()=>{
+  const products = PRODUCTS[state.cat] || [];
+  const targetPrice = state.price;
+  const needs = Array.from(state.needs);
+
+  // Score each: distance to price (closer better) + needs match count
+  const scored = products.map(p=>{
+    const priceDiff = Math.abs(p.price - targetPrice) / targetPrice;
+    const priceScore = Math.max(0, 1 - priceDiff); // 0-1
+    const tagMatches = needs.filter(n => p.tags.includes(n)).length;
+    const tagScore = needs.length ? tagMatches/needs.length : 0;
+    const score = priceScore * 0.5 + tagScore * 0.5;
+    return {...p, score, priceScore, tagScore};
+  });
+  scored.sort((a,b)=>b.score-a.score);
+  const top3 = scored.slice(0,3);
+
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '';
+  const rankNames = ['最值得买','次推荐','备选'];
+  top3.forEach((p, i)=>{
+    const card = document.createElement('div');
+    card.className = 'result-card' + (i===0 ? ' top' : '');
+    const tagsHtml = p.tags.map(t=>`<span class="tag">${t}</span>`).join('');
+    card.innerHTML = `
+      <p class="result-rank">${rankNames[i]} · 匹配度 ${Math.round(p.score*100)}%</p>
+      <div class="result-name">${p.name}</div>
+      <div class="price">¥${p.price.toLocaleString()}</div>
+      <p class="reason">${p.reason}</p>
+      <div class="tags">${tagsHtml}</div>
+      <a href="/appliance-guide/categories/${p.url}" class="result-link">在对比表中查看 →</a>
+    `;
+    resultsEl.appendChild(card);
+  });
+  document.getElementById('resultHelper').textContent = 
+    `预算 ¥${targetPrice.toLocaleString()}${needs.length ? '，看重' + needs.join('/') : ''}`;
+  showStep(4);
+});
+
+// BACK
+document.querySelectorAll('[data-back]').forEach(b=>{
+  b.addEventListener('click', ()=> showStep(state.step - 1));
+});
+
+// RESTART
+document.getElementById('restart').addEventListener('click', ()=>{
+  state.cat = null;
+  state.needs.clear();
+  document.querySelectorAll('.option-card.selected').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('nextBtn1').disabled = true;
+  showStep(1);
+});
+
+updateRangeBg(priceRange);
+</script>
+
+</body>
+</html>
