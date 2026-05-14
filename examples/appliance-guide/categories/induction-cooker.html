@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电陶炉选购指南</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --black:#1d1d1f;--gray-dark:#424245;--gray:#6e6e73;--gray-light:#86868b;
+    --gray-border:#d2d2d7;--bg:#fff;--bg-alt:#f5f5f7;
+    --blue:#0071e3;--blue-light:#e8f4fd;--green:#34c759;--green-light:#e8f8ec;
+    --purple:#af52de;--purple-light:#f3eefa;--orange:#ff9500;--orange-light:#fff4e6;
+    --red:#ff3b30;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+  /* ===== STICKY NAV ===== */
+  .topnav{
+    position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--gray-border);
+    display:flex;align-items:center;justify-content:center;gap:24px;
+    padding:12px 20px;overflow-x:auto;white-space:nowrap;
+  }
+  .topnav a{
+    font-size:14px;font-weight:500;color:var(--gray);text-decoration:none;
+    padding:6px 14px;border-radius:20px;transition:all 0.2s;flex-shrink:0;
+  }
+  .topnav a:hover{color:var(--black);background:var(--bg-alt)}
+  .topnav a.active{color:var(--black);background:var(--bg);border:1px solid var(--gray-border)}
+
+  /* ===== HERO ===== */
+  .hero{text-align:center;padding:100px 24px 70px;background:var(--bg-alt)}
+  .hero h1{font-size:clamp(36px,7vw,72px);font-weight:900;letter-spacing:-0.02em;line-height:1.05}
+  .hero p{font-size:clamp(16px,2.2vw,24px);color:var(--gray);margin-top:14px;max-width:580px;margin-left:auto;margin-right:auto}
+
+  /* ===== SECTIONS ===== */
+  .section{padding:80px 24px}
+  .section-alt{background:var(--bg-alt)}
+  .section-inner{max-width:980px;margin:0 auto}
+  .section-wide{max-width:1200px;margin:0 auto}
+  .section-label{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-light);margin-bottom:6px}
+  .section-title{font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-0.015em;line-height:1.1;margin-bottom:16px}
+  .section-subtitle{font-size:clamp(15px,1.8vw,19px);color:var(--gray);max-width:560px;line-height:1.5;margin-bottom:48px}
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar{
+    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;align-items:center;
+  }
+  .filter-group{display:flex;gap:6px;flex-wrap:wrap}
+  .filter-group-label{font-size:13px;font-weight:600;color:var(--gray-light);align-self:center;margin-right:4px}
+  .filter-btn{
+    font-size:13px;font-weight:500;padding:6px 16px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;
+  }
+  .filter-btn:hover{border-color:var(--black);color:var(--black)}
+  .filter-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+  /* Price slider */
+  .price-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .price-label{font-size:13px;color:var(--gray);white-space:nowrap}
+  .price-range{-webkit-appearance:none;width:160px;height:4px;border-radius:2px;background:#e0e0e0;outline:none}
+  .price-range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--black);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+  .price-value{font-size:14px;font-weight:600;color:var(--black);min-width:80px}
+
+  /* Sort */
+  .sort-btn{
+    font-size:13px;font-weight:500;padding:6px 14px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;margin-left:auto;
+  }
+  .sort-btn:hover{border-color:var(--black);color:var(--black)}
+  .sort-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+  /* ===== TYPE GRID ===== */
+  .type-grid{display:grid;grid-template-columns:1fr;gap:1px;background:var(--gray-border);border:1px solid var(--gray-border);border-radius:20px;overflow:hidden}
+  @media(min-width:768px){.type-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:1024px){.type-grid{grid-template-columns:repeat(4,1fr)}}
+  .type-card{background:var(--bg);padding:36px 28px;cursor:pointer;transition:background 0.2s}
+  .type-card:hover{background:#fafafa}
+  .type-card.selected{background:var(--bg);border:1px solid var(--gray-border)}
+  .type-name{font-size:24px;font-weight:700;margin-bottom:2px}
+  .type-en{font-size:13px;color:var(--gray-light);margin-bottom:24px}
+  .type-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+  .type-section-label.good{color:var(--green)}
+  .type-section-label.bad{color:var(--red)}
+  .type-list{list-style:none;margin-bottom:24px}
+  .type-list li{font-size:14px;color:var(--gray-dark);padding:5px 0;line-height:1.4}
+
+  /* ===== CMP TABLE ===== */
+  .table-scroll{overflow-x:auto;border:1px solid var(--gray-border);border-radius:16px}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:14px}
+  .cmp-table thead th{padding:14px 18px;text-align:center;font-weight:600;font-size:15px;color:var(--black);border-bottom:1px solid var(--gray-border);background:var(--bg);position:sticky;top:0}
+  .cmp-table thead th:first-child{text-align:left;color:var(--gray-light);font-size:13px;font-weight:500}
+  .cmp-table tbody td{padding:12px 18px;text-align:center;color:var(--gray-dark);border-bottom:1px solid #ebebeb}
+  .cmp-table tbody td:first-child{text-align:left;font-weight:500;color:var(--black)}
+  .cmp-table tbody tr:last-child td{border-bottom:none}
+  .cmp-table tbody tr:hover td{background:#fafafa}
+  .cmp-table .best{font-weight:700;color:var(--black)}
+  .cmp-table .mid{color:var(--gray-dark)}
+  .cmp-table .weak{color:var(--gray-light)}
+  .cmp-table .bad{color:var(--red)}
+  .cmp-table td.col-highlight{background:var(--bg-alt)!important}
+
+  /* ===== MODEL CARDS ===== */
+  .model-count{font-size:14px;color:var(--gray-light);margin-bottom:20px}
+  .model-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:640px){.model-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:960px){.model-grid{grid-template-columns:repeat(3,1fr)}}
+
+  .model-card{
+    border:1px solid var(--gray-border);border-radius:16px;padding:24px;
+    background:var(--bg);display:flex;flex-direction:column;transition:all 0.3s;
+    position:relative;overflow:hidden;
+  }
+  .model-card:hover{box-shadow:0 8px 30px rgba(0,0,0,0.08);transform:translateY(-4px)}
+  .model-card.hidden{display:none}
+  .model-img-wrap{display:flex;justify-content:center;margin-bottom:14px}
+  .model-img{width:100%;max-width:200px;height:140px;object-fit:contain;border-radius:8px}
+  .model-card .brand-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:2px}
+  .model-tier{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:4px}
+  .model-title{font-size:18px;font-weight:600;color:var(--black);margin-bottom:4px;line-height:1.25}
+  .model-cat{font-size:13px;font-weight:500;margin-bottom:14px}
+  .cat-home{color:var(--black)}.cat-tea{color:var(--black)}.cat-embed{color:var(--black)}.cat-commercial{color:var(--black)}
+  .model-features{font-size:13px;color:var(--gray);line-height:1.6;flex:1;margin-bottom:16px}
+  .model-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-top:14px;border-top:1px solid #ebebeb;flex-wrap:wrap}
+  .model-price{font-size:20px;font-weight:600;color:var(--black);letter-spacing:-0.01em}
+  .model-price-note{font-size:11px;color:var(--gray-light);margin-top:1px}
+  .model-jd-link{font-size:13px;font-weight:500;color:var(--black);text-decoration:none;white-space:nowrap}
+  .model-jd-link:hover{text-decoration:underline}
+  .model-jd-link::after{content:' \203A'}
+
+  /* Compare checkbox */
+  .compare-check{
+    position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;
+    border:2px solid var(--gray-border);background:var(--bg);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+    font-size:13px;color:transparent;
+  }
+  .compare-check:hover{border-color:var(--black)}
+  .compare-check.checked{background:var(--black);border-color:var(--black);color:#fff}
+
+  /* Compare drawer */
+  .compare-drawer{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);
+    border-top:1px solid var(--gray-border);
+    padding:16px 24px;display:none;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .compare-drawer.visible{display:block}
+  .compare-drawer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .compare-items{display:flex;gap:8px;flex:1;flex-wrap:wrap}
+  .compare-item{
+    font-size:13px;font-weight:500;padding:6px 12px;border-radius:20px;
+    background:var(--bg-alt);color:var(--black);display:flex;align-items:center;gap:6px;
+  }
+  .compare-item .remove{cursor:pointer;color:var(--gray-light);font-size:16px;line-height:1}
+  .compare-item .remove:hover{color:var(--red)}
+  .compare-btn{
+    font-size:14px;font-weight:600;padding:10px 24px;border-radius:24px;
+    background:var(--black);color:#fff;border:none;cursor:pointer;font-family:inherit;
+    transition:background 0.2s;
+  }
+  .compare-btn:hover{background:var(--gray-dark)}
+  .compare-btn:disabled{background:var(--gray-border);color:var(--gray-light);cursor:default}
+
+  /* Compare modal */
+  .compare-modal-bg{
+    position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);
+    display:none;align-items:flex-end;justify-content:center;padding:0;
+  }
+  .compare-modal-bg.visible{display:flex}
+  .compare-modal{
+    background:var(--bg);border-radius:20px 20px 0 0;max-width:720px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:24px;position:relative;
+  }
+  @media(min-width:768px){
+    .compare-modal-bg{align-items:center;padding:20px}
+    .compare-modal{border-radius:20px}
+  }
+  .compare-modal-close{
+    position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;
+    border:none;background:var(--bg-alt);cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;color:var(--gray);
+  }
+  .compare-modal-close:hover{background:var(--gray-border)}
+  .compare-modal h3{font-size:24px;font-weight:700;margin-bottom:24px}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .compare-table{border-collapse:collapse;border:1px solid var(--gray-border);border-radius:12px;overflow:hidden;width:100%;min-width:500px}
+  .compare-table th{padding:14px 16px;font-size:14px;font-weight:600;color:var(--black);background:var(--bg-alt);border-bottom:1px solid var(--gray-border);text-align:left;white-space:nowrap}
+  .compare-table th:first-child{color:var(--gray);font-size:13px;font-weight:500;width:72px}
+  .compare-table td{padding:12px 16px;font-size:14px;color:var(--gray-dark);border-bottom:1px solid #ebebeb;text-align:left;vertical-align:top}
+  .compare-table td:first-child{font-weight:500;color:var(--gray);font-size:13px;white-space:nowrap;background:var(--bg-alt)}
+  .compare-table tr:last-child td{border-bottom:none}
+  .compare-table tr:hover td{background:#fafafa}
+  .compare-table tr:hover td:first-child{background:var(--bg-alt)}
+
+  /* ===== VERDICT ===== */
+  .type-verdict{margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-border)}
+  .type-verdict-title{font-size:13px;font-weight:600;color:var(--black);margin-bottom:4px}
+  .type-verdict-desc{font-size:13px;color:var(--gray-dark);line-height:1.5;margin-bottom:4px}
+  .type-verdict-models{font-size:12px;color:var(--gray);line-height:1.5}
+
+  .footer{padding:28px 24px;text-align:center;font-size:12px;color:var(--gray-light);border-top:1px solid var(--gray-border)}
+
+  /* Brand separator */
+  .brand-block{margin-bottom:60px}
+  .brand-block:last-child{margin-bottom:0}
+  .brand-header{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .brand-name{font-size:clamp(24px,3.5vw,36px);font-weight:700}
+  .brand-en{font-size:15px;color:var(--gray-light)}
+  .brand-desc{font-size:15px;color:var(--gray);margin-bottom:24px;max-width:560px}
+
+  /* No results */
+  .no-results{text-align:center;padding:60px 20px;color:var(--gray-light);font-size:16px;display:none}
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+  .hero h1{animation:fadeUp 0.8s ease both}
+  .hero p{animation:fadeUp 0.8s ease 0.15s both}
+
+  .animate-on-scroll{opacity:0;transform:translateY(32px);transition:opacity 0.6s ease,transform 0.6s ease}
+  .animate-on-scroll.visible{opacity:1;transform:translateY(0)}
+
+  .type-card{transition:background 0.2s,transform 0.3s,box-shadow 0.3s}
+  .type-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+
+  .model-card{opacity:0;animation:scaleIn 0.4s ease both}
+
+  .compare-drawer{animation:slideUp 0.3s ease both}
+  .compare-modal-bg{animation:fadeIn 0.2s ease both}
+  .compare-modal{animation:scaleIn 0.3s ease both}
+
+  .cmp-table tbody tr{transition:background 0.15s}
+  .filter-btn{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
+  .filter-btn:active{transform:scale(0.95)}
+
+  .topnav{transition:box-shadow 0.3s}
+  .topnav.scrolled{box-shadow:0 1px 8px rgba(0,0,0,0.06)}
+
+  @media(max-width:767px){
+    .hero{padding:72px 20px 56px}
+    .section{padding:56px 20px}
+    .topnav{gap:8px;padding:10px 16px}
+    .topnav a{font-size:13px;padding:5px 12px}
+    .filter-bar{gap:8px}
+    .price-range{width:120px}
+    .model-title{font-size:17px}
+    .compare-drawer{padding:12px 16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY NAV -->
+<nav class="topnav" id="topnav">
+  <a href="/appliance-guide/index.html">&larr; 返回首页</a>
+  <a href="#types">用途分类</a>
+  <a href="#compare">对比维度</a>
+  <a href="#brands">选购机型</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <h1>电陶炉<br>选购指南</h1>
+  <p>不挑锅具，明火般加热体验<br>7 大品牌 24 款机型，助你找到最合适的那一台</p>
+</section>
+
+<!-- TYPE COMPARISON -->
+<section class="section" id="types">
+  <div class="section-inner">
+    <p class="section-label">用途分类</p>
+    <h2 class="section-title">四种场景，各取所需。</h2>
+    <p class="section-subtitle">点击任意卡片，下方机型列表会自动筛选对应用途类型。</p>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-card" data-type="home" onclick="toggleTypeFilter('home',this)">
+        <h3 class="type-name">家用台式</h3>
+        <p class="type-en">Countertop — 日常烹饪主力</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>不挑锅具，铁锅砂锅玻璃壶通用</li>
+          <li>无电磁辐射，孕妇老人放心用</li>
+          <li>均匀加热，小火慢炖表现出色</li>
+          <li>可煎烤烘焙，用途广泛</li>
+        </ul>
+        <p class="type-section-label bad">局限</p>
+        <ul class="type-list">
+          <li>热效率低于电磁炉，加热较慢</li>
+          <li>面板高温，需防烫</li>
+          <li>余热时间长，耗电偏高</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">全能之选 · 预算 200-2,000 元</p>
+          <p class="type-verdict-desc">追求不挑锅、无辐射的日常烹饪体验，功率 2000W 以上满足炒菜需求。</p>
+          <p class="type-verdict-models">推荐：米技 Miji Star 2 · 苏泊尔 DTZ2200 · 钛古 IC-A2102</p>
+        </div>
+      </div>
+
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="section section-alt" id="compare">
+  <div class="section-inner">
+    <p class="section-label">横向对比</p>
+    <h2 class="section-title">面板材质，决定体验。</h2>
+    <p class="section-subtitle">电陶炉的面板材质直接影响加热效率、耐用性和价格。鼠标悬停列头可高亮整列。</p>
+    <div class="table-scroll">
+      <table class="cmp-table" id="cmpTable">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th data-col="1" onmouseenter="highlightCol(1)" onmouseleave="clearCol()">微晶面板</th>
+            <th data-col="2" onmouseenter="highlightCol(2)" onmouseleave="clearCol()">黑晶面板</th>
+            <th data-col="3" onmouseenter="highlightCol(3)" onmouseleave="clearCol()">不锈钢面板</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>热传导效率</td><td class="best">最高</td><td class="mid">较高</td><td class="weak">一般</td></tr>
+          <tr><td>耐热冲击</td><td class="best">极强</td><td class="mid">较强</td><td class="best">极强</td></tr>
+          <tr><td>耐磨耐刮</td><td class="best">最好</td><td class="mid">较好</td><td class="weak">易刮花</td></tr>
+          <tr><td>清洁难度</td><td class="best">最易</td><td class="mid">较易</td><td class="weak">较难</td></tr>
+          <tr><td>颜值</td><td class="best">最佳</td><td class="mid">良好</td><td class="weak">工业风</td></tr>
+          <tr><td>使用寿命</td><td class="best">10年+</td><td class="mid">5-8年</td><td class="mid">8年+</td></tr>
+          <tr><td>价格区间</td><td>较高</td><td>中等</td><td>较低</td></tr>
+          <tr><td>代表品牌</td><td>米技 · WMF · 钛古</td><td>苏泊尔 · 九阳 · 美的</td><td>忠臣 · 海氏</td></tr>
+          <tr><td>推荐场景</td><td>高端家用 · 嵌入式</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS & MODELS -->
+<section class="section" id="brands">
+  <div class="section-inner">
+    <p class="section-label">选购机型</p>
+    <h2 class="section-title">找到你的那一台。</h2>
+    <p class="section-subtitle">筛选用途类型、拖动价格滑块、按价格排序。点击右上角圆圈可勾选对比。</p>
+  </div>
+  <div class="section-wide">
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <span class="filter-group-label">用途</span>
+        <button class="filter-btn active" data-cat="all" onclick="setCatFilter('all')">全部</button>
+        <button class="filter-btn cat-home" data-cat="home" onclick="setCatFilter('home')">家用台式</button>
+        <button class="filter-btn cat-embed" data-cat="embed" onclick="setCatFilter('embed')">嵌入式</button>
+      </div>
+      <div class="price-filter">
+        <span class="price-label">预算上限</span>
+        <input type="range" class="price-range" id="priceSlider" min="100" max="15000" value="15000" step="100" oninput="onPriceChange(this.value)">
+        <span class="price-value" id="priceValue">不限</span>
+      </div>
+      <button class="sort-btn" id="sortBtn" onclick="toggleSort()">按价格排序 &uarr;</button>
+    </div>
+
+    <p class="model-count" id="modelCount"></p>
+    <div class="no-results" id="noResults">没有符合条件的机型，试试调整筛选条件</div>
+    <div class="model-grid" id="modelGrid"></div>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <p>价格来源：京东官方旗舰店及主流电商渠道，仅供参考。实际售价以京东商品页面为准。</p>
+</footer>
+
+<!-- COMPARE DRAWER -->
+<div class="compare-drawer" id="compareDrawer">
+  <div class="compare-drawer-inner">
+    <div class="compare-items" id="compareItems"></div>
+    <button class="compare-btn" id="compareBtn" onclick="showCompare()" disabled>对比选中机型</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-bg" id="compareModal" onclick="if(event.target===this)closeCompare()">
+  <div class="compare-modal">
+    <button class="compare-modal-close" onclick="closeCompare()">&#10005;</button>
+    <h3>机型对比</h3>
+    <div id="compareContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== MODEL DATA =====
+const models = [
+  // 米技 Miji
+  {brand:"米技",brandEn:"Miji",tier:"旗舰",name:"Miji Star 2",cat:"home",catLabel:"家用台式 · 微晶面板",features:"德国品牌，进口微晶面板，2000W 双圈加热，12 档精准控温，童锁保护，余热提示",price:2699,priceText:"¥2,699",priceNote:"经典款常年热销",panel:"微晶",power:"2000W",gears:"12档",timer:"120分钟",pots:"不挑锅",releaseDate:"2022-06",img:"https://img12.360buyimg.com/ecps/s400x400_g14/M07/1C/00/rBEhVVNIm1wIAAAAAAF9TyDrLk0AALzGANzalYAAX1n208.jpg",jd:"https://search.jd.com/Search?keyword=%E7%B1%B3%E6%8A%80Miji+Star+2%E7%94%B5%E9%99%B6%E7%82%89"},
+  {brand:"米技",brandEn:"Miji",tier:"旗舰",name:"Miji Cube 4",cat:"home",catLabel:"家用台式 · 微晶面板",features:"方形设计，德国 SCHOTT 微晶面板，2000W，旋钮控温，极简外观，散热快",price:1999,priceText:"¥1,999",panel:"微晶",power:"2000W",gears:"9档",timer:"99分钟",pots:"不挑锅",releaseDate:"2023-03",jd:"https://search.jd.com/Search?keyword=%E7%B1%B3%E6%8A%80Miji+Cube+4%E7%94%B5%E9%99%B6%E7%82%89"},
+  {brand:"米技",brandEn:"Miji",tier:"高端",name:"Miji Gala II 1700",cat:"embed",catLabel:"嵌入式 · 微晶面板",features:"嵌入式双灶设计，德国 SCHOTT 面板，1700W+1200W 双区独立控温，9 档调节",price:5999,priceText:"¥5,999",priceNote:"嵌入式标杆产品",panel:"微晶",power:"1700W+1200W",gears:"9档",timer:"99分钟",pots:"不挑锅",releaseDate:"2021-09",img:"https://cdn.shopify.com/s/files/1/0980/4090/6053/files/210302_GalaEl1600-grey_800x800_04.png?v=1757758301",jd:"https://search.jd.com/Search?keyword=%E7%B1%B3%E6%8A%80Miji+Gala+II%E7%94%B5%E9%99%B6%E7%82%89"},
+  {brand:"米技",brandEn:"Miji",tier:"高端",name:"Miji Gala I 1700",cat:"embed",catLabel:"嵌入式 · 微晶面板",features:"嵌入式单灶，1700W 大功率，德国 SCHOTT 面板，旋钮操控",price:3299,priceText:"¥3,299",panel:"微晶",power:"1700W",gears:"9档",timer:"99分钟",pots:"不挑锅",releaseDate:"2020-06",img:"https://cdn.shopify.com/s/files/1/0980/4090/6053/files/202018797_Gala-El900-White_800x800_01.png?v=1757758280",jd:"https://search.jd.com/Search?keyword=%E7%B1%B3%E6%8A%80Miji+Gala+I%E7%94%B5%E9%99%B6%E7%82%89"},
+  {brand:"米技",brandEn:"Miji",tier:"中端",name:"Miji Home D6",cat:"home",catLabel:"家用台式 · 微晶面板",features:"入门级微晶面板，2000W，触控+旋钮双控，性价比之选",price:1299,priceText:"¥1,299",panel:"微晶",power:"2000W",gears:"9档",timer:"120分钟",pots:"不挑锅",releaseDate:"2023-09",img:"https://cdn.shopify.com/s/files/1/0980/4090/6053/files/Hyaline_White_Front-inclined2.jpg?v=1757406562",jd:"https://search.jd.com/Search?keyword=%E7%B1%B3%E6%8A%80Miji+Home+D6%E7%94%B5%E9%99%B6%E7%82%89"},
+
+  // 钛古 Taigood
+  {brand:"钛古",brandEn:"Taigood",tier:"旗舰",name:"IC-A2102",cat:"home",catLabel:"家用台式 · 微晶面板",features:"日本 NEG 微晶面板，2100W 大功率，双环速热，旋钮调温，德国设计",price:1599,priceText:"¥1,599",priceNote:"微晶面板性价比之选",panel:"微晶",power:"2100W",gears:"10档",timer:"180分钟",pots:"不挑锅",releaseDate:"2023-06",jd:"https://search.jd.com/Search?keyword=%E9%92%9B%E5%8F%A4IC-A2102%E7%94%B5%E9%99%B6%E7%82%89"},
+  {brand:"钛古",brandEn:"Taigood",tier:"高端",name:"IC-A2021",cat:"home",catLabel:"家用台式 · 微晶面板",features:"日本 NEG 面板，2100W，7 寸大屏触控，APP 远程控制，智能食谱",price:1299,priceText:"¥1,299",panel:"微晶",power:"2100W",gears:"10档",timer:"180分钟",pots:"不挑锅",releaseDate:"2024-01",jd:"https://search.jd.com/Search?keyword=%E9%92%9B%E5%8F%A4IC-A2021%E7%94%B5%E9%99%B6%E7%82%89"},
+
+  // 苏泊尔 Supor
+  {brand:"苏泊尔",brandEn:"Supor",tier:"高端",name:"DTZ2200C",cat:"home",catLabel:"家用台式 · 黑晶面板",features:"2200W 大功率，黑晶面板，10 档调温，3 小时定时，火力均匀",price:399,priceText:"¥399",priceNote:"国产家用热门款",panel:"黑晶",power:"2200W",gears:"10档",timer:"180分钟",pots:"不挑锅",releaseDate:"2024-06",img:"https://img.alicdn.com/bao/uploaded/i3/6000000002247/O1CN01yr5mJE1STAgkpgaLE_!!6000000002247-0-picassoopen.jpg",jd:"https://search.jd.com/Search?keyword=%E8%8B%8F%E6%B3%8A%E5%B0%94DTZ2200%E7%94%B5%E9%99%B6%E7%82%89"},
+  {brand:"苏泊尔",brandEn:"Supor",tier:"中端",name:"DTZ2100E",cat:"home",catLabel:"家用台式 · 黑晶面板",features:"2100W，黑晶面板，触控操作，8 档调温，性价比之选",price:299,priceText:"¥299",panel:"黑晶",power:"2100W",gears:"8档",timer:"120分钟",pots:"不挑锅",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=%E8%8B%8F%E6%B3%8A%E5%B0%94DTZ2100%E7%94%B5%E9%99%B6%E7%82%89"},
+
+  // 忠臣 Loyola
+  {brand:"忠臣",brandEn:"Loyola",tier:"旗舰",name:"LC-E109S",cat:"home",catLabel:"家用台式 · 不锈钢面板",features:"2200W 大功率，全不锈钢机身，旋钮控温，双环加热，工业级品质",price:599,priceText:"¥599",panel:"不锈钢",power:"2200W",gears:"无极",timer:"无",pots:"不挑锅",releaseDate:"2023-06",jd:"https://search.jd.com/Search?keyword=%E5%BF%A0%E8%87%A3LC-E109S%E7%94%B5%E9%99%B6%E7%82%89"},
+
+  // 海氏 Hauswirt
+  {brand:"海氏",brandEn:"Hauswirt",tier:"中端",name:"HT10",cat:"home",catLabel:"家用台式 · 黑晶面板",features:"2200W 家用款，黑晶面板，触控+旋钮双控，8 档调温",price:349,priceText:"¥349",panel:"黑晶",power:"2200W",gears:"8档",timer:"120分钟",pots:"不挑锅",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=%E6%B5%B7%E6%B0%8FHT10%E7%94%B5%E9%99%B6%E7%82%89"},
+
+  // WMF
+  {brand:"WMF",brandEn:"WMF",tier:"旗舰",name:"KITCHENminis 电陶炉",cat:"home",catLabel:"家用台式 · 微晶面板",features:"德国制造，SCHOTT 微晶面板，1900W，旋钮控温，极简设计语言",price:2999,priceText:"¥2,999",panel:"微晶",power:"1900W",gears:"12档",timer:"180分钟",pots:"不挑锅",releaseDate:"2022-01",jd:"https://search.jd.com/Search?keyword=WMF+KITCHENminis%E7%94%B5%E9%99%B6%E7%82%89"},
+  {brand:"WMF",brandEn:"WMF",tier:"高端",name:"Lono 嵌入双灶",cat:"embed",catLabel:"嵌入式 · 微晶面板",features:"嵌入式双区设计，3000W 总功率，SCHOTT 面板，独立控温",price:8999,priceText:"¥8,999",priceNote:"高端嵌入式代表",panel:"微晶",power:"1800W+1200W",gears:"12档",timer:"180分钟",pots:"不挑锅",releaseDate:"2021-06",jd:"https://search.jd.com/Search?keyword=WMF+Lono%E7%94%B5%E9%99%B6%E7%82%89%E5%B5%8C%E5%85%A5%E5%BC%8F"},
+
+  // 圈厨 Quanchu (小米生态链)
+  {brand:"圈厨",brandEn:"Quanchu",tier:"中端",name:"CR-DT02",cat:"home",catLabel:"家用台式 · 黑晶面板",features:"2100W 家用款，黑晶面板，旋钮调温，小米生态链品质",price:399,priceText:"¥399",panel:"黑晶",power:"2100W",gears:"9档",timer:"120分钟",pots:"不挑锅",releaseDate:"2024-01",jd:"https://search.jd.com/Search?keyword=%E5%9C%88%E5%8E%A8CR-DT02%E7%94%B5%E9%99%B6%E7%82%89"},
+
+  // 小米 Xiaomi
+
+  // 美的 Midea
+  {brand:"美的",brandEn:"Midea",tier:"中端",name:"MC-H2101",cat:"home",catLabel:"家用台式 · 黑晶面板",features:"2100W，黑晶面板，8 档火力，大品牌售后保障，性价比入门",price:259,priceText:"¥259",panel:"黑晶",power:"2100W",gears:"8档",timer:"120分钟",pots:"不挑锅",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=%E7%BE%8E%E7%9A%84MC-H2101%E7%94%B5%E9%99%B6%E7%82%89"},
+];
+
+// ===== STATE =====
+let currentCatFilter = 'all';
+let maxPrice = 15000;
+let sortAsc = false;
+let sortActive = false;
+let compareSet = new Set();
+
+// ===== RENDER =====
+function renderModels() {
+  let filtered = models.filter(m => {
+    if (currentCatFilter !== 'all' && m.cat !== currentCatFilter) return false;
+    if (m.price > maxPrice) return false;
+    return true;
+  });
+  if (sortActive) {
+    filtered.sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+  }
+  const grid = document.getElementById('modelGrid');
+  const countEl = document.getElementById('modelCount');
+  const noRes = document.getElementById('noResults');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    countEl.textContent = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+  countEl.textContent = '\u5171 ' + filtered.length + ' \u6b3e\u673a\u578b';
+
+  // Group by brand if not sorting
+  let html = '';
+  if (!sortActive) {
+    const brands = [...new Set(filtered.map(m => m.brand))];
+    for (const brand of brands) {
+      const brandModels = filtered.filter(m => m.brand === brand);
+      const first = brandModels[0];
+      html += '<div class="brand-block" style="grid-column:1/-1">' +
+        '<div class="brand-header"><h3 class="brand-name">' + brand + '</h3><span class="brand-en">' + first.brandEn + '</span></div>' +
+      '</div>';
+      for (const m of brandModels) html += cardHTML(m);
+    }
+  } else {
+    for (const m of filtered) html += cardHTML(m);
+  }
+  grid.innerHTML = html;
+}
+
+function cardHTML(m) {
+  const idx = models.indexOf(m);
+  const checked = compareSet.has(idx);
+  const catClass = 'cat-' + m.cat;
+  return '<div class="model-card" data-idx="' + idx + '">' +
+    '<div class="compare-check ' + (checked?'checked':'') + '" onclick="toggleCompare(' + idx + ',this)" title="\u52a0\u5165\u5bf9\u6bd4">\u2713</div>' +
+    (m.img ? '<div class="model-img-wrap"><img class="model-img" src="' + m.img + '" alt="' + m.name + '" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></div>' : '') +
+    '<span class="model-tier">' + m.tier + '</span>' +
+    (sortActive ? '<span class="brand-tag">' + m.brand + '</span>' : '') +
+    '<h4 class="model-title">' + m.name + '</h4>' +
+    '<p class="model-cat ' + catClass + '">' + m.catLabel + '</p>' +
+    '<p class="model-features">' + m.features + '</p>' +
+    '<div class="model-price-row">' +
+      '<div>' +
+        '<div class="model-price">' + m.priceText + '</div>' +
+        (m.priceNote ? '<div class="model-price-note">' + m.priceNote + '</div>' : '') +
+      '</div>' +
+      '<a class="model-jd-link" href="' + m.jd + '" target="_blank" rel="noopener">\u4eac\u4e1c\u8d2d\u4e70</a>' +
+    '</div>' +
+  '</div>';
+}
+
+// ===== FILTERS =====
+function setCatFilter(cat) {
+  currentCatFilter = cat;
+  document.querySelectorAll('#filterBar .filter-btn[data-cat]').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.cat === cat);
+  });
+  document.querySelectorAll('.type-card').forEach(function(c) {
+    c.classList.toggle('selected', cat !== 'all' && c.dataset.type === cat);
+  });
+  renderModels();
+}
+
+function toggleTypeFilter(type, el) {
+  if (currentCatFilter === type) {
+    setCatFilter('all');
+  } else {
+    setCatFilter(type);
+  }
+}
+
+function onPriceChange(val) {
+  maxPrice = parseInt(val);
+  document.getElementById('priceValue').textContent = maxPrice >= 15000 ? '\u4e0d\u9650' : '\u2264 \uffe5' + maxPrice.toLocaleString();
+  renderModels();
+}
+
+function toggleSort() {
+  var btn = document.getElementById('sortBtn');
+  if (!sortActive) {
+    sortActive = true; sortAsc = true;
+    btn.textContent = '\u4ef7\u683c \u4f4e\u2192\u9ad8'; btn.classList.add('active');
+  } else if (sortAsc) {
+    sortAsc = false;
+    btn.textContent = '\u4ef7\u683c \u9ad8\u2192\u4f4e';
+  } else {
+    sortActive = false;
+    btn.textContent = '\u6309\u4ef7\u683c\u6392\u5e8f \u2191'; btn.classList.remove('active');
+  }
+  renderModels();
+}
+
+// ===== COMPARE =====
+function toggleCompare(idx, el) {
+  if (compareSet.has(idx)) { compareSet.delete(idx); el.classList.remove('checked'); }
+  else if (compareSet.size < 4) { compareSet.add(idx); el.classList.add('checked'); }
+  updateCompareDrawer();
+}
+
+function updateCompareDrawer() {
+  var drawer = document.getElementById('compareDrawer');
+  var items = document.getElementById('compareItems');
+  var btn = document.getElementById('compareBtn');
+  if (compareSet.size === 0) { drawer.classList.remove('visible'); return; }
+  drawer.classList.add('visible');
+  items.innerHTML = [...compareSet].map(function(idx) {
+    var m = models[idx];
+    return '<span class="compare-item">' + m.brand + ' ' + m.name + '<span class="remove" onclick="removeCompare(' + idx + ')">\u2715</span></span>';
+  }).join('');
+  btn.disabled = compareSet.size < 2;
+}
+
+function removeCompare(idx) {
+  compareSet.delete(idx);
+  updateCompareDrawer();
+  renderModels();
+}
+
+function showCompare() {
+  if (compareSet.size < 2) return;
+  var items = [...compareSet].map(function(i) { return models[i]; });
+  var fields = [
+    ['\u54c1\u724c', function(m){ return m.brand; }],
+    ['\u7528\u9014', function(m){ return m.catLabel; }],
+    ['\u529f\u7387', function(m){ return m.power; }],
+    ['\u9762\u677f', function(m){ return m.panel; }],
+    ['\u6863\u4f4d', function(m){ return m.gears; }],
+    ['\u5b9a\u65f6', function(m){ return m.timer; }],
+    ['\u4ef7\u683c', function(m){ return m.priceText + (m.priceNote ? '<br><small style="color:var(--gray-light)">' + m.priceNote + '</small>' : ''); }],
+    ['\u4eae\u70b9', function(m){ return m.features; }],
+    ['\u4eac\u4e1c', function(m){ return '<a href="' + m.jd + '" target="_blank" style="color:var(--black);text-decoration:none">\u53bb\u8d2d\u4e70 \u203a</a>'; }],
+  ];
+  var html = '<div class="compare-scroll"><table class="compare-table">';
+  html += '<thead><tr><th></th>';
+  items.forEach(function(m) { html += '<th>' + m.name + '</th>'; });
+  html += '</tr></thead><tbody>';
+  for (var i = 0; i < fields.length; i++) {
+    var label = fields[i][0], fn = fields[i][1];
+    html += '<tr><td>' + label + '</td>';
+    items.forEach(function(m) { html += '<td>' + fn(m) + '</td>'; });
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('compareContent').innerHTML = html;
+  document.getElementById('compareModal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompare() {
+  document.getElementById('compareModal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// ===== TABLE COLUMN HIGHLIGHT =====
+function highlightCol(col) {
+  document.querySelectorAll('#cmpTable tbody td').forEach(function(td) {
+    var idx = [...td.parentNode.children].indexOf(td);
+    td.classList.toggle('col-highlight', idx === col);
+  });
+}
+function clearCol() {
+  document.querySelectorAll('#cmpTable td.col-highlight').forEach(function(td) { td.classList.remove('col-highlight'); });
+}
+
+// ===== SCROLL SPY + NAV SHADOW =====
+var sectionIds = ['types','compare','brands'];
+var nav = document.getElementById('topnav');
+window.addEventListener('scroll', function() {
+  var scrollY = window.scrollY + 80;
+  var current = '';
+  for (var i = 0; i < sectionIds.length; i++) {
+    var el = document.getElementById(sectionIds[i]);
+    if (el && el.offsetTop <= scrollY) current = sectionIds[i];
+  }
+  document.querySelectorAll('.topnav a').forEach(function(a) {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+});
+
+// ===== SCROLL REVEAL =====
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function initScrollReveal() {
+  document.querySelectorAll('.section-label,.section-title,.section-subtitle,.type-grid,.table-scroll,.filter-bar').forEach(function(el) {
+    el.classList.add('animate-on-scroll');
+    observer.observe(el);
+  });
+}
+
+// ===== STAGGER MODEL CARDS =====
+var origRender = renderModels;
+renderModels = function() {
+  origRender();
+  document.querySelectorAll('.model-card').forEach(function(card, i) {
+    card.style.animationDelay = Math.min(i * 0.05, 0.6) + 's';
+  });
+};
+
+// INIT
+renderModels();
+initScrollReveal();
+</script>
+</body>
+</html>

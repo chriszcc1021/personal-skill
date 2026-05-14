@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>户外登山包选购指南</title>
+<style>
+  @import url('https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    /* Apple Design System Colors */
+    --black:#000000;
+    --white:#ffffff;
+    --light-bg:#f5f5f7;
+    --near-black:#1d1d1f;
+    --apple-blue:#0071e3;
+    --link-blue:#0066cc;
+    --bright-blue:#2997ff;
+    --text-dark:rgba(0,0,0,0.8);
+    --text-dark-secondary:rgba(0,0,0,0.56);
+    --text-dark-tertiary:rgba(0,0,0,0.48);
+    --text-light:#ffffff;
+    --text-light-secondary:rgba(255,255,255,0.8);
+    --text-light-tertiary:rgba(255,255,255,0.56);
+    --dark-surface:#272729;
+    --dark-surface-2:#2a2a2d;
+    --card-shadow:rgba(0,0,0,0.22) 3px 5px 30px 0px;
+    --border-light:rgba(0,0,0,0.06);
+    --border-dark:rgba(255,255,255,0.08);
+  }
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,'SF Pro Text','SF Pro Display','Noto Sans SC','Helvetica Neue',Helvetica,Arial,sans-serif;
+    color:var(--near-black);background:var(--white);
+    -webkit-font-smoothing:antialiased;line-height:1.47;
+    font-size:17px;letter-spacing:-0.374px;
+  }
+
+  /* ===== STICKY NAV (Apple Glass) ===== */
+  .topnav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(0,0,0,0.8);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    display:flex;align-items:center;gap:0;padding:0 20px;height:48px;
+    justify-content:center;
+  }
+  .topnav a{
+    font-size:12px;font-weight:400;color:rgba(255,255,255,0.8);text-decoration:none;
+    padding:0 12px;line-height:48px;transition:color 0.2s;white-space:nowrap;
+    letter-spacing:-0.12px;
+  }
+  .topnav a:hover{color:#ffffff}
+  .topnav a.active{color:#ffffff;font-weight:500}
+  .topnav .back-link{margin-right:auto;font-weight:500;color:var(--bright-blue)}
+  .topnav .back-link:hover{text-decoration:underline}
+
+  /* ===== HERO (Dark Section) ===== */
+  .hero{
+    background:var(--black);color:var(--white);
+    padding:120px 40px 100px;text-align:center;
+    min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .hero-label{
+    font-size:17px;font-weight:600;letter-spacing:-0.374px;
+    color:var(--text-light-secondary);margin-bottom:20px;
+  }
+  .hero h1{
+    font-size:clamp(40px,8vw,56px);font-weight:600;
+    letter-spacing:-0.28px;line-height:1.07;
+    margin-bottom:20px;
+  }
+  .hero p{
+    font-size:clamp(17px,2.5vw,21px);color:var(--text-light-secondary);
+    margin:0 auto;max-width:600px;line-height:1.19;
+    font-weight:400;letter-spacing:0.231px;
+  }
+  .hero-stats{display:flex;justify-content:center;gap:56px;margin-top:48px}
+  .hero-stat{text-align:center}
+  .hero-stat .num{font-size:28px;font-weight:600;letter-spacing:-0.28px;color:var(--white);line-height:1.07}
+  .hero-stat .label{font-size:14px;color:var(--text-light-tertiary);margin-top:6px;font-weight:400;letter-spacing:-0.224px}
+
+  /* ===== SECTIONS ===== */
+  .section{padding:80px 40px}
+  .section-inner{max-width:980px;margin:0 auto;text-align:center}
+  .section-wide{max-width:1120px;margin:0 auto;padding:0 20px}
+  .section-label{
+    font-size:14px;font-weight:600;letter-spacing:-0.224px;
+    color:var(--apple-blue);margin-bottom:12px;
+  }
+  .section-label-dark{color:var(--bright-blue)}
+  .section-title{
+    font-size:clamp(28px,5vw,40px);font-weight:600;
+    letter-spacing:normal;line-height:1.10;margin-bottom:16px;
+  }
+  .section-subtitle{
+    font-size:17px;color:var(--text-dark-secondary);
+    max-width:600px;line-height:1.47;margin:0 auto 56px;
+    font-weight:400;letter-spacing:-0.374px;
+  }
+
+  /* Dark section variants */
+  .section-dark{background:var(--black);color:var(--white)}
+  .section-dark .section-label{color:var(--bright-blue)}
+  .section-dark .section-subtitle{color:var(--text-light-secondary)}
+  .section-light{background:var(--light-bg)}
+
+  /* Section divider - Apple uses color change, no visible line */
+  .section-divider{display:none}
+
+  /* ===== TYPE CARDS (Light Section) ===== */
+  .type-grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:980px;margin:0 auto}
+  @media(min-width:768px){.type-grid{grid-template-columns:repeat(3,1fr)}}
+  .type-card{
+    background:var(--white);border-radius:12px;padding:32px 28px;
+    cursor:pointer;transition:all 0.3s;text-align:left;
+    box-shadow:var(--card-shadow);
+  }
+  .type-card:hover{transform:translateY(-2px)}
+  .type-card.active{outline:2px solid var(--apple-blue);outline-offset:-2px}
+  .type-name{font-size:24px;font-weight:600;margin-bottom:4px;color:var(--near-black);letter-spacing:normal;line-height:1.10}
+  .type-en{font-size:14px;color:var(--text-dark-tertiary);margin-bottom:24px;letter-spacing:-0.224px}
+  .type-section-label{font-size:12px;font-weight:600;letter-spacing:-0.12px;margin-bottom:8px;color:var(--apple-blue);text-transform:uppercase}
+  .type-list{list-style:none;margin-bottom:20px}
+  .type-list li{font-size:14px;color:var(--text-dark-secondary);padding:4px 0;line-height:1.43;letter-spacing:-0.224px}
+  .type-list li::before{content:"·";margin-right:8px;color:var(--text-dark-tertiary)}
+  .type-verdict{margin-top:auto;padding-top:20px;border-top:1px solid var(--border-light)}
+  .type-verdict-title{font-size:14px;font-weight:600;color:var(--apple-blue);margin-bottom:6px;letter-spacing:-0.224px}
+  .type-verdict-desc{font-size:14px;color:var(--text-dark-secondary);line-height:1.43;margin-bottom:4px;letter-spacing:-0.224px}
+  .type-verdict-models{font-size:12px;color:var(--text-dark-tertiary);line-height:1.33;letter-spacing:-0.12px}
+
+  /* ===== COMPARISON TABLE (Dark Section) ===== */
+  .table-scroll{overflow-x:auto;border-radius:12px;background:var(--dark-surface)}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:14px;letter-spacing:-0.224px}
+  .cmp-table thead th{
+    padding:16px 20px;text-align:center;font-weight:600;color:var(--white);
+    border-bottom:1px solid var(--border-dark);font-size:14px;letter-spacing:-0.224px;
+  }
+  .cmp-table thead th:first-child{text-align:left;color:var(--text-light-tertiary);font-weight:400}
+  .cmp-table tbody td{padding:14px 20px;text-align:center;color:var(--text-light-secondary);border-bottom:1px solid rgba(255,255,255,0.04);font-size:14px}
+  .cmp-table tbody td:first-child{text-align:left;font-weight:500;color:var(--text-light-secondary)}
+  .cmp-table tbody tr:last-child td{border-bottom:none}
+  .cmp-table tbody tr:hover td{background:rgba(255,255,255,0.04)}
+  .cmp-table .best{font-weight:600;color:var(--white)}
+  .cmp-table .mid{color:var(--text-light-secondary)}
+  .cmp-table .weak{color:var(--text-light-tertiary)}
+  .cmp-table td.col-highlight{background:rgba(255,255,255,0.06)!important}
+
+  /* ===== FILTERS ===== */
+  .filter-bar{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:32px;
+    padding:20px 24px;background:var(--white);border-radius:12px;
+    box-shadow:var(--card-shadow);
+  }
+  .filter-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .filter-group-label{font-size:14px;font-weight:500;color:var(--text-dark-secondary);align-self:center;margin-right:4px;letter-spacing:-0.224px}
+  .filter-btn{
+    font-size:14px;font-weight:400;padding:8px 18px;border-radius:980px;
+    border:1px solid rgba(0,0,0,0.12);background:transparent;color:var(--text-dark-secondary);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;letter-spacing:-0.224px;
+  }
+  .filter-btn:hover{border-color:var(--apple-blue);color:var(--apple-blue)}
+  .filter-btn.active{background:var(--apple-blue);color:var(--white);border-color:var(--apple-blue)}
+  .price-filter{display:flex;align-items:center;gap:10px;margin-left:auto}
+  .price-label{font-size:14px;color:var(--text-dark-secondary);white-space:nowrap;letter-spacing:-0.224px}
+  .price-range{width:140px;accent-color:var(--apple-blue)}
+  .price-value{font-size:14px;font-weight:600;color:var(--near-black);min-width:80px;letter-spacing:-0.224px}
+  .sort-btn{
+    font-size:14px;font-weight:400;padding:8px 18px;border-radius:980px;
+    border:1px solid rgba(0,0,0,0.12);background:transparent;color:var(--text-dark-secondary);
+    cursor:pointer;font-family:inherit;transition:all 0.2s;letter-spacing:-0.224px;
+  }
+  .sort-btn:hover{border-color:var(--apple-blue);color:var(--apple-blue)}
+  .sort-btn.active{background:var(--near-black);color:var(--white);border-color:var(--near-black)}
+  .model-count{font-size:14px;color:var(--text-dark-tertiary);margin-bottom:24px;letter-spacing:-0.224px}
+  .no-results{display:none;text-align:center;padding:60px 20px;font-size:17px;color:var(--text-dark-secondary);letter-spacing:-0.374px}
+  .no-results.show{display:block}
+
+  /* ===== MODEL GRID & CARDS (Light Section) ===== */
+  .model-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:640px){.model-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:960px){.model-grid{grid-template-columns:repeat(3,1fr)}}
+  .model-card{
+    background:var(--white);border-radius:12px;padding:28px 24px;position:relative;
+    display:flex;flex-direction:column;box-shadow:var(--card-shadow);
+    transition:transform 0.3s;
+  }
+  .model-card:hover{transform:translateY(-2px)}
+  .model-card.hidden{display:none}
+  .model-img-wrap{display:flex;justify-content:center;margin-bottom:16px;background:var(--light-bg);border-radius:8px;padding:16px}
+  .model-img{width:100%;max-width:180px;height:140px;object-fit:contain}
+  .model-card .brand-tag{font-size:12px;font-weight:600;letter-spacing:-0.12px;color:var(--apple-blue);margin-bottom:4px}
+  .model-tier{
+    font-size:12px;font-weight:600;letter-spacing:-0.12px;
+    color:var(--text-dark-tertiary);margin-bottom:6px;
+  }
+  .model-title{font-size:21px;font-weight:600;color:var(--near-black);margin-bottom:4px;line-height:1.19;letter-spacing:0.231px}
+  .model-cat{font-size:14px;font-weight:400;margin-bottom:16px;color:var(--text-dark-tertiary);letter-spacing:-0.224px}
+  .model-specs{font-size:14px;color:var(--text-dark-secondary);line-height:1.7;flex:1;margin-bottom:16px;letter-spacing:-0.224px}
+  .model-specs .spec-row{display:flex;gap:8px}
+  .model-specs .spec-label{color:var(--text-dark-tertiary);min-width:40px;flex-shrink:0;font-size:12px;letter-spacing:-0.12px}
+  .model-specs .spec-value{flex:1}
+  .model-bottom{display:flex;align-items:flex-end;justify-content:space-between;margin-top:auto;padding-top:16px;border-top:1px solid var(--border-light)}
+  .model-price{font-size:21px;font-weight:700;color:var(--near-black);letter-spacing:0.231px}
+  .model-price-note{font-size:12px;color:var(--text-dark-tertiary);margin-top:2px;letter-spacing:-0.12px}
+  .model-jd-link{
+    font-size:14px;font-weight:400;color:var(--link-blue);text-decoration:none;
+    white-space:nowrap;transition:color 0.2s;letter-spacing:-0.224px;
+  }
+  .model-jd-link:hover{text-decoration:underline}
+  .model-jd-link::after{content:" ›"}
+  .model-release{font-size:12px;color:var(--text-dark-tertiary);margin-top:4px;letter-spacing:-0.12px}
+  .model-check{
+    position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:50%;
+    border:1.5px solid rgba(0,0,0,0.15);background:transparent;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent;
+    transition:all 0.2s;
+  }
+  .model-check.checked{background:var(--apple-blue);border-color:var(--apple-blue);color:var(--white)}
+
+  /* ===== BRAND SECTIONS ===== */
+  .brand-section{padding:32px 0;border-bottom:1px solid var(--border-light)}
+  .brand-section:last-child{border-bottom:none}
+  .brand-header{margin-bottom:24px}
+  .brand-name{font-size:clamp(24px,3.5vw,32px);font-weight:600;letter-spacing:normal;color:var(--near-black);line-height:1.10}
+  .brand-en{font-size:14px;color:var(--text-dark-tertiary);letter-spacing:-0.224px}
+
+  /* ===== COMPARE DRAWER ===== */
+  .compare-drawer{
+    position:fixed;bottom:0;left:0;right:0;z-index:90;
+    background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    padding:14px 24px;display:none;align-items:center;justify-content:center;gap:16px;
+    color:var(--white);
+  }
+  .compare-drawer.show{display:flex}
+  .compare-drawer span{font-size:14px;font-weight:400;letter-spacing:-0.224px}
+  .compare-btn{
+    font-size:17px;font-weight:400;padding:8px 20px;border-radius:980px;
+    background:var(--apple-blue);color:var(--white);border:none;cursor:pointer;font-family:inherit;
+    transition:all 0.2s;letter-spacing:-0.374px;
+  }
+  .compare-btn:hover{filter:brightness(1.1)}
+  .compare-clear{
+    font-size:14px;color:var(--bright-blue);background:none;border:none;cursor:pointer;
+    font-family:inherit;letter-spacing:-0.224px;
+  }
+  .compare-clear:hover{text-decoration:underline}
+
+  /* ===== COMPARE MODAL ===== */
+  .compare-modal-bg{
+    position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .compare-modal-bg.show{display:flex}
+  .compare-modal{
+    background:var(--white);width:100%;max-height:85vh;overflow-y:auto;
+    border-radius:16px 16px 0 0;padding:32px 24px;position:relative;
+  }
+  @media(min-width:768px){
+    .compare-modal-bg{align-items:center;padding:20px}
+    .compare-modal{border-radius:16px;max-width:900px}
+  }
+  .compare-modal-close{
+    position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;
+    border:1px solid rgba(0,0,0,0.1);background:var(--light-bg);cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;color:var(--text-dark-secondary);
+    transition:all 0.2s;
+  }
+  .compare-modal-close:hover{background:rgba(0,0,0,0.06)}
+  .compare-modal h3{font-size:24px;font-weight:600;margin-bottom:24px;letter-spacing:normal;color:var(--near-black)}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .compare-table{border-collapse:collapse;border:1px solid rgba(0,0,0,0.08);border-radius:12px;overflow:hidden;width:100%;min-width:500px}
+  .compare-table th,.compare-table td{padding:12px 16px;text-align:left;border-bottom:1px solid rgba(0,0,0,0.06);font-size:14px;letter-spacing:-0.224px}
+  .compare-table th{background:var(--light-bg);font-weight:600;color:var(--near-black);white-space:nowrap}
+  .compare-table td{color:var(--text-dark-secondary)}
+  .compare-table tr:last-child td{border-bottom:none}
+
+  /* ===== FOOTER ===== */
+  .footer{padding:32px 24px;text-align:center;font-size:12px;color:var(--text-dark-tertiary);border-top:1px solid var(--border-light);letter-spacing:-0.12px}
+
+  /* ===== ANIMATIONS ===== */
+  .model-card{opacity:0;animation:fadeUp 0.5s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .cmp-table tbody tr{transition:background 0.15s}
+
+  /* ===== RESPONSIVE (Mobile) ===== */
+  @media(max-width:767px){
+    .hero{padding:80px 20px 60px;min-height:auto}
+    .hero h1{font-size:32px}
+    .hero p{font-size:17px}
+    .hero-stats{gap:28px}
+    .hero-stat .num{font-size:22px}
+    .section{padding:56px 16px}
+    .topnav{padding:0 12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .topnav::-webkit-scrollbar{display:none}
+    .topnav a{white-space:nowrap;padding:0 10px}
+    .filter-bar{gap:8px;flex-direction:column;align-items:stretch;padding:16px}
+    .filter-group{flex-wrap:wrap;gap:6px}
+    .price-filter{width:100%;margin-left:0}
+    .price-range{flex:1;min-width:0}
+    .model-title{font-size:17px}
+    .compare-drawer{padding:12px 16px}
+    .section-title{font-size:24px}
+    .section-subtitle{font-size:14px;margin-bottom:32px}
+    .table-scroll{margin:0 -16px;border-radius:0}
+    .cmp-table{min-width:560px}
+    .cmp-table thead th{padding:10px 12px;font-size:12px}
+    .cmp-table tbody td{padding:10px 12px;font-size:13px}
+    .cmp-table tbody td:first-child{min-width:60px;white-space:nowrap;font-size:12px}
+    .type-grid{grid-template-columns:1fr!important}
+    .brand-name{font-size:22px}
+    .model-img{max-width:160px;height:120px}
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY NAV -->
+<nav class="topnav" id="topnav">
+  <a href="/appliance-guide/index.html" class="back-link">&#8592; 返回首页</a>
+  <a href="#types">容量分类</a>
+  <a href="#compare">横向对比</a>
+  <a href="#brands">选购型号</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <p class="hero-label">户外装备选购</p>
+  <h1>登山包<br>选购指南</h1>
+  <p>12 个品牌 41 款主流型号全面对比。按容量用途分类，滑动筛选价格，勾选对比参数。</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">41</div><div class="label">款型号</div></div>
+    <div class="hero-stat"><div class="num">12</div><div class="label">个品牌</div></div>
+    <div class="hero-stat"><div class="num">¥89-3,980</div><div class="label">价格区间</div></div>
+  </div>
+</section>
+
+<!-- TYPE COMPARISON -->
+<section class="section section-light" id="types">
+  <div class="section-inner">
+    <p class="section-label">容量分类</p>
+    <h2 class="section-title">按需选容量，<br>背得舒服。</h2>
+    <p class="section-subtitle">点击任意卡片，下方型号列表会自动筛选对应容量类别。</p>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-card" data-type="city" onclick="toggleTypeFilter('city',this)">
+        <h3 class="type-name">日常城市</h3>
+        <p class="type-en">15-30L / City & Day Hike</p>
+        <p class="type-section-label">适用场景</p>
+        <ul class="type-list">
+          <li>城市通勤背包两用</li>
+          <li>景区/公园半日徒步</li>
+          <li>周末近郊轻装出行</li>
+        </ul>
+        <p class="type-section-label">选购要点</p>
+        <ul class="type-list">
+          <li>自重控制在 0.5-1kg</li>
+          <li>透气背板防闷汗</li>
+          <li>外观日常可通勤</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">预算 200-1,500 元</p>
+          <p class="type-verdict-desc">轻装出行，兼顾日常通勤和短途徒步，选择轻量透气的小容量包。</p>
+          <p class="type-verdict-models">推荐：Osprey Hikelite 26 / 迪卡侬 MH100 / 凯乐石风洞 IV 26</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="hike" onclick="toggleTypeFilter('hike',this)">
+        <h3 class="type-name">轻量登山</h3>
+        <p class="type-en">30-50L / Light Mountaineering</p>
+        <p class="type-section-label">适用场景</p>
+        <ul class="type-list">
+          <li>一日重装登山</li>
+          <li>1-2 晚山间露营</li>
+          <li>技术攀登冲顶</li>
+        </ul>
+        <p class="type-section-label">选购要点</p>
+        <ul class="type-list">
+          <li>背负系统能承重 10-15kg</li>
+          <li>有腰带分散重量</li>
+          <li>水袋仓 + 登山杖挂点</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">预算 500-3,000 元</p>
+          <p class="type-verdict-desc">一日到两日行程主力容量段，需要可靠的背负系统和功能性设计。</p>
+          <p class="type-verdict-models">推荐：Osprey Stratos 36 / Gregory Zulu 45 / Deuter Futura 32</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="trek" onclick="toggleTypeFilter('trek',this)">
+        <h3 class="type-name">重装穿越</h3>
+        <p class="type-en">50-80L / Heavy Trekking</p>
+        <p class="type-section-label">适用场景</p>
+        <ul class="type-list">
+          <li>3 天以上多日穿越</li>
+          <li>高海拔重装登山</li>
+          <li>需携带帐篷/睡袋等</li>
+        </ul>
+        <p class="type-section-label">选购要点</p>
+        <ul class="type-list">
+          <li>背负系统至关重要</li>
+          <li>自重与承重的平衡</li>
+          <li>防水/防雨罩/分仓设计</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">预算 800-5,000 元</p>
+          <p class="type-verdict-desc">长线穿越核心装备，背负系统决定体验好坏，不建议省预算。</p>
+          <p class="type-verdict-models">推荐：Osprey Atmos AG 65 / Gregory Baltoro 65 / Deuter Aircontact Lite 50+10</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- COMPARISON TABLE -->
+<section class="section section-dark" id="compare">
+  <div class="section-inner">
+    <p class="section-label">横向对比</p>
+    <h2 class="section-title" style="color:var(--white)">十二大品牌，<br>逐项比较。</h2>
+    <p class="section-subtitle" style="color:var(--text-light-secondary)">鼠标悬停列头可高亮整列，方便纵向比较。</p>
+    <div class="table-scroll">
+      <table class="cmp-table" id="cmpTable">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th data-col="1" onmouseenter="highlightCol(1)" onmouseleave="clearCol()">顶级/高端</th>
+            <th data-col="2" onmouseenter="highlightCol(2)" onmouseleave="clearCol()">中端进阶</th>
+            <th data-col="3" onmouseenter="highlightCol(3)" onmouseleave="clearCol()">性价比入门</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>代表品牌</td><td class="best">攀山鼠 / Arc'teryx / Gregory / Osprey</td><td class="mid">Deuter / Mammut / TNF / Salomon</td><td>凯乐石 / 迪卡侬 / 探路者 / 骆驼</td></tr>
+          <tr><td>背负系统</td><td class="best">顶级（Butterfly Bridge/AG反重力等）</td><td class="mid">优秀（Aircomfort/Spine等）</td><td>基础-良好</td></tr>
+          <tr><td>自重控制</td><td class="best">极致轻量</td><td class="mid">轻量</td><td>适中偏重</td></tr>
+          <tr><td>面料耐久</td><td class="best">顶级（Kevlar/CORDURA/N100D+）</td><td class="mid">优秀</td><td>良好</td></tr>
+          <tr><td>防水性能</td><td class="best">强（15K防水/PFC-free DWR/AC2）</td><td class="mid">较强（DWR涂层）</td><td>基础防泼水</td></tr>
+          <tr><td>舒适透气</td><td class="best">最佳</td><td class="mid">优秀</td><td>一般</td></tr>
+          <tr><td>功能细节</td><td class="best">极丰富</td><td class="mid">丰富</td><td>够用</td></tr>
+          <tr><td>价格区间</td><td>1,500-5,000+</td><td>800-2,500</td><td>150-800</td></tr>
+          <tr><td>适合人群</td><td>重度户外 / 高强度登山</td><td>进阶玩家 / 周末常客</td><td>入门新手 / 预算有限</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- BRANDS & MODELS -->
+<section class="section" id="brands">
+  <div class="section-inner">
+    <p class="section-label">选购型号</p>
+    <h2 class="section-title">找到适合你的包。</h2>
+    <p class="section-subtitle">按容量分类筛选、拖动价格滑块、按价格排序。点击右上角圆圈可勾选对比。</p>
+  </div>
+  <div class="section-wide">
+
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <span class="filter-group-label">容量</span>
+        <button class="filter-btn active" data-cat="all" onclick="setCatFilter('all')">全部</button>
+        <button class="filter-btn" data-cat="city" onclick="setCatFilter('city')">15-30L 日常</button>
+        <button class="filter-btn" data-cat="hike" onclick="setCatFilter('hike')">30-50L 登山</button>
+        <button class="filter-btn" data-cat="trek" onclick="setCatFilter('trek')">50-80L 重装</button>
+      </div>
+      <div class="price-filter">
+        <span class="price-label">预算上限</span>
+        <input type="range" class="price-range" id="priceSlider" min="100" max="5000" value="5000" step="100" oninput="onPriceChange(this.value)">
+        <span class="price-value" id="priceValue">不限</span>
+      </div>
+      <button class="sort-btn" id="sortBtn" onclick="toggleSort()">按价格排序</button>
+    </div>
+
+    <p class="model-count" id="modelCount"></p>
+    <div class="no-results" id="noResults">没有符合条件的型号，试试调整筛选条件</div>
+    <div class="model-grid" id="modelGrid"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>价格来源：京东官方旗舰店及主流电商渠道，仅供参考。实际售价以商品页面为准。数据更新：2025年5月。</p>
+</footer>
+
+<!-- COMPARE DRAWER -->
+<div class="compare-drawer" id="compareDrawer">
+  <div class="compare-drawer-inner">
+    <div class="compare-items" id="compareItems"></div>
+    <button class="compare-btn" id="compareBtn" onclick="showCompare()" disabled>对比选中型号</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-bg" id="compareModal" onclick="if(event.target===this)closeCompare()">
+  <div class="compare-modal">
+    <button class="compare-modal-close" onclick="closeCompare()">&#10005;</button>
+    <h3>型号对比</h3>
+    <div id="compareContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== MODEL DATA =====
+const models = [
+  // === 高端：始祖鸟 Arc'teryx ===
+  {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Aerios 30",cat:"hike",catLabel:"30L / 轻量登山",volume:"30L",weight:"0.96kg",backSystem:"AeroForm 透气背板",material:"N420d 液晶聚合物面料",waterproof:"AC2 防水涂层",scene:"一日徒步 / 技术攀登",highlight:"肩带口袋速取设计，冰镐快挂系统，极致轻量",price:2290,priceText:"¥2,290",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/aerios-30.jpg",jd:"https://search.jd.com/Search?keyword=始祖鸟Aerios+30+登山包"},
+  {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Aerios 45",cat:"hike",catLabel:"45L / 轻量登山",volume:"45L",weight:"1.25kg",backSystem:"AeroForm 透气背板",material:"N420d 液晶聚合物面料",waterproof:"AC2 防水涂层",scene:"1-2日徒步 / 轻装穿越",highlight:"超轻大容量，可调节腰带，登山杖/冰镐挂载",price:2890,priceText:"¥2,890",releaseDate:"2024-03",img:"",jd:"https://search.jd.com/Search?keyword=始祖鸟Aerios+45+登山包"},
+  {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Alpha FL 30",cat:"hike",catLabel:"30L / 技术攀登",volume:"30L",weight:"0.66kg",backSystem:"极简泡棉背板",material:"N400r-AC2 防撕裂尼龙",waterproof:"防水卷口+热压缝",scene:"高山攀登 / 冲顶",highlight:"超轻防水，卷口密封，流线型设计，极端环境适用",price:2690,priceText:"¥2,690",releaseDate:"2023-09",img:"",jd:"https://search.jd.com/Search?keyword=始祖鸟Alpha+FL+30+登山包"},
+  {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Mantis 26",cat:"city",catLabel:"26L / 日常城市",volume:"26L",weight:"0.74kg",backSystem:"加厚泡棉背板",material:"N630d CORDURA 尼龙",waterproof:"DWR 防泼水",scene:"城市通勤 / 轻量户外",highlight:"电脑隔层，多口袋收纳，都市户外两用",price:1590,priceText:"¥1,590",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=始祖鸟Mantis+26+背包"},
+
+  // === 高端：Gregory ===
+  {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Baltoro 65",cat:"trek",catLabel:"65L / 重装穿越",volume:"65L",weight:"2.27kg",backSystem:"FreeFloat A3 悬浮背负",material:"210D Crypt Ripstop",waterproof:"含防雨罩",scene:"多日重装穿越 / 长线徒步",highlight:"背包界劳斯莱斯，FreeFloat悬浮背负，髋骨完美贴合。可选 55/65/75L",price:3200,priceText:"¥3,200",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/baltoro-65.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Baltoro+65+登山包"},
+  {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Zulu 45",cat:"hike",catLabel:"45L / 轻量登山",volume:"45L",weight:"1.47kg",backSystem:"FreeFloat 透气背板",material:"210D Crypt Ripstop",waterproof:"含防雨罩",scene:"1-2日徒步 / 中等负重",highlight:"透气性极佳，多尺码适配，背负舒适度标杆。可选 30/35/40/45L",price:1850,priceText:"¥1,850",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/zulu-45.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Zulu+45+登山包"},
+  {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Paragon 48",cat:"hike",catLabel:"48L / 轻量登山",volume:"48L",weight:"1.52kg",backSystem:"FreeFloat 可调节背板",material:"210D Crypt Ripstop",waterproof:"含防雨罩",scene:"轻装穿越 / 2日徒步",highlight:"2025新款，Garmin InReach肩带口袋，轻量化设计",price:2200,priceText:"¥2,200",releaseDate:"2025-01",img:"/appliance-guide/images/backpacks/paragon-48.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Paragon+48+登山包"},
+  {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Nano 20",cat:"city",catLabel:"20L / 日常城市",volume:"20L",weight:"0.54kg",backSystem:"泡棉背板",material:"100D x 210D 尼龙",waterproof:"DWR 防泼水",scene:"日常通勤 / 近郊徒步",highlight:"超轻极简，折叠收纳，单日休闲首选",price:590,priceText:"¥590",releaseDate:"2024-06",img:"/appliance-guide/images/backpacks/nano-20.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Nano+20+背包"},
+  {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Katmai 65",cat:"trek",catLabel:"65L / 重装穿越",volume:"65L",weight:"2.38kg",backSystem:"Response A3 背负系统",material:"210D Crypt Ripstop",waterproof:"含防雨罩",scene:"多日重装 / 高海拔穿越",highlight:"Response背负系统，大容量多仓设计，稳定承重",price:2800,priceText:"¥2,800",releaseDate:"2023-09",img:"/appliance-guide/images/backpacks/katmai-65.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Katmai+65+登山包"},
+
+  // === 高端：Osprey ===
+  {brand:"小鹰",brandEn:"Osprey",tier:"高端",name:"Atmos AG 65",cat:"trek",catLabel:"65L / 重装穿越",volume:"65L",weight:"2.16kg",backSystem:"Anti-Gravity 反重力悬挂",material:"100D x 630D 尼龙",waterproof:"含防雨罩",scene:"多日重装 / 长线穿越",highlight:"Anti-Gravity反重力系统，如同背包消失，行业标杆。可选 50/65L",price:2990,priceText:"¥2,990",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/atmos-ag-65.jpg",jd:"https://search.jd.com/Search?keyword=Osprey+Atmos+AG+65+登山包"},
+  {brand:"小鹰",brandEn:"Osprey",tier:"高端",name:"Stratos 36",cat:"hike",catLabel:"36L / 轻量登山",volume:"36L",weight:"1.43kg",backSystem:"AirSpeed 空速背板",material:"210D 尼龙",waterproof:"含防雨罩",scene:"一日徒步 / 轻装登山",highlight:"AirSpeed空速透气，Stow-on-the-Go登山杖收纳。可选 24/34/36/44/50L",price:1490,priceText:"¥1,490",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/stratos-36.jpg",jd:"https://search.jd.com/Search?keyword=Osprey+Stratos+36+登山包"},
+  {brand:"小鹰",brandEn:"Osprey",tier:"高端",name:"Talon 33",cat:"hike",catLabel:"33L / 轻量登山",volume:"33L",weight:"0.98kg",backSystem:"AirScape 空景背板",material:"100D x 210D 尼龙",waterproof:"DWR 防泼水",scene:"一日速攻 / 越野徒步",highlight:"2025新款魔爪，超轻速攻，可调节背板，多附件点。可选 22/26/33/36L",price:1290,priceText:"¥1,290",releaseDate:"2025-01",img:"/appliance-guide/images/backpacks/talon-33.jpg",jd:"https://search.jd.com/Search?keyword=Osprey+Talon+33+登山包"},
+  {brand:"小鹰",brandEn:"Osprey",tier:"高端",name:"Hikelite 26",cat:"city",catLabel:"26L / 日常城市",volume:"26L",weight:"0.74kg",backSystem:"AirSpeed 空速背板",material:"210D 尼龙",waterproof:"含防雨罩",scene:"城市徒步 / 日常通勤",highlight:"专业背负下放日常包，AirSpeed透气，性价比高端。可选 18/26/32L",price:799,priceText:"¥799",releaseDate:"2024-06",img:"/appliance-guide/images/backpacks/hikelite-26.jpg",jd:"https://search.jd.com/Search?keyword=Osprey+Hikelite+26+背包"},
+  {brand:"小鹰",brandEn:"Osprey",tier:"高端",name:"Exos 58",cat:"trek",catLabel:"58L / 重装穿越",volume:"58L",weight:"1.17kg",backSystem:"AirSpeed 悬浮背负",material:"100D Ripstop 尼龙",waterproof:"DWR 防泼水",scene:"超轻重装 / UL穿越",highlight:"超轻重装神包，仅1.17kg背58L，极限轻量化。可选 38/48/58L",price:2290,priceText:"¥2,290",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/exos-58.jpg",jd:"https://search.jd.com/Search?keyword=Osprey+Exos+58+登山包"},
+
+  // === 中端：Deuter 多特 ===
+  {brand:"多特",brandEn:"Deuter",tier:"中端",name:"Futura 32",cat:"hike",catLabel:"32L / 轻量登山",volume:"32L",weight:"1.42kg",backSystem:"Aircomfort 透气网架",material:"210D PA 尼龙",waterproof:"含防雨罩",scene:"一日徒步 / 周末登山",highlight:"经典透气网架，背部完全架空通风，德国品质。可选 24/26/28/32L",price:1099,priceText:"¥1,099",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/futura-32.png",jd:"https://search.jd.com/Search?keyword=Deuter+Futura+32+登山包"},
+  {brand:"多特",brandEn:"Deuter",tier:"中端",name:"Futura Air Trek 50+10",cat:"trek",catLabel:"60L / 重装穿越",volume:"50+10L",weight:"2.05kg",backSystem:"Aircomfort 可调节网架",material:"210D PA Ripstop",waterproof:"含防雨罩",scene:"多日穿越 / 重装徒步",highlight:"可扩展容量，Aircomfort网架通风，可调背长。可选 45+10/50+10/55+10L",price:1799,priceText:"¥1,799",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/futura-air-trek-50.png",jd:"https://search.jd.com/Search?keyword=Deuter+Futura+Air+Trek+50+登山包"},
+  {brand:"多特",brandEn:"Deuter",tier:"中端",name:"Aircontact Lite 50+10",cat:"trek",catLabel:"60L / 重装穿越",volume:"50+10L",weight:"1.68kg",backSystem:"Aircontact 贴合背负",material:"210D PA Ripstop",waterproof:"含防雨罩",scene:"多日重装 / 穿越徒步",highlight:"蓝精灵系列，轻量重装，Aircontact贴合背负。可选 35+5/40+10/50+10/65+10L",price:1599,priceText:"¥1,599",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/aircontact-lite-50.png",jd:"https://search.jd.com/Search?keyword=Deuter+Aircontact+Lite+50+10+登山包"},
+  {brand:"多特",brandEn:"Deuter",tier:"中端",name:"Speed Lite 25",cat:"city",catLabel:"25L / 日常城市",volume:"25L",weight:"0.58kg",backSystem:"Airstripes 透气背板",material:"100D PA Ripstop",waterproof:"DWR 防泼水",scene:"快速徒步 / 日常通勤",highlight:"超轻速度包，极简设计，城市户外两用",price:699,priceText:"¥699",releaseDate:"2024-06",img:"/appliance-guide/images/backpacks/speed-lite-25.png",jd:"https://search.jd.com/Search?keyword=Deuter+Speed+Lite+25+背包"},
+
+  // === 中端：猛犸象 Mammut ===
+  {brand:"猛犸象",brandEn:"Mammut",tier:"中端",name:"Lithium 30",cat:"hike",catLabel:"30L / 轻量登山",volume:"30L",weight:"1.10kg",backSystem:"Contact Stream 背板",material:"210D 尼龙",waterproof:"PFC-free DWR",scene:"一日徒步 / 登山",highlight:"PFC-free环保DWR，可拆卸腰带，瑞士品质",price:1099,priceText:"¥1,099",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/lithium-30.jpg",jd:"https://search.jd.com/Search?keyword=猛犸象+Lithium+30+登山包"},
+  {brand:"猛犸象",brandEn:"Mammut",tier:"中端",name:"Ducan Spine 50-60",cat:"trek",catLabel:"50-60L / 重装穿越",volume:"50-60L",weight:"1.98kg",backSystem:"Active Spine 动态背负",material:"210D Ripstop 尼龙",waterproof:"含防雨罩",scene:"多日穿越 / 重装登山",highlight:"Active Spine动态背负随步伐摆动，减轻颈部疲劳。可选 28-35/50-60L",price:2490,priceText:"¥2,490",releaseDate:"2023-09",img:"/appliance-guide/images/backpacks/ducan-spine-50.jpg",jd:"https://search.jd.com/Search?keyword=猛犸象+Ducan+Spine+50+登山包"},
+  {brand:"猛犸象",brandEn:"Mammut",tier:"中端",name:"Trion 38",cat:"hike",catLabel:"38L / 技术攀登",volume:"38L",weight:"1.15kg",backSystem:"Close Contact 背板",material:"420D 尼龙",waterproof:"DWR 防泼水",scene:"技术攀登 / 高山路线",highlight:"技术攀登专用，绳索固定点，装备环，冰镐挂载",price:1590,priceText:"¥1,590",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/trion-38.jpg",jd:"https://search.jd.com/Search?keyword=猛犸象+Trion+38+登山包"},
+
+  // === 中端：北面 The North Face ===
+  {brand:"北面",brandEn:"The North Face",tier:"中端",name:"Terra 40",cat:"hike",catLabel:"40L / 轻量登山",volume:"40L",weight:"1.36kg",backSystem:"OPTIFIT 可调节背负",material:"420D 尼龙",waterproof:"DWR 防泼水",scene:"一日重装 / 入门登山",highlight:"OPTIFIT可调节背板，入门级专业登山包，性价比高。可选 40/55/65L",price:899,priceText:"¥899",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/terra-40.jpg",jd:"https://search.jd.com/Search?keyword=北面+Terra+40+登山包"},
+  {brand:"北面",brandEn:"The North Face",tier:"中端",name:"Banchee 50",cat:"trek",catLabel:"50L / 重装穿越",volume:"50L",weight:"1.62kg",backSystem:"OPTIFIT 可调节背负",material:"420D 尼龙",waterproof:"含防雨罩",scene:"多日徒步 / 穿越",highlight:"经典重装包，OPTIFIT背负，底仓独立分区。可选 35/50/65L",price:1290,priceText:"¥1,290",releaseDate:"2024-01",img:"",jd:"https://search.jd.com/Search?keyword=北面+Banchee+50+登山包"},
+  {brand:"北面",brandEn:"The North Face",tier:"中端",name:"Basin 24",cat:"city",catLabel:"24L / 日常城市",volume:"24L",weight:"0.68kg",backSystem:"NextVent 透气背板",material:"300D Polyester",waterproof:"DWR 防泼水",scene:"城市通勤 / 轻量徒步",highlight:"NextVent透气背板，多口袋收纳，日常户外两用",price:699,priceText:"¥699",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=北面+Basin+24+背包"},
+
+  // === 性价比：凯乐石 Kailas ===
+  {brand:"凯乐石",brandEn:"Kailas",tier:"性价比",name:"风洞 IV 26",cat:"city",catLabel:"26L / 日常城市",volume:"26L",weight:"0.78kg",backSystem:"Air Mesh 透气背板",material:"420D 尼龙",waterproof:"DWR 防泼水",scene:"城市徒步 / 日常通勤",highlight:"国产户外龙头，透气轻便，性价比突出",price:499,priceText:"¥499",releaseDate:"2024-03",img:"",jd:"https://search.jd.com/Search?keyword=凯乐石+风洞IV+26+背包"},
+  {brand:"凯乐石",brandEn:"Kailas",tier:"性价比",name:"玄机 III 35",cat:"hike",catLabel:"35L / 轻量登山",volume:"35L",weight:"1.15kg",backSystem:"SAS 透气背负",material:"420D 尼龙",waterproof:"DWR 防泼水",scene:"一日登山 / 周末徒步",highlight:"SAS背负系统，轻量耐磨，国产专业登山包",price:599,priceText:"¥599",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=凯乐石+玄机III+35+登山包"},
+  {brand:"凯乐石",brandEn:"Kailas",tier:"性价比",name:"巅峰 BC 65+10",cat:"trek",catLabel:"75L / 重装穿越",volume:"65+10L",weight:"2.20kg",backSystem:"SAS 专业背负系统",material:"420D CORDURA 尼龙",waterproof:"含防雨罩",scene:"多日穿越 / 高海拔登山",highlight:"国产重装标杆，CORDURA面料，专业级背负",price:899,priceText:"¥899",releaseDate:"2024-01",img:"",jd:"https://search.jd.com/Search?keyword=凯乐石+巅峰BC+65+登山包"},
+
+  // === 性价比：迪卡侬 Decathlon ===
+  {brand:"迪卡侬",brandEn:"Decathlon/Forclaz",tier:"性价比",name:"MH100 20L",cat:"city",catLabel:"20L / 日常城市",volume:"20L",weight:"0.39kg",backSystem:"泡棉背板",material:"Polyester",waterproof:"基础防泼水",scene:"入门徒步 / 休闲出行",highlight:"极致入门，不到百元的户外背包",price:89,priceText:"¥89",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/mh100-20l.jpg",jd:"https://search.jd.com/Search?keyword=迪卡侬+MH100+20L+登山包"},
+  {brand:"迪卡侬",brandEn:"Decathlon/Forclaz",tier:"性价比",name:"MT500 Air 38L",cat:"hike",catLabel:"38L / 轻量登山",volume:"38L",weight:"1.55kg",backSystem:"Air Mesh 透气网架",material:"210D Ripstop 尼龙",waterproof:"含防雨罩",scene:"一日徒步 / 入门登山",highlight:"千元内最佳透气背负，网架设计，自带防雨罩",price:599,priceText:"¥599",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=迪卡侬+MT500+Air+38+登山包"},
+  {brand:"迪卡侬",brandEn:"Decathlon/Forclaz",tier:"性价比",name:"MT500 Air 70L",cat:"trek",catLabel:"70L / 重装穿越",volume:"70L",weight:"2.30kg",backSystem:"Air Mesh 可调节网架",material:"210D Ripstop 尼龙",waterproof:"含防雨罩",scene:"多日穿越 / 入门重装",highlight:"入门重装性价比之王，透气网架可调背长",price:799,priceText:"¥799",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/mt500-air-70l.jpg",jd:"https://search.jd.com/Search?keyword=迪卡侬+MT500+Air+70+登山包"},
+
+  // === 性价比：探路者 Toread ===
+  {brand:"探路者",brandEn:"Toread",tier:"性价比",name:"户外 30L",cat:"city",catLabel:"30L / 日常城市",volume:"30L",weight:"0.85kg",backSystem:"透气网布背板",material:"420D 牛津布",waterproof:"防泼水涂层",scene:"日常通勤 / 近郊出行",highlight:"加宽加厚肩带，透气网布背板，含防雨罩",price:299,priceText:"¥299",releaseDate:"2024-09",img:"",jd:"https://search.jd.com/Search?keyword=探路者+30L+登山包"},
+  {brand:"探路者",brandEn:"Toread",tier:"性价比",name:"探穹 50L",cat:"trek",catLabel:"50L / 重装穿越",volume:"50L",weight:"1.80kg",backSystem:"腰翼分散背负",material:"高密度牛津布",waterproof:"防水涂层 + 防雨罩",scene:"多日穿越 / 露营",highlight:"独立鞋仓，腰翼分散60%重量，高耐磨防撕裂",price:329,priceText:"¥329",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=探路者+探穹+50L+登山包"},
+
+  // === 性价比：骆驼 Camel ===
+  {brand:"骆驼",brandEn:"Camel",tier:"性价比",name:"蜂窝透气 40L",cat:"hike",catLabel:"40L / 轻量登山",volume:"40L",weight:"1.10kg",backSystem:"蜂窝透气背板",material:"高密度牛津布",waterproof:"防泼水涂层 + 防雨罩",scene:"中短途登山 / 近郊露营",highlight:"国民热门款，蜂窝透气，加宽肩带，隐藏防雨罩",price:199,priceText:"¥199",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=骆驼+40L+登山包"},
+  {brand:"骆驼",brandEn:"Camel",tier:"性价比",name:"重装 65+5L",cat:"trek",catLabel:"70L / 重装穿越",volume:"65+5L",weight:"2.10kg",backSystem:"金属支架背负",material:"高密度牛津布",waterproof:"防泼水涂层 + 防雨罩",scene:"多日穿越 / 长途旅行",highlight:"金属支架支撑，大容量，胸腰带可调，入门重装",price:289,priceText:"¥289",releaseDate:"2024-03",img:"",jd:"https://search.jd.com/Search?keyword=骆驼+65L+登山包"},
+
+  // === 顶级：攀山鼠 Klättermusen ===
+  {brand:"攀山鼠",brandEn:"Klättermusen",tier:"顶级",name:"Grip 2.0 60L",cat:"trek",catLabel:"60L / 重装穿越",volume:"60L",weight:"2.30kg",backSystem:"Carry-on-Bone / Butterfly Bridge",material:"210D Cordura® 再生尼龙",waterproof:"15K 防水 + 卷顶式封口",scene:"多日重装穿越 / 高海拔徒步",highlight:"专利骨骼负重系统，将重量转移至骨骼而非肌肉，Kevlar加固底部，瓦尔哈拉战神级",price:3980,priceText:"¥3,980",priceNote:"海淘参考价",releaseDate:"2024-01",img:"",jd:"https://search.jd.com/Search?keyword=攀山鼠+Grip+60L+登山包"},
+  {brand:"攀山鼠",brandEn:"Klättermusen",tier:"顶级",name:"Grip 2.0 40L",cat:"hike",catLabel:"40L / 轻量登山",volume:"40L",weight:"1.80kg",backSystem:"Carry-on-Bone / Butterfly Bridge",material:"210D Cordura® 再生尼龙",waterproof:"15K 防水 + 卷顶式封口",scene:"一日登山 / 轻装多日",highlight:"专利负重系统，紧凑卷顶设计，环保再生材料",price:3280,priceText:"¥3,280",priceNote:"海淘参考价",releaseDate:"2024-01",img:"",jd:"https://search.jd.com/Search?keyword=攀山鼠+Grip+40L+登山包"},
+  {brand:"攀山鼠",brandEn:"Klättermusen",tier:"顶级",name:"Ratatosk 3.0 30L",cat:"hike",catLabel:"30L / 轻量登山",volume:"30L",weight:"1.20kg",backSystem:"贴合式背板 + 可拆腰带",material:"Kevlar® 加固尼龙",waterproof:"防泼水 + 弹性绳压缩",scene:"一日徒步 / 技术登山",highlight:"Kevlar底部加固，窄身紧凑不降灵活性，冰镐绑点，北欧经典款",price:2480,priceText:"¥2,480",priceNote:"海淘参考价",releaseDate:"2023-06",img:"/appliance-guide/images/backpacks/ratatosk-30l.jpg",jd:"https://search.jd.com/Search?keyword=攀山鼠+Ratatosk+30L+登山包"},
+  {brand:"攀山鼠",brandEn:"Klättermusen",tier:"顶级",name:"Delling 25L",cat:"city",catLabel:"25L / 日常通勤",volume:"25L",weight:"0.85kg",backSystem:"透气衬垫肩带 + 人体工学背板",material:"Retina® 再生面料 + Kevlar加固",waterproof:"15K 防水",scene:"城市通勤 / 一日轻徒步",highlight:"15K防水再生面料，双层顶盖闭合，美学与环保兼备",price:1980,priceText:"¥1,980",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=攀山鼠+Delling+25L+背包"},
+
+  // === 专业：萨洛蒙 Salomon ===
+  {brand:"萨洛蒙",brandEn:"Salomon",tier:"中端",name:"XT 20",cat:"city",catLabel:"20L / 日常城市",volume:"20L",weight:"0.56kg",backSystem:"加垫背板 + 可调胸带腰带",material:"尼龙",waterproof:"DWR 防泼水",scene:"日常通勤 / 越野跑 / 骑行",highlight:"越野跑品牌血统，含500ml软水壶，U型拉链速取，弹力绳固定登山杖",price:899,priceText:"¥899",releaseDate:"2024-06",img:"/appliance-guide/images/backpacks/xt-20.jpg",jd:"https://search.jd.com/Search?keyword=萨洛蒙+Salomon+XT+20+背包"},
+  {brand:"萨洛蒙",brandEn:"Salomon",tier:"中端",name:"Out Night 30+5",cat:"hike",catLabel:"35L / 轻量登山",volume:"30+5L",weight:"0.76kg",backSystem:"MotionFit 动态背负",material:"尼龙主体 + 弹力网口袋",waterproof:"DWR 防泼水",scene:"1-2日徒步 / 过夜轻装",highlight:"MotionFit随体移动，可扩展5L容量，超轻仅756g背35L",price:1099,priceText:"¥1,099",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/out-night-30.webp",jd:"https://search.jd.com/Search?keyword=萨洛蒙+Salomon+Out+Night+30+背包"},
+  {brand:"萨洛蒙",brandEn:"Salomon",tier:"中端",name:"Peak 40",cat:"hike",catLabel:"40L / 轻量登山",volume:"40L",weight:"0.82kg",backSystem:"MotionFit Trail + Airvent AGILITY+",material:"210D Mini Ripstop 防水尼龙",waterproof:"1000mm 防水",scene:"多日徒步 / 登山 / 露营",highlight:"全长侧开拉链如行李箱取物，可拆顶包独立携带，内置哨子",price:1199,priceText:"¥1,199",releaseDate:"2024-01",img:"",jd:"https://search.jd.com/Search?keyword=萨洛蒙+Salomon+Peak+40+登山包"},
+];
+
+// ===== STATE =====
+let currentCatFilter = 'all';
+let maxPrice = 5000;
+let sortAsc = false;
+let sortActive = false;
+let compareSet = new Set();
+
+// ===== RENDER =====
+function renderModels() {
+  let filtered = models.filter(m => {
+    if (currentCatFilter !== 'all' && m.cat !== currentCatFilter) return false;
+    if (m.price > maxPrice) return false;
+    return true;
+  });
+  if (sortActive) {
+    filtered.sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+  }
+  const grid = document.getElementById('modelGrid');
+  const countEl = document.getElementById('modelCount');
+  const noRes = document.getElementById('noResults');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    countEl.textContent = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+  countEl.textContent = '共 ' + filtered.length + ' 款型号';
+
+  let html = '';
+  if (!sortActive) {
+    const brands = [...new Set(filtered.map(m => m.brand))];
+    for (const brand of brands) {
+      const brandModels = filtered.filter(m => m.brand === brand);
+      const first = brandModels[0];
+      html += '<div class="brand-block" style="grid-column:1/-1">' +
+        '<div class="brand-header"><h3 class="brand-name">' + brand + '</h3><span class="brand-en">' + first.brandEn + '</span></div>' +
+        '</div>';
+      for (const m of brandModels) html += cardHTML(m);
+    }
+  } else {
+    for (const m of filtered) html += cardHTML(m);
+  }
+  grid.innerHTML = html;
+}
+
+function cardHTML(m) {
+  const idx = models.indexOf(m);
+  const checked = compareSet.has(idx);
+  return '<div class="model-card" data-idx="' + idx + '">' +
+    '<div class="compare-check ' + (checked ? 'checked' : '') + '" onclick="toggleCompare(' + idx + ',this)" title="加入对比">\u2713</div>' +
+    (m.img ? '<div class="model-img-wrap"><img class="model-img" src="' + m.img + '" alt="' + m.name + '" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></div>' : '') +
+    '<span class="model-tier">' + m.tier + '</span>' +
+    (sortActive ? '<span class="brand-tag">' + m.brand + '</span>' : '') +
+    '<h4 class="model-title">' + m.brand + ' ' + m.name + '</h4>' +
+    '<p class="model-cat">' + m.catLabel + '</p>' +
+    '<div class="model-specs">' +
+      '<div class="spec-row"><span class="spec-label">容量</span>' + m.volume + ' / 自重 ' + m.weight + '</div>' +
+      '<div class="spec-row"><span class="spec-label">背负</span>' + m.backSystem + '</div>' +
+      '<div class="spec-row"><span class="spec-label">面料</span>' + m.material + '</div>' +
+      '<div class="spec-row"><span class="spec-label">防水</span>' + m.waterproof + '</div>' +
+      '<div class="spec-row"><span class="spec-label">场景</span>' + m.scene + '</div>' +
+      '<div class="spec-row"><span class="spec-label">亮点</span>' + m.highlight + '</div>' +
+    '</div>' +
+    '<div class="model-price-row">' +
+      '<div><div class="model-price">' + m.priceText + '</div>' +
+      '<div class="model-price-note">' + m.releaseDate + ' 上市</div></div>' +
+      '<a class="model-jd-link" href="' + m.jd + '" target="_blank" rel="noopener">京东搜索</a>' +
+    '</div></div>';
+}
+
+// ===== FILTERS =====
+function setCatFilter(cat) {
+  currentCatFilter = cat;
+  document.querySelectorAll('#filterBar .filter-btn[data-cat]').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.cat === cat);
+  });
+  document.querySelectorAll('.type-card').forEach(function(c) {
+    c.classList.toggle('selected', cat !== 'all' && c.dataset.type === cat);
+  });
+  renderModels();
+}
+
+function toggleTypeFilter(type, el) {
+  if (currentCatFilter === type) {
+    setCatFilter('all');
+  } else {
+    setCatFilter(type);
+  }
+}
+
+function onPriceChange(val) {
+  maxPrice = parseInt(val);
+  document.getElementById('priceValue').textContent = maxPrice >= 5000 ? '不限' : '≤ ¥' + maxPrice.toLocaleString();
+  renderModels();
+}
+
+function toggleSort() {
+  var btn = document.getElementById('sortBtn');
+  if (!sortActive) {
+    sortActive = true; sortAsc = true;
+    btn.textContent = '价格 低→高'; btn.classList.add('active');
+  } else if (sortAsc) {
+    sortAsc = false;
+    btn.textContent = '价格 高→低';
+  } else {
+    sortActive = false;
+    btn.textContent = '按价格排序'; btn.classList.remove('active');
+  }
+  renderModels();
+}
+
+// ===== COMPARE =====
+function toggleCompare(idx, el) {
+  if (compareSet.has(idx)) { compareSet.delete(idx); el.classList.remove('checked'); }
+  else if (compareSet.size < 4) { compareSet.add(idx); el.classList.add('checked'); }
+  updateCompareDrawer();
+}
+
+function updateCompareDrawer() {
+  var drawer = document.getElementById('compareDrawer');
+  var items = document.getElementById('compareItems');
+  var btn = document.getElementById('compareBtn');
+  if (compareSet.size === 0) { drawer.classList.remove('visible'); return; }
+  drawer.classList.add('visible');
+  items.innerHTML = Array.from(compareSet).map(function(idx) {
+    var m = models[idx];
+    return '<span class="compare-item">' + m.brand + ' ' + m.name + '<span class="remove" onclick="removeCompare(' + idx + ')">\u2715</span></span>';
+  }).join('');
+  btn.disabled = compareSet.size < 2;
+}
+
+function removeCompare(idx) {
+  compareSet.delete(idx);
+  updateCompareDrawer();
+  renderModels();
+}
+
+function showCompare() {
+  if (compareSet.size < 2) return;
+  var items = Array.from(compareSet).map(function(i) { return models[i]; });
+  var fields = [
+    ['品牌', function(m){ return m.brand; }],
+    ['容量', function(m){ return m.volume; }],
+    ['自重', function(m){ return m.weight; }],
+    ['背负系统', function(m){ return m.backSystem; }],
+    ['面料', function(m){ return m.material; }],
+    ['防水', function(m){ return m.waterproof; }],
+    ['适用场景', function(m){ return m.scene; }],
+    ['亮点', function(m){ return m.highlight; }],
+    ['价格', function(m){ return m.priceText; }],
+    ['上市时间', function(m){ return m.releaseDate; }],
+    ['购买', function(m){ return '<a href="' + m.jd + '" target="_blank" style="color:var(--accent);text-decoration:none">京东搜索 ›</a>'; }],
+  ];
+  var html = '<div class="compare-scroll"><table class="compare-table">';
+  html += '<thead><tr><th></th>';
+  items.forEach(function(m) { html += '<th>' + m.name + '</th>'; });
+  html += '</tr></thead><tbody>';
+  for (var i = 0; i < fields.length; i++) {
+    var label = fields[i][0], fn = fields[i][1];
+    html += '<tr><td>' + label + '</td>';
+    items.forEach(function(m) { html += '<td>' + fn(m) + '</td>'; });
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('compareContent').innerHTML = html;
+  document.getElementById('compareModal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompare() {
+  document.getElementById('compareModal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// ===== TABLE COLUMN HIGHLIGHT =====
+function highlightCol(col) {
+  document.querySelectorAll('#cmpTable tbody td').forEach(function(td) {
+    var idx = Array.from(td.parentNode.children).indexOf(td);
+    td.classList.toggle('col-highlight', idx === col);
+  });
+}
+function clearCol() {
+  document.querySelectorAll('#cmpTable td.col-highlight').forEach(function(td) { td.classList.remove('col-highlight'); });
+}
+
+// ===== SCROLL SPY + NAV SHADOW =====
+var sectionIds = ['types','compare','brands'];
+var nav = document.getElementById('topnav');
+window.addEventListener('scroll', function() {
+  var scrollY = window.scrollY + 80;
+  var current = '';
+  for (var i = 0; i < sectionIds.length; i++) {
+    var el = document.getElementById(sectionIds[i]);
+    if (el && el.offsetTop <= scrollY) current = sectionIds[i];
+  }
+  document.querySelectorAll('.topnav a:not(.back-link)').forEach(function(a) {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+});
+
+// ===== SCROLL REVEAL =====
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function initScrollReveal() {
+  document.querySelectorAll('.section-label,.section-title,.section-subtitle,.type-grid,.table-scroll,.filter-bar').forEach(function(el) {
+    el.classList.add('animate-on-scroll');
+    observer.observe(el);
+  });
+}
+
+// ===== STAGGER MODEL CARDS =====
+var origRender = renderModels;
+renderModels = function() {
+  origRender();
+  document.querySelectorAll('.model-card').forEach(function(card, i) {
+    card.style.animationDelay = Math.min(i * 0.05, 0.6) + 's';
+  });
+};
+
+// INIT
+renderModels();
+initScrollReveal();
+</script>
+</body>
+</html>

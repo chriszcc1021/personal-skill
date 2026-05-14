@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>扫地机器人拖布选购指南</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --black:#1d1d1f;--gray-dark:#424245;--gray:#6e6e73;--gray-light:#86868b;
+    --gray-border:#d2d2d7;--bg:#fff;--bg-alt:#f5f5f7;
+    --blue:#0071e3;--blue-light:#e8f4fd;--green:#34c759;--green-light:#e8f8ec;
+    --purple:#af52de;--purple-light:#f3eefa;--orange:#ff9500;--orange-light:#fff4e6;
+    --red:#ff3b30;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,'SF Pro Text','SF Pro Display','Noto Sans SC','Helvetica Neue',Helvetica,Arial,sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.47;font-size:17px;letter-spacing:-0.374px}
+
+  /* ===== STICKY NAV ===== */
+  .topnav{
+    position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.8);
+    backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    display:flex;align-items:center;justify-content:center;gap:0;
+    padding:0 20px;height:48px;overflow-x:auto;white-space:nowrap;
+  }
+  .topnav a{
+    font-size:12px;font-weight:400;color:rgba(255,255,255,0.8);text-decoration:none;
+    padding:0 12px;line-height:48px;transition:color 0.2s;flex-shrink:0;letter-spacing:-0.12px;
+  }
+  .topnav a:hover{color:#fff}
+  .topnav a.active{color:#fff;font-weight:500}
+
+  /* ===== HERO ===== */
+  .hero{text-align:center;padding:120px 40px 100px;background:#000;color:#fff;min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .hero-label{font-size:17px;font-weight:600;letter-spacing:-0.374px;color:rgba(255,255,255,0.8);margin-bottom:20px}
+  .hero h1{font-size:clamp(40px,8vw,56px);font-weight:600;letter-spacing:-0.28px;line-height:1.07;color:#fff}
+  .hero p{font-size:clamp(17px,2.5vw,21px);color:rgba(255,255,255,0.8);margin-top:20px;max-width:600px;margin-left:auto;margin-right:auto;line-height:1.19;font-weight:400;letter-spacing:0.231px}
+
+  /* ===== SECTIONS ===== */
+  .section{padding:80px 24px}
+  .section-alt{background:var(--bg-alt)}
+  .section-dark{background:#000;color:#fff}
+  .section-dark .section-label{color:#2997ff}
+  .section-dark .section-title{color:#fff}
+  .section-dark .section-subtitle{color:rgba(255,255,255,0.8)}
+  .section-inner{max-width:980px;margin:0 auto;text-align:center}
+  .section-wide{max-width:1200px;margin:0 auto;text-align:left}
+  .section-label{font-size:14px;font-weight:600;letter-spacing:-0.224px;color:var(--blue);margin-bottom:12px}
+  .section-title{font-size:clamp(28px,5vw,40px);font-weight:600;letter-spacing:normal;line-height:1.10;margin-bottom:16px}
+  .section-subtitle{font-size:17px;color:var(--gray);max-width:600px;line-height:1.47;margin:0 auto 56px;font-weight:400;letter-spacing:-0.374px}
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar{
+    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;align-items:center;
+  }
+  .filter-group{display:flex;gap:6px;flex-wrap:wrap}
+  .filter-group-label{font-size:13px;font-weight:600;color:var(--gray-light);align-self:center;margin-right:4px}
+  .filter-btn{
+    font-size:14px;font-weight:400;padding:8px 18px;border-radius:980px;
+    border:1px solid rgba(0,0,0,0.12);background:transparent;color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;letter-spacing:-0.224px;
+  }
+  .filter-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .filter-btn.mop-disc.active{background:var(--blue);border-color:var(--blue)}
+  .filter-btn.mop-roller.active{background:var(--green);border-color:var(--green)}
+  .filter-btn.mop-track.active{background:var(--purple);border-color:var(--purple)}
+  .filter-btn.mop-tri.active{background:var(--orange);border-color:var(--orange)}
+
+  /* Price slider */
+  .price-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .price-label{font-size:13px;color:var(--gray);white-space:nowrap}
+  .price-range{-webkit-appearance:none;width:160px;height:4px;border-radius:2px;background:#e0e0e0;outline:none}
+  .price-range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+  .price-value{font-size:14px;font-weight:600;color:var(--black);min-width:80px}
+
+  /* Sort */
+  .sort-btn{
+    font-size:14px;font-weight:400;padding:8px 18px;border-radius:980px;
+    border:1px solid rgba(0,0,0,0.12);background:transparent;color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;margin-left:auto;letter-spacing:-0.224px;
+  }
+  .sort-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .sort-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+  /* ===== TYPE GRID ===== */
+  .type-grid{display:grid;grid-template-columns:1fr;gap:1px;background:var(--gray-border);border:1px solid var(--gray-border);border-radius:20px;overflow:hidden}
+  @media(min-width:768px){.type-grid{grid-template-columns:repeat(3,1fr)}}
+  .type-card{background:var(--bg);padding:36px 28px;cursor:pointer;transition:background 0.2s}
+  .type-card:hover{background:#fafafa}
+  .type-card.selected{background:var(--blue-light)}
+  .type-card[data-type="roller"].selected{background:var(--green-light)}
+  .type-card[data-type="track"].selected{background:var(--purple-light)}
+  .type-name{font-size:24px;font-weight:700;margin-bottom:2px}
+  .type-en{font-size:13px;color:var(--gray-light);margin-bottom:24px}
+  .type-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+  .type-section-label.good{color:var(--green)}
+  .type-section-label.bad{color:var(--red)}
+  .type-list{list-style:none;margin-bottom:24px}
+  .type-list li{font-size:14px;color:var(--gray-dark);padding:5px 0;line-height:1.4}
+
+  /* ===== CMP TABLE ===== */
+  .table-scroll{overflow-x:auto;border-radius:12px;background:rgba(255,255,255,0.04)}
+  .section-dark .table-scroll{background:#272729}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:14px;letter-spacing:-0.224px}
+  .cmp-table thead th{padding:16px 20px;text-align:center;font-weight:600;font-size:14px;color:var(--black);border-bottom:1px solid var(--gray-border);background:var(--bg)}
+  .section-dark .cmp-table thead th{color:#fff;background:transparent;border-bottom-color:rgba(255,255,255,0.1)}
+  .cmp-table thead th:first-child{text-align:left;color:var(--gray-light);font-size:13px;font-weight:400}
+  .section-dark .cmp-table thead th:first-child{color:rgba(255,255,255,0.56)}
+  .cmp-table tbody td{padding:14px 20px;text-align:center;color:var(--gray-dark);border-bottom:1px solid #ebebeb;font-size:14px}
+  .section-dark .cmp-table tbody td{color:rgba(255,255,255,0.8);border-bottom-color:rgba(255,255,255,0.04)}
+  .cmp-table tbody td:first-child{text-align:left;font-weight:500;color:var(--black)}
+  .section-dark .cmp-table tbody td:first-child{color:rgba(255,255,255,0.8)}
+  .cmp-table tbody tr:last-child td{border-bottom:none}
+  .cmp-table tbody tr:hover td{background:rgba(0,0,0,0.02)}
+  .section-dark .cmp-table tbody tr:hover td{background:rgba(255,255,255,0.04)}
+  .cmp-table .best{font-weight:600;color:var(--blue)}
+  .section-dark .cmp-table .best{color:#2997ff}
+  .cmp-table .mid{color:var(--gray-dark)}
+  .cmp-table .weak{color:var(--gray-light)}
+  .cmp-table .bad{color:var(--red)}
+  .cmp-table td.col-highlight{background:rgba(0,113,227,0.08)!important}
+  .section-dark .cmp-table td.col-highlight{background:rgba(255,255,255,0.06)!important}
+
+  /* ===== MODEL CARDS ===== */
+  .model-count{font-size:14px;color:var(--gray-light);margin-bottom:20px}
+  .model-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:640px){.model-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:960px){.model-grid{grid-template-columns:repeat(3,1fr)}}
+
+  .model-card{
+    border:none;border-radius:12px;padding:28px 24px;
+    background:var(--bg);display:flex;flex-direction:column;transition:all 0.3s;
+    position:relative;overflow:hidden;box-shadow:rgba(0,0,0,0.06) 0px 2px 16px 0px;
+  }
+  .model-card:hover{box-shadow:rgba(0,0,0,0.22) 3px 5px 30px 0px;transform:translateY(-2px)}
+  .model-card.hidden{display:none}
+  .model-img-wrap{display:flex;justify-content:center;margin-bottom:14px}
+  .model-img{width:100%;max-width:200px;height:140px;object-fit:contain;border-radius:8px}
+  .model-card .brand-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:2px}
+  .model-tier{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:4px}
+  .model-title{font-size:18px;font-weight:600;color:var(--black);margin-bottom:4px;line-height:1.25}
+  .model-mop{font-size:13px;font-weight:500;margin-bottom:14px}
+  .mop-disc{color:var(--blue)}.mop-roller{color:var(--green)}.mop-track{color:var(--purple)}.mop-tri{color:var(--orange)}
+  .model-features{font-size:13px;color:var(--gray);line-height:1.6;flex:1;margin-bottom:16px}
+  .model-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-top:14px;border-top:1px solid #ebebeb;flex-wrap:wrap}
+  .model-price{font-size:20px;font-weight:600;color:var(--black);letter-spacing:-0.01em}
+  .model-price-note{font-size:11px;color:var(--gray-light);margin-top:1px}
+  .model-jd-link{font-size:13px;font-weight:500;color:var(--blue);text-decoration:none;white-space:nowrap}
+  .model-jd-link:hover{text-decoration:underline}
+  .model-jd-link::after{content:' ›'}
+
+  /* Compare checkbox */
+  .compare-check{
+    position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;
+    border:2px solid var(--gray-border);background:var(--bg);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+    font-size:13px;color:transparent;
+  }
+  .compare-check:hover{border-color:var(--blue)}
+  .compare-check.checked{background:var(--blue);border-color:var(--blue);color:#fff}
+
+  /* Compare drawer */
+  .compare-drawer{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);
+    border-top:1px solid var(--gray-border);
+    padding:16px 24px;display:none;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .compare-drawer.visible{display:block}
+  .compare-drawer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .compare-items{display:flex;gap:8px;flex:1;flex-wrap:wrap}
+  .compare-item{
+    font-size:13px;font-weight:500;padding:6px 12px;border-radius:20px;
+    background:var(--bg-alt);color:var(--black);display:flex;align-items:center;gap:6px;
+  }
+  .compare-item .remove{cursor:pointer;color:var(--gray-light);font-size:16px;line-height:1}
+  .compare-item .remove:hover{color:var(--red)}
+  .compare-btn{
+    font-size:17px;font-weight:400;padding:8px 22px;border-radius:980px;
+    background:var(--blue);color:#fff;border:none;cursor:pointer;font-family:inherit;
+    transition:filter 0.2s;letter-spacing:-0.374px;
+  }
+  .compare-btn:hover{filter:brightness(1.1)}
+  .compare-btn:hover{background:var(--blue-hover,#0077ed)}
+  .compare-btn:disabled{background:var(--gray-border);color:var(--gray-light);cursor:default}
+
+  /* Compare modal */
+  .compare-modal-bg{
+    position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);
+    display:none;align-items:flex-end;justify-content:center;padding:0;
+  }
+  .compare-modal-bg.visible{display:flex}
+  .compare-modal{
+    background:var(--bg);border-radius:20px 20px 0 0;max-width:720px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:24px;position:relative;
+  }
+  @media(min-width:768px){
+    .compare-modal-bg{align-items:center;padding:20px}
+    .compare-modal{border-radius:20px}
+  }
+  .compare-modal-close{
+    position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;
+    border:none;background:var(--bg-alt);cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;color:var(--gray);
+  }
+  .compare-modal-close:hover{background:var(--gray-border)}
+  .compare-modal h3{font-size:24px;font-weight:700;margin-bottom:24px}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .compare-table{border-collapse:collapse;border:1px solid var(--gray-border);border-radius:12px;overflow:hidden;width:100%;min-width:500px}
+  .compare-table th{padding:14px 16px;font-size:14px;font-weight:600;color:var(--black);background:var(--bg-alt);border-bottom:1px solid var(--gray-border);text-align:left;white-space:nowrap}
+  .compare-table th:first-child{color:var(--gray);font-size:13px;font-weight:500;width:72px}
+  .compare-table td{padding:12px 16px;font-size:14px;color:var(--gray-dark);border-bottom:1px solid #ebebeb;text-align:left;vertical-align:top}
+  .compare-table td:first-child{font-weight:500;color:var(--gray);font-size:13px;white-space:nowrap;background:var(--bg-alt)}
+  .compare-table tr:last-child td{border-bottom:none}
+  .compare-table tr:hover td{background:#fafafa}
+  .compare-table tr:hover td:first-child{background:var(--bg-alt)}
+
+  /* ===== VERDICT ===== */
+  .type-verdict{margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-border)}
+  .type-verdict-title{font-size:13px;font-weight:600;color:var(--black);margin-bottom:4px}
+  .type-verdict-desc{font-size:13px;color:var(--gray-dark);line-height:1.5;margin-bottom:4px}
+  .type-verdict-models{font-size:12px;color:var(--gray);line-height:1.5}
+
+  .footer{padding:28px 24px;text-align:center;font-size:12px;color:var(--gray-light);border-top:1px solid var(--gray-border)}
+
+  /* Brand separator */
+  .brand-block{margin-bottom:60px}
+  .brand-block:last-child{margin-bottom:0}
+  .brand-header{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .brand-name{font-size:clamp(24px,3.5vw,36px);font-weight:700}
+  .brand-en{font-size:15px;color:var(--gray-light)}
+  .brand-desc{font-size:15px;color:var(--gray);margin-bottom:24px;max-width:560px}
+
+  /* No results */
+  .no-results{text-align:center;padding:60px 20px;color:var(--gray-light);font-size:16px;display:none}
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  .hero h1{animation:fadeUp 0.8s ease both}
+  .hero p{animation:fadeUp 0.8s ease 0.15s both}
+
+  .animate-on-scroll{opacity:0;transform:translateY(32px);transition:opacity 0.6s ease,transform 0.6s ease}
+  .animate-on-scroll.visible{opacity:1;transform:translateY(0)}
+
+  .type-card{transition:background 0.2s,transform 0.3s,box-shadow 0.3s}
+  .type-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+
+  .model-card{opacity:0;animation:scaleIn 0.4s ease both}
+
+  .compare-drawer{animation:slideUp 0.3s ease both}
+  .compare-modal-bg{animation:fadeIn 0.2s ease both}
+  .compare-modal{animation:scaleIn 0.3s ease both}
+
+  .cmp-table tbody tr{transition:background 0.15s}
+  .filter-btn{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
+  .filter-btn:active{transform:scale(0.95)}
+
+  .topnav{transition:box-shadow 0.3s}
+  .topnav.scrolled{box-shadow:0 1px 8px rgba(0,0,0,0.06)}
+
+  @media(max-width:767px){
+    .hero{padding:72px 20px 56px}
+    .section{padding:56px 20px}
+    .topnav{gap:8px;padding:10px 16px}
+    .topnav a{font-size:13px;padding:5px 12px}
+    .filter-bar{gap:8px}
+    .price-range{width:120px}
+    .model-title{font-size:17px}
+    .compare-drawer{padding:12px 16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY NAV -->
+<nav class="topnav" id="topnav">
+  <a href="#types">拖布类型</a>
+  <a href="#compare">对比维度</a>
+  <a href="#brands">选购机型</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <p class="hero-label">家用清洁电器</p>
+  <h1>扫地机器人<br>拖布选购指南</h1>
+  <p>三种拖布方案全面对比，四大品牌 30+ 款机型。<br>点击卡片对比，滑动筛选价格。</p>
+</section>
+
+<!-- TYPE COMPARISON -->
+<section class="section" id="types">
+  <div class="section-inner">
+    <p class="section-label">拖布形式</p>
+    <h2 class="section-title">三种方案，各有所长。</h2>
+    <p class="section-subtitle">点击任意卡片，下方机型列表会自动筛选对应拖布类型。</p>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-card" data-type="disc" onclick="toggleTypeFilter('disc',this)">
+        <h3 class="type-name">圆盘板</h3>
+        <p class="type-en">Disc Mop — 旋转拖布</p>
+        <p class="type-section-label good">做得好的</p>
+        <ul class="type-list">
+          <li>技术最成熟，市场绝对主流</li>
+          <li>机身最薄，沙发床底轻松钻</li>
+          <li>耗材便宜，维护省心</li>
+          <li>搭配高频震动去污力也不弱</li>
+        </ul>
+        <p class="type-section-label bad">做不到的</p>
+        <ul class="type-list">
+          <li>圆形结构天生有墙角盲区</li>
+          <li>拖布越拖越脏，以脏拖脏</li>
+          <li>厨房油污基本靠运气</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">性价比之选 · 预算 2,500–4,500 元</p>
+          <p class="type-verdict-desc">技术成熟，耗材便宜，日常清洁完全够用。大疆 ROMO 系列双机械臂贴边设计也值得关注。</p>
+          <p class="type-verdict-models">推荐：石头 P20 Plus · 追觅 S50 · 科沃斯 T50 Pro · 云鲸 J5 · 大疆 ROMO S</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="roller" onclick="toggleTypeFilter('roller',this)">
+        <h3 class="type-name">滚筒板</h3>
+        <p class="type-en">Roller Mop — 活水滚筒</p>
+        <p class="type-section-label good">做得好的</p>
+        <ul class="type-list">
+          <li>活水实时清洗，不以脏拖脏</li>
+          <li>滚动摩擦清洁力强</li>
+          <li>湿垃圾、厨房油渍处理出色</li>
+          <li>部分可侧伸擦边</li>
+        </ul>
+        <p class="type-section-label bad">做不到的</p>
+        <ul class="type-list">
+          <li>机身偏高，矮家具进不去</li>
+          <li>滚筒内部容易藏污纳垢</li>
+          <li>耗材成本高于圆盘</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">厨房油污克星 · 预算 3,000–5,500 元</p>
+          <p class="type-verdict-desc">活水实时洗，类似洗地机效果，重油污场景首选。</p>
+          <p class="type-verdict-models">推荐：科沃斯 T80 · 追觅 X50 Pro 滚筒版 · 石头 P20 活水版</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="track" onclick="toggleTypeFilter('track',this)">
+        <h3 class="type-name">履带板</h3>
+        <p class="type-en">Track Mop — 履带循环</p>
+        <p class="type-section-label good">做得好的</p>
+        <ul class="type-list">
+          <li>恒压 12-18N，清洁力最强</li>
+          <li>45°C 热活水循环即拖即净</li>
+          <li>越障 6cm，门槛无压力</li>
+          <li>无级外扩，毫米级贴边清洁</li>
+        </ul>
+        <p class="type-section-label bad">做不到的</p>
+        <ul class="type-list">
+          <li>技术较新，市场验证不足</li>
+          <li>结构复杂，维护成本偏高</li>
+          <li>价位是三种方案中最高的</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">极致清洁 · 预算 4,500–8,000 元</p>
+          <p class="type-verdict-desc">恒压 + 热水循环，角落贴边最强，大户型/精装房首选。</p>
+          <p class="type-verdict-models">推荐：云鲸逍遥 002 · 追觅 X50 Pro 履带版 · 追觅 X60 Master</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="section section-dark" id="compare">
+  <div class="section-inner">
+    <p class="section-label">横向对比</p>
+    <h2 class="section-title">逐项比，一目了然。</h2>
+    <p class="section-subtitle">鼠标悬停列头可高亮整列，方便纵向比较。</p>
+    <div class="table-scroll">
+      <table class="cmp-table" id="cmpTable">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th data-col="1" onmouseenter="highlightCol(1)" onmouseleave="clearCol()">圆盘板</th>
+            <th data-col="2" onmouseenter="highlightCol(2)" onmouseleave="clearCol()">滚筒板</th>
+            <th data-col="3" onmouseenter="highlightCol(3)" onmouseleave="clearCol()">履带板</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>清洁力</td><td class="weak">中等</td><td class="mid">较强</td><td class="best">最强</td></tr>
+          <tr><td>边角清洁</td><td class="weak">差</td><td class="mid">较好</td><td class="best">最好</td></tr>
+          <tr><td>以脏拖脏</td><td class="bad">严重</td><td class="mid">较少</td><td class="best">最少</td></tr>
+          <tr><td>机身高度</td><td class="best">最薄</td><td class="weak">偏高</td><td class="mid">中等</td></tr>
+          <tr><td>越障能力</td><td class="weak">2-4cm</td><td class="weak">2-4cm</td><td class="best">6cm</td></tr>
+          <tr><td>维护成本</td><td class="best">最低</td><td class="mid">中等</td><td class="weak">偏高</td></tr>
+          <tr><td>技术成熟度</td><td class="best">最成熟</td><td class="mid">成熟</td><td class="weak">较新</td></tr>
+          <tr><td>价格区间</td><td>¥2,000–5,000</td><td>¥3,000–6,000</td><td>¥4,500–8,000</td></tr>
+          <tr><td>推荐场景</td><td>日常清洁</td><td>厨房油污</td><td>极致大户型</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS & MODELS -->
+<section class="section" id="brands">
+  <div class="section-inner">
+    <p class="section-label">选购机型</p>
+    <h2 class="section-title">找到你的那一台。</h2>
+    <p class="section-subtitle">筛选拖布类型、拖动价格滑块、按价格排序。点击右上角圆圈可勾选对比。</p>
+  </div>
+  <div class="section-wide">
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <span class="filter-group-label">拖布</span>
+        <button class="filter-btn active" data-mop="all" onclick="setMopFilter('all')">全部</button>
+        <button class="filter-btn mop-disc" data-mop="disc" onclick="setMopFilter('disc')">圆盘</button>
+        <button class="filter-btn mop-roller" data-mop="roller" onclick="setMopFilter('roller')">滚筒</button>
+        <button class="filter-btn mop-track" data-mop="track" onclick="setMopFilter('track')">履带</button>
+        <button class="filter-btn mop-tri" data-mop="tri" onclick="setMopFilter('tri')">三角</button>
+      </div>
+      <div class="price-filter">
+        <span class="price-label">预算上限</span>
+        <input type="range" class="price-range" id="priceSlider" min="1500" max="10000" value="10000" step="500" oninput="onPriceChange(this.value)">
+        <span class="price-value" id="priceValue">不限</span>
+      </div>
+      <button class="sort-btn" id="sortBtn" onclick="toggleSort()">按价格排序 ↑</button>
+    </div>
+
+    <p class="model-count" id="modelCount"></p>
+    <div class="no-results" id="noResults">没有符合条件的机型，试试调整筛选条件</div>
+    <div class="model-grid" id="modelGrid"></div>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <p>价格来源：京东官方旗舰店及主流电商渠道。实际售价以京东商品页面为准。</p>
+</footer>
+
+<!-- COMPARE DRAWER -->
+<div class="compare-drawer" id="compareDrawer">
+  <div class="compare-drawer-inner">
+    <div class="compare-items" id="compareItems"></div>
+    <button class="compare-btn" id="compareBtn" onclick="showCompare()" disabled>对比选中机型</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-bg" id="compareModal" onclick="if(event.target===this)closeCompare()">
+  <div class="compare-modal">
+    <button class="compare-modal-close" onclick="closeCompare()">✕</button>
+    <h3>机型对比</h3>
+    <div id="compareContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== MODEL DATA =====
+const models = [
+  // 石头
+  {brand:"石头科技",brandEn:"Roborock",tier:"旗舰",name:"G30 Space 探索版",mop:"disc",mopLabel:"圆盘 · 双震擦地",features:"仿生机械手主动移障，7.98cm 超薄，80°C 热水洗，22000Pa",price:5499,priceText:"¥5,499",priceNote:"促销低至 ¥5,502",img:"https://us.roborock.com/cdn/shop/files/Saros_Z70_Silver_ID.png?v=1758785547&width=400",jd:"https://search.jd.com/Search?keyword=石头G30+Space扫地机器人"},
+  {brand:"石头科技",brandEn:"Roborock",tier:"旗舰",name:"G30",mop:"disc",mopLabel:"圆盘 · 4000次高频震动",features:"RRmind GPT 语音大模型，22000Pa，8N 下压，接入 DeepSeek-R1",price:4999,priceText:"¥4,999",jd:"https://search.jd.com/Search?keyword=石头G30扫地机器人"},
+  {brand:"石头科技",brandEn:"Roborock",tier:"旗舰",name:"G20S Ultra",mop:"disc",mopLabel:"圆盘 · 旋转拖布",features:"3D ToF 避障，拖布自动拆装，边刷升降",price:4499,priceText:"¥4,499",priceNote:"上下水版约 ¥4,817",jd:"https://search.jd.com/Search?keyword=石头G20S+Ultra扫地机器人"},
+  {brand:"石头科技",brandEn:"Roborock",tier:"高端",name:"P20 Ultra Plus",mop:"disc",mopLabel:"圆盘 · 旋转加压",features:"100°C 热洗拖布，60°C 热拖地，25000Pa，开荒清洁模式",price:3899,priceText:"¥3,899",priceNote:"活动低至 ¥3,381",jd:"https://search.jd.com/Search?keyword=石头P20+Ultra+Plus扫地机器人"},
+  {brand:"石头科技",brandEn:"Roborock",tier:"高端",name:"P20 活水版",mop:"roller",mopLabel:"滚筒 · 270mm活水",features:"石头唯一滚筒机型，实时活水清洗，15mm 地毯抬升",price:3899,priceText:"¥3,899",priceNote:"活动低至 ¥3,212",jd:"https://search.jd.com/Search?keyword=石头P20活水版扫地机器人"},
+  {brand:"石头科技",brandEn:"Roborock",tier:"中端",name:"P20 Pro",mop:"disc",mopLabel:"圆盘 · 可外扩",features:"18500Pa，动态机械臂 ≤1mm 贴边清洁",price:3499,priceText:"¥3,499",jd:"https://search.jd.com/Search?keyword=石头P20Pro扫地机器人"},
+  {brand:"石头科技",brandEn:"Roborock",tier:"中端",name:"Q Revo Pro",mop:"disc",mopLabel:"圆盘 · 可伸缩",features:"拖布可伸缩擦墙边，热风烘干基站",price:2799,priceText:"¥2,799",jd:"https://search.jd.com/Search?keyword=石头Q+Revo+Pro扫地机器人"},
+  // 追觅
+  {brand:"追觅科技",brandEn:"Dreame",tier:"顶级旗舰",name:"Matrix10 Ultra",mop:"disc",mopLabel:"圆盘 · 自动换拖布",features:"基站存储 3 组不同材质拖布，按区域自动更换",price:9999,priceText:"¥9,999",img:"https://www.dreametech.com/cdn/shop/files/robot-vacuums-matrix10-ultra-nav.webp?width=400",jd:"https://search.jd.com/Search?keyword=追觅Matrix10+Ultra扫地机器人"},
+  {brand:"追觅科技",brandEn:"Dreame",tier:"旗舰",name:"X60 Master 履带版",mop:"track",mopLabel:"履带 · 热活水洗地",features:"履带式拖布，100°C 基站高温清洗烘干",price:7999,priceText:"¥7,999",img:"https://www.dreametech.com/cdn/shop/files/X60Ultra-White.webp?width=400",jd:"https://search.jd.com/Search?keyword=追觅X60+Master履带扫地机器人"},
+  {brand:"追觅科技",brandEn:"Dreame",tier:"旗舰",name:"X60 Pro 滚筒版",mop:"roller",mopLabel:"滚筒 · 活水洗地",features:"智能滚筒活水清洁系统",price:7999,priceText:"¥7,999",jd:"https://search.jd.com/Search?keyword=追觅X60Pro滚筒扫地机器人"},
+  {brand:"追觅科技",brandEn:"Dreame",tier:"旗舰",name:"X50 Pro 履带版",mop:"track",mopLabel:"履带 · 45°C恒温热水",features:"18N 下压力，6cm 越障，100°C 基站清洗烘干",price:5999,priceText:"¥5,999",priceNote:"国补后 ¥5,100 · 低至 ¥4,999",img:"https://www.dreametech.com/cdn/shop/files/2026-valentine-day-vacuum-robot-x50-ultra.webp?width=400",jd:"https://search.jd.com/Search?keyword=追觅X50Pro履带扫地机器人"},
+  {brand:"追觅科技",brandEn:"Dreame",tier:"旗舰",name:"X50 Pro 增强版",mop:"disc",mopLabel:"圆盘 · 旋转",features:"扫拖一体自动清洗，多版本可选",price:4845,priceText:"¥4,845",priceNote:"活动低至 ¥4,235",jd:"https://search.jd.com/Search?keyword=追觅X50Pro增强版扫地机器人"},
+  {brand:"追觅科技",brandEn:"Dreame",tier:"高端",name:"S60 Pro",mop:"disc",mopLabel:"圆盘 · 旋转",features:"巅峰越障能力，超薄版可选",price:4280,priceText:"¥4,280",jd:"https://search.jd.com/Search?keyword=追觅S60Pro扫地机器人"},
+  {brand:"追觅科技",brandEn:"Dreame",tier:"中端",name:"S50 Pro",mop:"disc",mopLabel:"圆盘 · 旋转",features:"扫拖洗一体，自清洁基站",price:4299,priceText:"¥4,299",priceNote:"活动低至 ¥3,236",jd:"https://search.jd.com/Search?keyword=追觅S50Pro扫地机器人"},
+  {brand:"追觅科技",brandEn:"Dreame",tier:"入门",name:"S50 增强版",mop:"disc",mopLabel:"圆盘 · 旋转",features:"超感双目智能避障",price:2899,priceText:"¥2,899",priceNote:"活动低至 ¥2,743",jd:"https://search.jd.com/Search?keyword=追觅S50增强版扫地机器人"},
+  // 科沃斯
+  {brand:"科沃斯",brandEn:"Ecovacs",tier:"顶级旗舰",name:"X9 Pro Omni",mop:"roller",mopLabel:"滚筒 · OZMO ROLLER",features:"16000Pa，VLM 视觉大模型，滚筒 200RPM",price:5499,priceText:"¥5,499",priceNote:"活动低至 ¥4,504",img:"https://site-static.ecovacs.com/upload/us/image/associated-group/2025/09/10/053438_8252$id-x9-pro-omni-black-920x920-2.png",jd:"https://search.jd.com/Search?keyword=科沃斯X9Pro扫地机器人"},
+  {brand:"科沃斯",brandEn:"Ecovacs",tier:"旗舰",name:"X8 Pro Omni",mop:"roller",mopLabel:"滚筒 · 可伸出OZMO",features:"True Edge 2.0 贴边，实时滚筒自清洁",price:4999,priceText:"¥4,999",img:"https://site-static.ecovacs.com/upload/us/image/associated-group/2025/09/10/053500_2163$id-x8-pro-omni-black-920x920-1.png",jd:"https://search.jd.com/Search?keyword=科沃斯X8Pro扫地机器人"},
+  {brand:"科沃斯",brandEn:"Ecovacs",tier:"旗舰",name:"T80 滚筒版",mop:"roller",mopLabel:"滚筒 · OZMO恒压活水",features:"3700Pa 对地压强，8 孔喷淋，75°C 热水清洗",price:3799,priceText:"¥3,799",priceNote:"活动低至 ¥2,805",img:"https://site-static.ecovacs.com/upload/us/image/associated-group/2025/09/10/053606_9662$id-t80-omni-black-920x920-1.png",jd:"https://search.jd.com/Search?keyword=科沃斯T80扫地机器人"},
+  {brand:"科沃斯",brandEn:"Ecovacs",tier:"高端",name:"T50 Pro Omni",mop:"disc",mopLabel:"圆盘 · 双旋转",features:"8.1cm 超薄，15800Pa，True Edge 2.0，70°C 热水",price:3599,priceText:"¥3,599",priceNote:"国补后低至 ¥2,076",img:"https://site-static.ecovacs.com/upload/us/image/associated-group/2025/09/10/053718_5778$id-t50-max-pro-omni-black-920x920-2.png",jd:"https://search.jd.com/Search?keyword=科沃斯T50Pro扫地机器人"},
+  {brand:"科沃斯",brandEn:"Ecovacs",tier:"中端",name:"T30 Pro Omni",mop:"disc",mopLabel:"圆盘 · 双旋转",features:"11000Pa，自清洁基站",price:2999,priceText:"¥2,999",jd:"https://search.jd.com/Search?keyword=科沃斯T30Pro扫地机器人"},
+  {brand:"科沃斯",brandEn:"Ecovacs",tier:"入门",name:"N20 Pro",mop:"disc",mopLabel:"圆盘 · 旋转",features:"5000Pa，5200mAh 大电池，高性价比入门",price:1999,priceText:"¥1,999",jd:"https://search.jd.com/Search?keyword=科沃斯N20Pro扫地机器人"},
+  // 云鲸
+  {brand:"云鲸",brandEn:"Narwal",tier:"旗舰",name:"逍遥 002 Flow",mop:"track",mopLabel:"履带 · 热活水循环洗地",features:"45°C 热水实时清洗，12N 恒压，无级外扩，22000Pa，95mm 超薄",price:4599,priceText:"¥4,599",priceNote:"上下水版 ¥5,199 · 促销低至 ¥3,411",img:"https://us.narwal.com/cdn/shop/files/CX4_9d2bb611-8c11-4c48-a694-be86207c410a.png?width=400",jd:"https://search.jd.com/Search?keyword=云鲸逍遥002扫地机器人"},
+  {brand:"云鲸",brandEn:"Narwal",tier:"旗舰",name:"J6",mop:"track",mopLabel:"履带 · 热活水",features:"履带式清洁系统",price:4999,priceText:"¥4,999",jd:"https://search.jd.com/Search?keyword=云鲸J6扫地机器人"},
+  {brand:"云鲸",brandEn:"Narwal",tier:"高端",name:"Freo Z10 Ultra",mop:"tri",mopLabel:"三角形 · 仿生擦地",features:"AI 双目视觉，18KPa，拖布延伸贴边",price:4599,priceText:"¥4,599",img:"https://us.narwal.com/cdn/shop/files/NarwalFreoZ10UltraRobotVacuum_Mop4.png?width=400",jd:"https://search.jd.com/Search?keyword=云鲸Freo+Z10+Ultra扫地机器人"},
+  {brand:"云鲸",brandEn:"Narwal",tier:"高端",name:"Freo Z10",mop:"tri",mopLabel:"三角形 · 仿生擦地",features:"8N 下压力，45-75°C 热水清洗，15KPa",price:3799,priceText:"¥3,799",jd:"https://search.jd.com/Search?keyword=云鲸Freo+Z10扫地机器人"},
+  {brand:"云鲸",brandEn:"Narwal",tier:"中端",name:"J5 Max",mop:"disc",mopLabel:"圆盘 · 仿生擦地",features:"AI 单目感知，18500Pa，动态热水洗拖布",price:3599,priceText:"¥3,599",priceNote:"国补后 ¥2,974",jd:"https://search.jd.com/Search?keyword=云鲸J5Max扫地机器人"},
+  {brand:"云鲸",brandEn:"Narwal",tier:"入门",name:"Freo Pro",mop:"disc",mopLabel:"圆盘 · 旋转",features:"高性价比入门，扫拖全能",price:2299,priceText:"¥2,299",jd:"https://search.jd.com/Search?keyword=云鲸Freo+Pro扫地机器人"},
+  // 大疆
+  {brand:"大疆",brandEn:"DJI",tier:"顶级旗舰",name:"ROMO P2",mop:"disc",mopLabel:"圆盘 · 双机械臂贴边",features:"36000Pa，双目鱼眼+3激光雷达，AI清洁策略，透明机身设计",price:5999,priceText:"¥5,999",priceNote:"上下水版 ¥6,499",img:"https://se-cdn.djiits.com/tpc/uploads/spu/cover/dc4fa18f1c4300f9923b4cae5ce1be71@small.png",jd:"https://search.jd.com/Search?keyword=大疆ROMO+P2扫地机器人"},
+  {brand:"大疆",brandEn:"DJI",tier:"旗舰",name:"ROMO A2",mop:"disc",mopLabel:"圆盘 · 双机械臂贴边",features:"36000Pa，双机械臂外扩贴边，80°C热水清洗",price:5499,priceText:"¥5,499",priceNote:"上下水版 ¥5,999",img:"https://se-cdn.djiits.com/tpc/uploads/spu/cover/998c7f453f30d9d0d9db16e53031ed93@small.png",jd:"https://search.jd.com/Search?keyword=大疆ROMO+A2扫地机器人"},
+  {brand:"大疆",brandEn:"DJI",tier:"高端",name:"ROMO S V2",mop:"disc",mopLabel:"圆盘 · 双机械臂",features:"性价比款，双机械臂贴边，25000Pa",price:4299,priceText:"¥4,299",priceNote:"上下水套装 ¥4,898",img:"https://se-cdn.djiits.com/tpc/uploads/spu/cover/3b44b633f3da674f7f46f6bf5a1a8721@small.png",jd:"https://search.jd.com/Search?keyword=大疆ROMO+S+V2扫地机器人"},
+  {brand:"大疆",brandEn:"DJI",tier:"旗舰",name:"ROMO P",mop:"disc",mopLabel:"圆盘 · 双机械臂贴边",features:"25000Pa，透明机身，双目鱼眼+3激光雷达，80°C热水洗",price:6799,priceText:"¥6,799",priceNote:"促销低至 ¥4,399 · 上下水版 ¥7,399",img:"https://se-cdn.djiits.com/tpc/uploads/spu/cover/dc4fa18f1c4300f9923b4cae5ce1be71@small.png",jd:"https://search.jd.com/Search?keyword=大疆ROMO+P扫地机器人"},
+  {brand:"大疆",brandEn:"DJI",tier:"高端",name:"ROMO A",mop:"disc",mopLabel:"圆盘 · 双机械臂",features:"25000Pa，双机械臂贴边清洁，80°C热水",price:5399,priceText:"¥5,399",priceNote:"促销低至 ¥4,199",img:"https://se-cdn.djiits.com/tpc/uploads/spu/cover/998c7f453f30d9d0d9db16e53031ed93@small.png",jd:"https://search.jd.com/Search?keyword=大疆ROMO+A扫地机器人"},
+  {brand:"大疆",brandEn:"DJI",tier:"中端",name:"ROMO S",mop:"disc",mopLabel:"圆盘 · 双机械臂",features:"入门款，25000Pa，双机械臂贴边，性价比之选",price:4699,priceText:"¥4,699",priceNote:"促销低至 ¥3,799",img:"https://se-cdn.djiits.com/tpc/uploads/spu/cover/3b44b633f3da674f7f46f6bf5a1a8721@small.png",jd:"https://search.jd.com/Search?keyword=大疆ROMO+S扫地机器人"},
+];
+
+// ===== STATE =====
+let currentMopFilter = 'all';
+let maxPrice = 10000;
+let sortAsc = false;
+let sortActive = false;
+let compareSet = new Set();
+
+// ===== RENDER =====
+function renderModels() {
+  let filtered = models.filter(m => {
+    if (currentMopFilter !== 'all' && m.mop !== currentMopFilter) return false;
+    if (m.price > maxPrice) return false;
+    return true;
+  });
+  if (sortActive) {
+    filtered.sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+  }
+  const grid = document.getElementById('modelGrid');
+  const countEl = document.getElementById('modelCount');
+  const noRes = document.getElementById('noResults');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    countEl.textContent = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+  countEl.textContent = `共 ${filtered.length} 款机型`;
+
+  // Group by brand if not sorting
+  let html = '';
+  if (!sortActive) {
+    const brands = [...new Set(filtered.map(m => m.brand))];
+    for (const brand of brands) {
+      const brandModels = filtered.filter(m => m.brand === brand);
+      const first = brandModels[0];
+      html += `<div class="brand-block" style="grid-column:1/-1">
+        <div class="brand-header"><h3 class="brand-name">${brand}</h3><span class="brand-en">${first.brandEn}</span></div>
+      </div>`;
+      for (const m of brandModels) html += cardHTML(m);
+    }
+  } else {
+    for (const m of filtered) html += cardHTML(m);
+  }
+  grid.innerHTML = html;
+}
+
+function cardHTML(m) {
+  const idx = models.indexOf(m);
+  const checked = compareSet.has(idx);
+  const mopClass = 'mop-' + m.mop;
+  return `<div class="model-card" data-idx="${idx}">
+    <div class="compare-check ${checked?'checked':''}" onclick="toggleCompare(${idx},this)" title="加入对比">✓</div>
+    ${m.img ? `<div class="model-img-wrap"><img class="model-img" src="${m.img}" alt="${m.name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+    <span class="model-tier">${m.tier}</span>
+    ${sortActive ? `<span class="brand-tag">${m.brand}</span>` : ''}
+    <h4 class="model-title">${m.name}</h4>
+    <p class="model-mop ${mopClass}">${m.mopLabel}</p>
+    <p class="model-features">${m.features}</p>
+    <div class="model-price-row">
+      <div>
+        <div class="model-price">${m.priceText}</div>
+        ${m.priceNote ? `<div class="model-price-note">${m.priceNote}</div>` : ''}
+      </div>
+      <a class="model-jd-link" href="${m.jd}" target="_blank" rel="noopener">京东购买</a>
+    </div>
+  </div>`;
+}
+
+// ===== FILTERS =====
+function setMopFilter(mop) {
+  currentMopFilter = mop;
+  document.querySelectorAll('#filterBar .filter-btn[data-mop]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mop === mop);
+  });
+  // Also update type cards
+  document.querySelectorAll('.type-card').forEach(c => {
+    c.classList.toggle('selected', mop !== 'all' && c.dataset.type === mop);
+  });
+  renderModels();
+}
+
+function toggleTypeFilter(type, el) {
+  if (currentMopFilter === type) {
+    setMopFilter('all');
+  } else {
+    setMopFilter(type);
+  }
+}
+
+function onPriceChange(val) {
+  maxPrice = parseInt(val);
+  document.getElementById('priceValue').textContent = maxPrice >= 10000 ? '不限' : `≤ ¥${maxPrice.toLocaleString()}`;
+  renderModels();
+}
+
+function toggleSort() {
+  const btn = document.getElementById('sortBtn');
+  if (!sortActive) {
+    sortActive = true; sortAsc = true;
+    btn.textContent = '价格 低→高'; btn.classList.add('active');
+  } else if (sortAsc) {
+    sortAsc = false;
+    btn.textContent = '价格 高→低';
+  } else {
+    sortActive = false;
+    btn.textContent = '按价格排序 ↑'; btn.classList.remove('active');
+  }
+  renderModels();
+}
+
+// ===== COMPARE =====
+function toggleCompare(idx, el) {
+  if (compareSet.has(idx)) { compareSet.delete(idx); el.classList.remove('checked'); }
+  else if (compareSet.size < 4) { compareSet.add(idx); el.classList.add('checked'); }
+  updateCompareDrawer();
+}
+
+function updateCompareDrawer() {
+  const drawer = document.getElementById('compareDrawer');
+  const items = document.getElementById('compareItems');
+  const btn = document.getElementById('compareBtn');
+  if (compareSet.size === 0) { drawer.classList.remove('visible'); return; }
+  drawer.classList.add('visible');
+  items.innerHTML = [...compareSet].map(idx => {
+    const m = models[idx];
+    return `<span class="compare-item">${m.brand} ${m.name}<span class="remove" onclick="removeCompare(${idx})">✕</span></span>`;
+  }).join('');
+  btn.disabled = compareSet.size < 2;
+}
+
+function removeCompare(idx) {
+  compareSet.delete(idx);
+  updateCompareDrawer();
+  renderModels();
+}
+
+function showCompare() {
+  if (compareSet.size < 2) return;
+  const items = [...compareSet].map(i => models[i]);
+  const cols = items.length + 1;
+  const fields = [
+    ['品牌', m => m.brand],
+    ['拖布类型', m => m.mopLabel],
+    ['价格', m => m.priceText + (m.priceNote ? `<br><small style="color:var(--gray-light)">${m.priceNote}</small>` : '')],
+    ['亮点', m => m.features],
+    ['京东', m => `<a href="${m.jd}" target="_blank" style="color:var(--blue);text-decoration:none">去购买 ›</a>`],
+  ];
+  let html = `<div class="compare-scroll"><table class="compare-table">`;
+  // header
+  html += `<thead><tr><th></th>`;
+  items.forEach(m => { html += `<th>${m.name}</th>`; });
+  html += `</tr></thead><tbody>`;
+  // rows
+  for (const [label, fn] of fields) {
+    html += `<tr><td>${label}</td>`;
+    items.forEach(m => { html += `<td>${fn(m)}</td>`; });
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  document.getElementById('compareContent').innerHTML = html;
+  document.getElementById('compareModal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompare() {
+  document.getElementById('compareModal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// ===== TABLE COLUMN HIGHLIGHT =====
+function highlightCol(col) {
+  document.querySelectorAll('#cmpTable tbody td').forEach(td => {
+    const idx = [...td.parentNode.children].indexOf(td);
+    td.classList.toggle('col-highlight', idx === col);
+  });
+}
+function clearCol() {
+  document.querySelectorAll('#cmpTable td.col-highlight').forEach(td => td.classList.remove('col-highlight'));
+}
+
+// ===== SCROLL SPY + NAV SHADOW =====
+const sectionIds = ['types','compare','brands','verdict'];
+const nav = document.getElementById('topnav');
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY + 80;
+  let current = '';
+  for (const id of sectionIds) {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= scrollY) current = id;
+  }
+  document.querySelectorAll('.topnav a').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+});
+
+// ===== SCROLL REVEAL =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function initScrollReveal() {
+  document.querySelectorAll('.section-label,.section-title,.section-subtitle,.type-grid,.table-scroll,.verdict-card,.filter-bar').forEach(el => {
+    el.classList.add('animate-on-scroll');
+    observer.observe(el);
+  });
+}
+
+// ===== STAGGER MODEL CARDS =====
+const origRender = renderModels;
+renderModels = function() {
+  origRender();
+  document.querySelectorAll('.model-card').forEach((card, i) => {
+    card.style.animationDelay = `${Math.min(i * 0.05, 0.6)}s`;
+  });
+};
+
+// INIT
+renderModels();
+initScrollReveal();
+</script>
+</body>
+</html>

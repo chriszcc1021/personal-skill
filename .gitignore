@@ -1,0 +1,18 @@
+# Logs
+*.log
+node_modules/
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+
+# Temp
+*.tmp
+*.swp
+
+# Images (kept on server, not in repo)
+images/backpacks/

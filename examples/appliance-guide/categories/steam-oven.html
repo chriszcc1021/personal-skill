@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微蒸烤一体机选购指南</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --black:#1d1d1f;--gray-dark:#424245;--gray:#6e6e73;--gray-light:#86868b;
+    --gray-border:#d2d2d7;--bg:#fff;--bg-alt:#f5f5f7;
+    --blue:#0071e3;--blue-light:#e8f4fd;--green:#34c759;--green-light:#e8f8ec;
+    --purple:#af52de;--purple-light:#f3eefa;--orange:#ff9500;--orange-light:#fff4e6;
+    --red:#ff3b30;--amber:#f59e0b;--amber-light:#fef3c7;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+  /* ===== STICKY NAV ===== */
+  .topnav{
+    position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--gray-border);
+    display:flex;align-items:center;justify-content:center;gap:24px;
+    padding:12px 20px;overflow-x:auto;white-space:nowrap;
+  }
+  .topnav a{
+    font-size:14px;font-weight:500;color:var(--gray);text-decoration:none;
+    padding:6px 14px;border-radius:20px;transition:all 0.2s;flex-shrink:0;
+  }
+  .topnav a:hover{color:var(--black);background:var(--bg-alt)}
+  .topnav a.active{color:var(--black);background:var(--bg);border:1px solid var(--gray-border)}
+  .topnav .back-link{color:var(--gray-light);font-size:13px}
+  .topnav .back-link:hover{color:var(--blue)}
+
+  /* ===== HERO ===== */
+  .hero{text-align:center;padding:100px 24px 70px;background:linear-gradient(180deg,#f5f5f7 0%,#fff 100%)}
+  .hero h1{font-size:clamp(36px,7vw,72px);font-weight:900;letter-spacing:-0.02em;line-height:1.05}
+  .hero p{font-size:clamp(16px,2.2vw,24px);color:var(--gray);margin-top:14px;max-width:620px;margin-left:auto;margin-right:auto}
+
+  /* ===== SECTIONS ===== */
+  .section{padding:80px 24px}
+  .section-alt{background:var(--bg-alt)}
+  .section-inner{max-width:980px;margin:0 auto}
+  .section-wide{max-width:1200px;margin:0 auto}
+  .section-label{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-light);margin-bottom:6px}
+  .section-title{font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-0.015em;line-height:1.1;margin-bottom:16px}
+  .section-subtitle{font-size:clamp(15px,1.8vw,19px);color:var(--gray);max-width:560px;line-height:1.5;margin-bottom:48px}
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar{
+    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;align-items:center;
+  }
+  .filter-group{display:flex;gap:6px;flex-wrap:wrap}
+  .filter-group-label{font-size:13px;font-weight:600;color:var(--gray-light);align-self:center;margin-right:4px}
+  .filter-btn{
+    font-size:13px;font-weight:500;padding:6px 16px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;
+  }
+  .filter-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .filter-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+
+  /* Price slider */
+  .price-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .price-label{font-size:13px;color:var(--gray);white-space:nowrap}
+  .price-range{-webkit-appearance:none;width:160px;height:4px;border-radius:2px;background:#e0e0e0;outline:none}
+  .price-range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+  .price-value{font-size:14px;font-weight:600;color:var(--black);min-width:80px}
+
+  /* Sort */
+  .sort-btn{
+    font-size:13px;font-weight:500;padding:6px 14px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;margin-left:auto;
+  }
+  .sort-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .sort-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+  /* ===== TYPE GRID ===== */
+  .type-grid{display:grid;grid-template-columns:1fr;gap:1px;background:var(--gray-border);border:1px solid var(--gray-border);border-radius:20px;overflow:hidden}
+  @media(min-width:768px){.type-grid{grid-template-columns:repeat(2,1fr)}}
+  .type-card{background:var(--bg);padding:36px 28px;cursor:pointer;transition:background 0.2s}
+  .type-card:hover{background:#fafafa}
+  .type-card.selected{background:var(--bg)}
+  .type-name{font-size:24px;font-weight:700;margin-bottom:2px}
+  .type-en{font-size:13px;color:var(--gray-light);margin-bottom:24px}
+  .type-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+  .type-section-label.good{color:var(--green)}
+  .type-section-label.bad{color:var(--red)}
+  .type-list{list-style:none;margin-bottom:24px}
+  .type-list li{font-size:14px;color:var(--gray-dark);padding:5px 0;line-height:1.4}
+
+  /* ===== CMP TABLE ===== */
+  .table-scroll{overflow-x:auto;border:1px solid var(--gray-border);border-radius:16px}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:14px}
+  .cmp-table thead th{padding:14px 18px;text-align:center;font-weight:600;font-size:15px;color:var(--black);border-bottom:1px solid var(--gray-border);background:var(--bg);position:sticky;top:0}
+  .cmp-table thead th:first-child{text-align:left;color:var(--gray-light);font-size:13px;font-weight:500}
+  .cmp-table tbody td{padding:12px 18px;text-align:center;color:var(--gray-dark);border-bottom:1px solid #ebebeb}
+  .cmp-table tbody td:first-child{text-align:left;font-weight:500;color:var(--black)}
+  .cmp-table tbody tr:last-child td{border-bottom:none}
+  .cmp-table tbody tr:hover td{background:#fafafa}
+  .cmp-table .best{font-weight:700;color:var(--blue)}
+  .cmp-table .mid{color:var(--gray-dark)}
+  .cmp-table .weak{color:var(--gray-light)}
+  .cmp-table .bad{color:var(--red)}
+  .cmp-table td.col-highlight{background:var(--bg-alt)!important}
+
+  /* ===== MODEL CARDS ===== */
+  .model-count{font-size:14px;color:var(--gray-light);margin-bottom:20px}
+  .model-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:640px){.model-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:960px){.model-grid{grid-template-columns:repeat(3,1fr)}}
+
+  /* Model image */
+  .model-img{width:100%;aspect-ratio:4/3;border-radius:12px;overflow:hidden;margin-bottom:14px;background:var(--bg-alt);display:flex;align-items:center;justify-content:center}
+  .model-img img{width:100%;height:100%;object-fit:contain}
+  .model-img .img-placeholder{font-size:24px;font-weight:700;color:var(--gray-border);letter-spacing:0.05em;text-transform:uppercase}
+
+  .model-card{
+    border:1px solid var(--gray-border);border-radius:16px;padding:24px;
+    background:var(--bg);display:flex;flex-direction:column;transition:all 0.3s;
+    position:relative;overflow:hidden;
+  }
+  .model-card:hover{box-shadow:0 8px 30px rgba(0,0,0,0.08);transform:translateY(-4px)}
+  .model-card.hidden{display:none}
+  .model-card .brand-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:2px}
+  .model-tier{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:4px}
+  .model-title{font-size:18px;font-weight:600;color:var(--black);margin-bottom:4px;line-height:1.25}
+  .model-type{font-size:13px;font-weight:500;margin-bottom:14px}
+  .type-embed{color:var(--black)}.type-counter{color:var(--black)}
+  .model-specs{font-size:12px;color:var(--gray);line-height:1.7;margin-bottom:10px}
+  .model-specs span{display:inline-block;background:var(--bg-alt);padding:2px 8px;border-radius:6px;margin:2px 4px 2px 0}
+  .model-features{font-size:13px;color:var(--gray);line-height:1.6;flex:1;margin-bottom:16px}
+  .model-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-top:14px;border-top:1px solid #ebebeb;flex-wrap:wrap}
+  .model-price{font-size:20px;font-weight:600;color:var(--black);letter-spacing:-0.01em}
+  .model-price-note{font-size:11px;color:var(--gray-light);margin-top:1px}
+  .model-jd-link{font-size:13px;font-weight:500;color:var(--blue);text-decoration:none;white-space:nowrap}
+  .model-jd-link:hover{text-decoration:underline}
+  .model-jd-link::after{content:' ›'}
+
+  /* Compare checkbox */
+  .compare-check{
+    position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;
+    border:2px solid var(--gray-border);background:var(--bg);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+    font-size:13px;color:transparent;
+  }
+  .compare-check::after{content:'';display:block;width:10px;height:5px;border-left:2px solid transparent;border-bottom:2px solid transparent;transform:rotate(-45deg);margin-top:-2px}
+  .compare-check:hover{border-color:var(--black)}
+  .compare-check.checked{background:var(--black);border-color:var(--black)}
+  .compare-check.checked::after{border-color:#fff}
+
+  /* Compare drawer */
+  .compare-drawer{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);
+    border-top:1px solid var(--gray-border);
+    padding:16px 24px;display:none;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .compare-drawer.visible{display:block}
+  .compare-drawer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .compare-items{display:flex;gap:8px;flex:1;flex-wrap:wrap}
+  .compare-item{
+    font-size:13px;font-weight:500;padding:6px 12px;border-radius:20px;
+    background:var(--bg-alt);color:var(--black);display:flex;align-items:center;gap:6px;
+  }
+  .compare-item .remove{cursor:pointer;color:var(--gray-light);font-size:16px;line-height:1}
+  .compare-item .remove:hover{color:var(--red)}
+  .compare-btn{
+    font-size:14px;font-weight:600;padding:10px 24px;border-radius:24px;
+    background:var(--black);color:#fff;border:none;cursor:pointer;font-family:inherit;
+    transition:background 0.2s;
+  }
+  .compare-btn:hover{background:#333}
+  .compare-btn:disabled{background:var(--gray-border);color:var(--gray-light);cursor:default}
+
+  /* Compare modal (bottom sheet on mobile) */
+  .compare-modal-bg{
+    position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);
+    display:none;align-items:flex-end;justify-content:center;padding:0;
+  }
+  .compare-modal-bg.visible{display:flex}
+  .compare-modal{
+    background:var(--bg);border-radius:20px 20px 0 0;max-width:720px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:24px;position:relative;
+  }
+  @media(min-width:768px){
+    .compare-modal-bg{align-items:center;padding:20px}
+    .compare-modal{border-radius:20px}
+  }
+  .compare-modal-close{
+    position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;
+    border:none;background:var(--bg-alt);cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;color:var(--gray);
+  }
+  .compare-modal-close:hover{background:var(--gray-border)}
+  .compare-modal h3{font-size:24px;font-weight:700;margin-bottom:24px}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .compare-table{border-collapse:collapse;border:1px solid var(--gray-border);border-radius:12px;overflow:hidden;width:100%;min-width:500px}
+  .compare-table th{padding:14px 16px;font-size:14px;font-weight:600;color:var(--black);background:var(--bg-alt);border-bottom:1px solid var(--gray-border);text-align:left;white-space:nowrap}
+  .compare-table th:first-child{color:var(--gray);font-size:13px;font-weight:500;width:72px}
+  .compare-table td{padding:12px 16px;font-size:14px;color:var(--gray-dark);border-bottom:1px solid #ebebeb;text-align:left;vertical-align:top}
+  .compare-table td:first-child{font-weight:500;color:var(--gray);font-size:13px;white-space:nowrap;background:var(--bg-alt)}
+  .compare-table tr:last-child td{border-bottom:none}
+  .compare-table tr:hover td{background:#fafafa}
+  .compare-table tr:hover td:first-child{background:var(--bg-alt)}
+
+  /* ===== VERDICT ===== */
+  .type-verdict{margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-border)}
+  .type-verdict-title{font-size:13px;font-weight:600;color:var(--black);margin-bottom:4px}
+  .type-verdict-desc{font-size:13px;color:var(--gray-dark);line-height:1.5;margin-bottom:4px}
+  .type-verdict-models{font-size:12px;color:var(--gray);line-height:1.5}
+
+  .footer{padding:28px 24px;text-align:center;font-size:12px;color:var(--gray-light);border-top:1px solid var(--gray-border)}
+
+  /* Brand separator */
+  .brand-block{margin-bottom:60px}
+  .brand-block:last-child{margin-bottom:0}
+  .brand-header{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .brand-name{font-size:clamp(24px,3.5vw,36px);font-weight:700}
+  .brand-en{font-size:15px;color:var(--gray-light)}
+  .brand-desc{font-size:15px;color:var(--gray);margin-bottom:24px;max-width:560px}
+
+  /* No results */
+  .no-results{text-align:center;padding:60px 20px;color:var(--gray-light);font-size:16px;display:none}
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+  .hero h1{animation:fadeUp 0.8s ease both}
+  .hero p{animation:fadeUp 0.8s ease 0.15s both}
+
+  .animate-on-scroll{opacity:0;transform:translateY(32px);transition:opacity 0.6s ease,transform 0.6s ease}
+  .animate-on-scroll.visible{opacity:1;transform:translateY(0)}
+
+  .type-card{transition:background 0.2s,transform 0.3s,box-shadow 0.3s}
+  .type-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+
+  .model-card{opacity:0;animation:scaleIn 0.4s ease both}
+
+  .compare-drawer{animation:slideUp 0.3s ease both}
+  .compare-modal-bg{animation:fadeIn 0.2s ease both}
+  .compare-modal{animation:scaleIn 0.3s ease both}
+
+  .cmp-table tbody tr{transition:background 0.15s}
+  .filter-btn{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
+  .filter-btn:active{transform:scale(0.95)}
+
+  .topnav{transition:box-shadow 0.3s}
+  .topnav.scrolled{box-shadow:0 1px 8px rgba(0,0,0,0.06)}
+
+  @media(max-width:767px){
+    .hero{padding:72px 20px 56px}
+    .section{padding:56px 20px}
+    .topnav{gap:8px;padding:10px 16px}
+    .topnav a{font-size:13px;padding:5px 12px}
+    .filter-bar{gap:8px}
+    .price-range{width:120px}
+    .model-title{font-size:17px}
+    .compare-drawer{padding:12px 16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY NAV -->
+<nav class="topnav" id="topnav">
+  <a href="../index.html" class="back-link">← 返回首页</a>
+  <a href="#types">安装类型</a>
+  <a href="#compare">对比维度</a>
+  <a href="#brands">选购机型</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <h1>微蒸烤一体机<br>选购指南</h1>
+  <p>嵌入式 vs 台面式全面对比，10 大品牌 34 款机型<br>点击卡片对比，滑动筛选价格</p>
+</section>
+
+<!-- TYPE COMPARISON -->
+<section class="section" id="types">
+  <div class="section-inner">
+    <p class="section-label">安装方式</p>
+    <h2 class="section-title">两种方案，各取所需。</h2>
+    <p class="section-subtitle">点击任意卡片，下方机型列表会自动筛选对应安装类型。</p>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-card" data-type="embed" onclick="toggleTypeFilter('embed',this)">
+        <h3 class="type-name">嵌入式</h3>
+        <p class="type-en">Built-in — 橱柜嵌装</p>
+        <p class="type-section-label good">做得好的</p>
+        <ul class="type-list">
+          <li>厨房一体化设计，美观大气</li>
+          <li>容量大，通常 40–60L，烤整鸡无压力</li>
+          <li>蒸汽系统更强，直喷蒸效果好</li>
+          <li>散热设计更专业，安全性高</li>
+          <li>主流高端品牌覆盖丰富</li>
+        </ul>
+        <p class="type-section-label bad">做不到的</p>
+        <ul class="type-list">
+          <li>需要预留橱柜空间，装修前规划</li>
+          <li>安装需走电线，后期移位困难</li>
+          <li>价格普遍 5,000 元起步</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">新房装修首选 · 预算 5,000–20,000 元</p>
+          <p class="type-verdict-desc">空间利用率高、功能全面、外观一体化。新装修或厨房改造强烈推荐。</p>
+          <p class="type-verdict-models">推荐：方太 E9 Pro · 老板 CQ9066 · 西门子 CS589ABS0W · 凯度 IT3BL42EN</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="counter" onclick="toggleTypeFilter('counter',this)">
+        <h3 class="type-name">台面式</h3>
+        <p class="type-en">Countertop — 桌面独立</p>
+        <p class="type-section-label good">做得好的</p>
+        <ul class="type-list">
+          <li>即买即用，无需装修改造</li>
+          <li>可搬家带走，租房友好</li>
+          <li>价格相对亲民，2,000 元起步</li>
+          <li>部分机型功能不输嵌入式</li>
+        </ul>
+        <p class="type-section-label bad">做不到的</p>
+        <ul class="type-list">
+          <li>占用台面空间，小厨房压力大</li>
+          <li>容量较小，通常 20–35L</li>
+          <li>蒸汽功率受限，大菜蒸制较慢</li>
+          <li>外观不如嵌入式整洁</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">租房 & 过渡之选 · 预算 2,000–6,000 元</p>
+          <p class="type-verdict-desc">灵活方便，适合租房或不想大动干戈的用户。日常蒸烤热完全够用。</p>
+          <p class="type-verdict-models">推荐：松下 NN-CS89HB · 美的 PG2310 · 凯度 SR60B-TD · daogrs G8s</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="section section-alt" id="compare">
+  <div class="section-inner">
+    <p class="section-label">横向对比</p>
+    <h2 class="section-title">逐项比，一目了然。</h2>
+    <p class="section-subtitle">鼠标悬停列头可高亮整列，方便纵向比较。</p>
+    <div class="table-scroll">
+      <table class="cmp-table" id="cmpTable">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th data-col="1" onmouseenter="highlightCol(1)" onmouseleave="clearCol()">嵌入式</th>
+            <th data-col="2" onmouseenter="highlightCol(2)" onmouseleave="clearCol()">台面式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>容量</td><td class="best">40–60L</td><td class="weak">20–35L</td></tr>
+          <tr><td>蒸汽效果</td><td class="best">直喷蒸，蒸汽量大</td><td class="mid">沸腾蒸居多，效果稍弱</td></tr>
+          <tr><td>烘烤效果</td><td class="best">上下独立控温 + 热风</td><td class="mid">热风循环为主</td></tr>
+          <tr><td>微波功率</td><td class="mid">800–1000W</td><td class="mid">700–1000W</td></tr>
+          <tr><td>安装难度</td><td class="weak">需预留柜体 + 走线</td><td class="best">即插即用</td></tr>
+          <tr><td>外观融合度</td><td class="best">厨房一体化</td><td class="weak">占用台面</td></tr>
+          <tr><td>自清洁</td><td class="mid">多数支持蒸汽清洁</td><td class="mid">部分支持</td></tr>
+          <tr><td>价格区间</td><td>¥5,000–20,000</td><td>¥2,000–6,000</td></tr>
+          <tr><td>推荐场景</td><td>新房装修 / 厨房改造</td><td>租房 / 灵活使用</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS & MODELS -->
+<section class="section" id="brands">
+  <div class="section-inner">
+    <p class="section-label">选购机型</p>
+    <h2 class="section-title">找到你的那一台。</h2>
+    <p class="section-subtitle">筛选安装类型、拖动价格滑块、按价格排序。点击右上角圆圈可勾选对比。</p>
+  </div>
+  <div class="section-wide">
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <span class="filter-group-label">安装</span>
+        <button class="filter-btn active" data-cat="all" onclick="setCatFilter('all')">全部</button>
+        <button class="filter-btn cat-embed" data-cat="embed" onclick="setCatFilter('embed')">嵌入式</button>
+        <button class="filter-btn cat-counter" data-cat="counter" onclick="setCatFilter('counter')">台面式</button>
+      </div>
+      <div class="price-filter">
+        <span class="price-label">预算上限</span>
+        <input type="range" class="price-range" id="priceSlider" min="2000" max="22000" value="22000" step="1000" oninput="onPriceChange(this.value)">
+        <span class="price-value" id="priceValue">不限</span>
+      </div>
+      <button class="sort-btn" id="sortBtn" onclick="toggleSort()">按价格排序 ↑</button>
+    </div>
+
+    <p class="model-count" id="modelCount"></p>
+    <div class="no-results" id="noResults">没有符合条件的机型，试试调整筛选条件</div>
+    <div class="model-grid" id="modelGrid"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>价格来源：京东官方旗舰店及主流电商渠道（2024–2025年参考价）。实际售价以京东商品页面为准。</p>
+</footer>
+
+<!-- COMPARE DRAWER -->
+<div class="compare-drawer" id="compareDrawer">
+  <div class="compare-drawer-inner">
+    <div class="compare-items" id="compareItems"></div>
+    <button class="compare-btn" id="compareBtn" onclick="showCompare()" disabled>对比选中机型</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-bg" id="compareModal" onclick="if(event.target===this)closeCompare()">
+  <div class="compare-modal">
+    <button class="compare-modal-close" onclick="closeCompare()">x</button>
+    <h3>机型对比</h3>
+    <div id="compareContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== MODEL DATA =====
+const models = [
+  // ===== 西门子 Siemens =====
+  {brand:"西门子",brandEn:"Siemens",tier:"旗舰",name:"CS589ABS0W",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2023-06",capacity:"47L",microwave:"1000W",steam:"直喷蒸汽 / 1600W",bake:"上下独立控温 + 4D热风 / 3300W",clean:"高温蒸汽自清洁 + ecoClean",features:"4D热风均匀烘烤，varioSpeed加速，14种自动程序，TFT彩色触控屏",price:16999,priceText:"¥16,999",priceNote:"活动低至 ¥14,500",jd:"https://search.jd.com/Search?keyword=西门子CS589ABS0W"},
+  {brand:"西门子",brandEn:"Siemens",tier:"旗舰",name:"CP565AGS0W",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2022-03",capacity:"36L",microwave:"900W",steam:"直喷蒸汽 / 1200W",bake:"上下独立控温 + 热风 / 2800W",clean:"蒸汽自清洁",features:"微波+蒸+烤三合一，iQ500智能系统，30+自动菜单，不锈钢内胆",price:12999,priceText:"¥12,999",priceNote:"促销约 ¥10,800",jd:"https://search.jd.com/Search?keyword=西门子CP565AGS0W"},
+  {brand:"西门子",brandEn:"Siemens",tier:"高端",name:"CO565AGS0W",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2022-06",capacity:"36L",microwave:"—",steam:"直喷蒸汽 / 1200W",bake:"上下独立控温 + 热风 / 2800W",clean:"蒸汽自清洁 + ecoClean",features:"无微波版本，专注蒸烤，iQ500系统，TFT触控屏",price:9999,priceText:"¥9,999",priceNote:"活动低至 ¥8,500",jd:"https://search.jd.com/Search?keyword=西门子CO565AGS0W"},
+
+  // ===== 博世 Bosch =====
+  {brand:"博世",brandEn:"Bosch",tier:"旗舰",name:"CMG578BS0W",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2023-09",capacity:"45L",microwave:"1000W",steam:"直喷蒸汽 / 1600W",bake:"上下独立控温 + 4D热风 / 3300W",clean:"EcoClean直喷 + 蒸汽清洁",features:"4D热风烘烤，AutoPilot自动程序，Bosch Home Connect智能互联，不锈钢内腔",price:15999,priceText:"¥15,999",priceNote:"活动低至 ¥13,200",jd:"https://search.jd.com/Search?keyword=博世CMG578BS0W"},
+  {brand:"博世",brandEn:"Bosch",tier:"高端",name:"CSA578BS0W",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-03",capacity:"47L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立控温 + 4D热风 / 3300W",clean:"EcoClean + 蒸汽清洁",features:"纯蒸烤组合，4D热风精准控温，PerfectBake烘焙传感器，Home Connect",price:13999,priceText:"¥13,999",priceNote:"活动低至 ¥11,500",jd:"https://search.jd.com/Search?keyword=博世CSA578BS0W"},
+  {brand:"博世",brandEn:"Bosch",tier:"高端",name:"CPA565GS0W",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2022-06",capacity:"36L",microwave:"900W",steam:"直喷蒸汽 / 1200W",bake:"上下独立 + 热风 / 2600W",clean:"蒸汽自清洁",features:"紧凑型微蒸烤，AutoPilot 10自动程序，搪瓷内胆，LED照明",price:11999,priceText:"¥11,999",priceNote:"促销约 ¥9,800",jd:"https://search.jd.com/Search?keyword=博世CPA565GS0W"},
+
+  // ===== 方太 Fotile =====
+  {brand:"方太",brandEn:"Fotile",tier:"旗舰",name:"ZK-E9 Pro",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-03",capacity:"50L",microwave:"900W",steam:"双蒸汽发生器 / 直喷 / 2100W",bake:"上下独立控温 + 背部热风 / 2500W",clean:"高温蒸汽自清洁 110°C",features:"双蒸汽发生器，110°C过温蒸，烤制均匀度提升40%，8.8寸彩屏，智能菜单200+",price:13999,priceText:"¥13,999",priceNote:"活动低至 ¥12,000",jd:"https://search.jd.com/Search?keyword=方太ZK-E9Pro微蒸烤"},
+  {brand:"方太",brandEn:"Fotile",tier:"旗舰",name:"ZK-T1i",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2023-06",capacity:"50L",microwave:"900W",steam:"双蒸汽发生器 / 直喷 / 2000W",bake:"上下独立控温 + 热风 / 2500W",clean:"高温蒸汽自清洁",features:"FIKS智能系统，NFC食谱导入，110°C过温蒸，8寸触控屏",price:11999,priceText:"¥11,999",priceNote:"促销约 ¥10,500",jd:"https://search.jd.com/Search?keyword=方太ZK-T1i微蒸烤"},
+  {brand:"方太",brandEn:"Fotile",tier:"高端",name:"ZK-E5",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"48L",microwave:"850W",steam:"直喷蒸汽 / 1800W",bake:"上下独立 + 热风 / 2300W",clean:"蒸汽自清洁",features:"性价比旗舰，双直喷蒸汽，精准控温，搪瓷内胆，100+智能菜谱",price:8999,priceText:"¥8,999",priceNote:"活动低至 ¥7,500",jd:"https://search.jd.com/Search?keyword=方太ZK-E5微蒸烤"},
+  {brand:"方太",brandEn:"Fotile",tier:"中端",name:"ZK-E3",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-09",capacity:"42L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"无微波纯蒸烤，精控蒸汽，搪瓷内腔耐高温易清洁",price:6999,priceText:"¥6,999",priceNote:"促销约 ¥5,800",jd:"https://search.jd.com/Search?keyword=方太ZK-E3蒸烤"},
+
+  // ===== 老板 Robam =====
+  {brand:"老板",brandEn:"Robam",tier:"旗舰",name:"CQ9066",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"50L",microwave:"900W",steam:"双核直喷蒸汽 / 2200W",bake:"上下独立 + 3D热风 / 2600W",clean:"高温蒸汽自清洁 + 一键除垢",features:"双核蒸汽引擎，120°C过温蒸，3D热风均匀烤制，ROKI智能烹饪系统，9寸大屏",price:12999,priceText:"¥12,999",priceNote:"活动低至 ¥10,800",jd:"https://search.jd.com/Search?keyword=老板CQ9066微蒸烤"},
+  {brand:"老板",brandEn:"Robam",tier:"高端",name:"CQ976",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2023-09",capacity:"48L",microwave:"900W",steam:"直喷蒸汽 / 2000W",bake:"上下独立 + 热风 / 2400W",clean:"蒸汽自清洁",features:"105°C过温蒸，上下独控精准烘焙，ROKI智能菜谱150+",price:9999,priceText:"¥9,999",priceNote:"活动低至 ¥8,200",jd:"https://search.jd.com/Search?keyword=老板CQ976微蒸烤"},
+  {brand:"老板",brandEn:"Robam",tier:"高端",name:"CQ972",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2024-03",capacity:"50L",microwave:"—",steam:"直喷蒸汽 / 1800W",bake:"上下独立 + 3D热风 / 2400W",clean:"一键蒸汽清洁",features:"无微波纯蒸烤，50L大容量，3层烤位，搪瓷内胆",price:7999,priceText:"¥7,999",priceNote:"活动低至 ¥6,500",jd:"https://search.jd.com/Search?keyword=老板CQ972蒸烤"},
+  {brand:"老板",brandEn:"Robam",tier:"中端",name:"CQ926",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-03",capacity:"42L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"入门嵌入式蒸烤，性价比之选，搪瓷内腔",price:5999,priceText:"¥5,999",priceNote:"促销约 ¥4,800",jd:"https://search.jd.com/Search?keyword=老板CQ926蒸烤"},
+
+  // ===== 美的 Midea =====
+  {brand:"美的",brandEn:"Midea",tier:"旗舰",name:"BS5051W",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"50L",microwave:"900W",steam:"直喷蒸汽 / 2000W",bake:"上下独立 + 热风循环 / 2500W",clean:"蒸汽自清洁 + 除垢",features:"50L搪瓷内胆，105°C过温蒸，智能菜谱APP联控，性价比出色",price:7999,priceText:"¥7,999",priceNote:"活动低至 ¥6,500",jd:"https://search.jd.com/Search?keyword=美的BS5051W微蒸烤"},
+  {brand:"美的",brandEn:"Midea",tier:"高端",name:"BS5055W",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-09",capacity:"50L",microwave:"1000W",steam:"双直喷蒸汽 / 2200W",bake:"上下独立 + 3D热风 / 2800W",clean:"高温蒸汽自清洁",features:"旗舰微蒸烤，双直喷+变频微波，3D热风烘焙，智能语音交互",price:9999,priceText:"¥9,999",priceNote:"活动低至 ¥8,200",jd:"https://search.jd.com/Search?keyword=美的BS5055W微蒸烤"},
+  {brand:"美的",brandEn:"Midea",tier:"中端",name:"PG2310",cat:"counter",catLabel:"台面式 · 微蒸烤三合一",releaseDate:"2023-06",capacity:"23L",microwave:"800W",steam:"沸腾蒸 / 1200W",bake:"热风循环 / 1850W",clean:"蒸汽清洁",features:"台面微蒸烤入门之选，23L紧凑设计，30+自动菜单，千元级性价比",price:2299,priceText:"¥2,299",priceNote:"活动低至 ¥1,899",jd:"https://search.jd.com/Search?keyword=美的PG2310微蒸烤"},
+  {brand:"美的",brandEn:"Midea",tier:"中端",name:"PG2531",cat:"counter",catLabel:"台面式 · 微蒸烤三合一",releaseDate:"2024-03",capacity:"25L",microwave:"900W",steam:"直喷蒸汽 / 1400W",bake:"上下加热 + 热风 / 2000W",clean:"蒸汽自清洁",features:"升级版台面微蒸烤，直喷蒸更快更透，不锈钢内胆，智能菜谱",price:3299,priceText:"¥3,299",priceNote:"活动低至 ¥2,800",jd:"https://search.jd.com/Search?keyword=美的PG2531微蒸烤"},
+
+  // ===== 松下 Panasonic =====
+  {brand:"松下",brandEn:"Panasonic",tier:"旗舰",name:"NN-CS89HB",cat:"counter",catLabel:"台面式 · 微蒸烤三合一",releaseDate:"2023-09",capacity:"31L",microwave:"1000W 变频",steam:"直喷蒸汽 / 1400W",bake:"上下独立 + 热风 / 1950W",clean:"蒸汽自清洁",features:"变频微波更均匀，31L大容量台面机，64道自动菜单，金属内腔",price:5299,priceText:"¥5,299",priceNote:"活动低至 ¥4,500",jd:"https://search.jd.com/Search?keyword=松下NN-CS89HB微蒸烤"},
+  {brand:"松下",brandEn:"Panasonic",tier:"高端",name:"NN-CS88HB",cat:"counter",catLabel:"台面式 · 微蒸烤三合一",releaseDate:"2023-03",capacity:"30L",microwave:"1000W 变频",steam:"蒸汽 / 1200W",bake:"热风循环 / 1850W",clean:"蒸汽清洁",features:"变频微波省电静音，30L容量，48道自动菜单，搪瓷底盘",price:4499,priceText:"¥4,499",priceNote:"促销约 ¥3,800",jd:"https://search.jd.com/Search?keyword=松下NN-CS88HB微蒸烤"},
+  {brand:"松下",brandEn:"Panasonic",tier:"中端",name:"NN-DS59MB",cat:"counter",catLabel:"台面式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"27L",microwave:"900W 变频",steam:"蒸汽 / 1000W",bake:"热风 / 1600W",clean:"蒸汽清洁",features:"日系性价比，变频微波技术，27L紧凑台面，触控面板",price:3199,priceText:"¥3,199",priceNote:"活动低至 ¥2,699",jd:"https://search.jd.com/Search?keyword=松下NN-DS59MB微蒸烤"},
+
+  // ===== 凯度 CASDON =====
+  {brand:"凯度",brandEn:"CASDON",tier:"旗舰",name:"IT3BL42EN",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"42L",microwave:"900W",steam:"直喷蒸汽 / 2000W",bake:"上下独立 + 热风循环 / 2600W",clean:"高温蒸汽自清洁",features:"42L搪瓷内胆，110°C过温蒸，上下管独立控温精准烘焙，8寸触控屏，APP互联",price:7999,priceText:"¥7,999",priceNote:"活动低至 ¥6,800",jd:"https://search.jd.com/Search?keyword=凯度IT3BL42EN微蒸烤"},
+  {brand:"凯度",brandEn:"CASDON",tier:"高端",name:"SV4220EMB-SE",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2024-03",capacity:"42L",microwave:"—",steam:"直喷蒸汽 / 1800W",bake:"上下独立 + 热风 / 2400W",clean:"蒸汽自清洁",features:"纯蒸烤性价比款，搪瓷内胆耐高温，精准控温±1°C",price:5999,priceText:"¥5,999",priceNote:"活动低至 ¥4,800",jd:"https://search.jd.com/Search?keyword=凯度SV4220EMB蒸烤"},
+  {brand:"凯度",brandEn:"CASDON",tier:"旗舰",name:"SR60B-TD Pro",cat:"counter",catLabel:"台面式 · 微蒸烤三合一",releaseDate:"2024-09",capacity:"26L",microwave:"900W",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"台面旗舰，直喷蒸汽不输嵌入式，上下管独立控温，搪瓷内胆",price:4999,priceText:"¥4,999",priceNote:"活动低至 ¥4,200",jd:"https://search.jd.com/Search?keyword=凯度SR60B-TD微蒸烤"},
+  {brand:"凯度",brandEn:"CASDON",tier:"中端",name:"SR60B-TD",cat:"counter",catLabel:"台面式 · 微蒸烤三合一",releaseDate:"2023-06",capacity:"26L",microwave:"800W",steam:"直喷蒸汽 / 1400W",bake:"上下独立 + 热风 / 2000W",clean:"蒸汽自清洁",features:"台面微蒸烤热门款，直喷蒸+独立控温，性价比突出",price:3599,priceText:"¥3,599",priceNote:"活动低至 ¥2,999",jd:"https://search.jd.com/Search?keyword=凯度SR60B-TD微蒸烤"},
+
+  // ===== daogrs =====
+  {brand:"daogrs",brandEn:"daogrs",tier:"旗舰",name:"M8s",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-03",capacity:"48L",microwave:"900W",steam:"直喷蒸汽 / 1800W",bake:"上下独立 + 热风循环 / 2500W",clean:"高温蒸汽自清洁",features:"意大利品牌，48L大容量，双层玻璃门散热优秀，110°C过温蒸，触控面板",price:8999,priceText:"¥8,999",priceNote:"活动低至 ¥7,500",jd:"https://search.jd.com/Search?keyword=daogrs+M8s微蒸烤"},
+  {brand:"daogrs",brandEn:"daogrs",tier:"高端",name:"G8s",cat:"counter",catLabel:"台面式 · 微蒸烤三合一",releaseDate:"2023-09",capacity:"34L",microwave:"900W",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"大容量台面机，34L足够家用，直喷蒸汽强劲，三层烤架，搪瓷内腔",price:4599,priceText:"¥4,599",priceNote:"活动低至 ¥3,800",jd:"https://search.jd.com/Search?keyword=daogrs+G8s微蒸烤"},
+  {brand:"daogrs",brandEn:"daogrs",tier:"中端",name:"S8s",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-06",capacity:"40L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"纯蒸烤入门嵌入，40L实用容量，搪瓷内胆，性价比突出",price:5499,priceText:"¥5,499",priceNote:"促销约 ¥4,500",jd:"https://search.jd.com/Search?keyword=daogrs+S8s蒸烤"},
+
+  // ===== 华帝 Vatti =====
+  {brand:"华帝",brandEn:"Vatti",tier:"旗舰",name:"i23012",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"48L",microwave:"900W",steam:"直喷蒸汽 / 2000W",bake:"上下独立 + 3D热风 / 2500W",clean:"蒸汽自清洁",features:"48L搪瓷内胆，双直喷蒸汽，3D热风精准控温，VCOO智能系统，彩屏触控",price:8999,priceText:"¥8,999",priceNote:"活动低至 ¥7,200",jd:"https://search.jd.com/Search?keyword=华帝i23012微蒸烤"},
+  {brand:"华帝",brandEn:"Vatti",tier:"高端",name:"i23009",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2023-09",capacity:"42L",microwave:"850W",steam:"直喷蒸汽 / 1800W",bake:"上下独立 + 热风 / 2400W",clean:"蒸汽自清洁",features:"42L性价比微蒸烤，搪瓷内胆，上下管独立控温，APP智能菜谱",price:6999,priceText:"¥6,999",priceNote:"活动低至 ¥5,800",jd:"https://search.jd.com/Search?keyword=华帝i23009微蒸烤"},
+  {brand:"华帝",brandEn:"Vatti",tier:"中端",name:"i23006",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-03",capacity:"40L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"入门嵌入式蒸烤，40L实用容量，搪瓷内腔，性价比之选",price:4999,priceText:"¥4,999",priceNote:"促销约 ¥3,999",jd:"https://search.jd.com/Search?keyword=华帝i23006蒸烤"},
+
+  // ===== COLMO =====
+  {brand:"COLMO",brandEn:"COLMO",tier:"旗舰",name:"CZSUE50",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"50L",microwave:"1000W 变频",steam:"双直喷蒸汽 / 2400W",bake:"上下独立 + 4D热风 / 3200W",clean:"高温蒸汽自清洁 + 除垢",features:"美的集团顶级子品牌，50L搪瓷内胆，变频微波+双直喷蒸汽，4D热风精准烘焙，智能菜谱200+",price:15999,priceText:"¥15,999",priceNote:"活动低至 ¥13,500",jd:"https://search.jd.com/Search?keyword=COLMO+CZSUE50+微蒸烤"},
+  {brand:"COLMO",brandEn:"COLMO",tier:"高端",name:"CZKQE50",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-03",capacity:"50L",microwave:"900W",steam:"双直喷蒸汽 / 2200W",bake:"上下独立 + 3D热风 / 2800W",clean:"蒸汽自清洁 + 除垢",features:"50L大容量搪瓷内胆，双直喷蒸汽，3D热风均匀烘烤，智能触控屏，APP远程控制",price:11999,priceText:"¥11,999",priceNote:"活动低至 ¥9,800",jd:"https://search.jd.com/Search?keyword=COLMO+CZKQE50+微蒸烤"},
+  {brand:"COLMO",brandEn:"COLMO",tier:"中端",name:"CZSE42",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-09",capacity:"42L",microwave:"—",steam:"直喷蒸汽 / 1800W",bake:"上下独立 + 热风 / 2400W",clean:"蒸汽自清洁",features:"纯蒸烤组合，42L搪瓷内腔，精准控温±1°C，性价比突出",price:8999,priceText:"¥8,999",priceNote:"促销约 ¥7,500",jd:"https://search.jd.com/Search?keyword=COLMO+CZSE42+蒸烤"},
+];
+
+// ===== STATE =====
+let currentCatFilter = 'all';
+let maxPrice = 22000;
+let sortAsc = false;
+let sortActive = false;
+let compareSet = new Set();
+
+// ===== RENDER =====
+function renderModels() {
+  let filtered = models.filter(m => {
+    if (currentCatFilter !== 'all' && m.cat !== currentCatFilter) return false;
+    if (m.price > maxPrice) return false;
+    return true;
+  });
+  if (sortActive) {
+    filtered.sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+  }
+  const grid = document.getElementById('modelGrid');
+  const countEl = document.getElementById('modelCount');
+  const noRes = document.getElementById('noResults');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    countEl.textContent = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+  countEl.textContent = `共 ${filtered.length} 款机型`;
+
+  let html = '';
+  if (!sortActive) {
+    const brands = [...new Set(filtered.map(m => m.brand))];
+    for (const brand of brands) {
+      const brandModels = filtered.filter(m => m.brand === brand);
+      const first = brandModels[0];
+      html += `<div class="brand-block" style="grid-column:1/-1">
+        <div class="brand-header"><h3 class="brand-name">${brand}</h3><span class="brand-en">${first.brandEn}</span></div>
+      </div>`;
+      for (const m of brandModels) html += cardHTML(m);
+    }
+  } else {
+    for (const m of filtered) html += cardHTML(m);
+  }
+  grid.innerHTML = html;
+}
+
+function cardHTML(m) {
+  const idx = models.indexOf(m);
+  const checked = compareSet.has(idx);
+  const catClass = 'type-' + m.cat;
+  return `<div class="model-card" data-idx="${idx}">
+    <div class="compare-check ${checked?'checked':''}" onclick="toggleCompare(${idx},this)" title="加入对比"></div>
+    <div class="model-img">${m.img ? `<img src="${m.img}" alt="${m.brand} ${m.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display=''"><span class="img-placeholder" style="display:none">${m.brand}</span>` : `<span class="img-placeholder">${m.brand}</span>`}</div>
+    <span class="model-tier">${m.tier}</span>
+    ${sortActive ? `<span class="brand-tag">${m.brand}</span>` : ''}
+    <h4 class="model-title">${m.name}</h4>
+    <p class="model-type ${catClass}">${m.catLabel}</p>
+    <div class="model-specs">
+      <span>${m.releaseDate}</span>
+      <span>${m.capacity}</span>
+      ${m.microwave !== '—' ? `<span>微波 ${m.microwave}</span>` : ''}
+      <span>蒸汽 ${m.steam.split('/')[0]}</span>
+    </div>
+    <p class="model-features">${m.features}</p>
+    <div class="model-price-row">
+      <div>
+        <div class="model-price">${m.priceText}</div>
+        ${m.priceNote ? `<div class="model-price-note">${m.priceNote}</div>` : ''}
+      </div>
+      <a class="model-jd-link" href="${m.jd}" target="_blank" rel="noopener">京东搜索</a>
+    </div>
+  </div>`;
+}
+
+// ===== FILTERS =====
+function setCatFilter(cat) {
+  currentCatFilter = cat;
+  document.querySelectorAll('#filterBar .filter-btn[data-cat]').forEach(b => {
+    b.classList.toggle('active', b.dataset.cat === cat);
+  });
+  document.querySelectorAll('.type-card').forEach(c => {
+    c.classList.toggle('selected', cat !== 'all' && c.dataset.type === cat);
+  });
+  renderModels();
+}
+
+function toggleTypeFilter(type, el) {
+  if (currentCatFilter === type) {
+    setCatFilter('all');
+  } else {
+    setCatFilter(type);
+  }
+}
+
+function onPriceChange(val) {
+  maxPrice = parseInt(val);
+  document.getElementById('priceValue').textContent = maxPrice >= 22000 ? '不限' : `≤ ¥${maxPrice.toLocaleString()}`;
+  renderModels();
+}
+
+function toggleSort() {
+  const btn = document.getElementById('sortBtn');
+  if (!sortActive) {
+    sortActive = true; sortAsc = true;
+    btn.textContent = '价格 低→高'; btn.classList.add('active');
+  } else if (sortAsc) {
+    sortAsc = false;
+    btn.textContent = '价格 高→低';
+  } else {
+    sortActive = false;
+    btn.textContent = '按价格排序 ↑'; btn.classList.remove('active');
+  }
+  renderModels();
+}
+
+// ===== COMPARE =====
+function toggleCompare(idx, el) {
+  if (compareSet.has(idx)) { compareSet.delete(idx); el.classList.remove('checked'); }
+  else if (compareSet.size < 4) { compareSet.add(idx); el.classList.add('checked'); }
+  updateCompareDrawer();
+}
+
+function updateCompareDrawer() {
+  const drawer = document.getElementById('compareDrawer');
+  const items = document.getElementById('compareItems');
+  const btn = document.getElementById('compareBtn');
+  if (compareSet.size === 0) { drawer.classList.remove('visible'); return; }
+  drawer.classList.add('visible');
+  items.innerHTML = [...compareSet].map(idx => {
+    const m = models[idx];
+    return `<span class="compare-item">${m.brand} ${m.name}<span class="remove" onclick="removeCompare(${idx})">x</span></span>`;
+  }).join('');
+  btn.disabled = compareSet.size < 2;
+}
+
+function removeCompare(idx) {
+  compareSet.delete(idx);
+  updateCompareDrawer();
+  renderModels();
+}
+
+function showCompare() {
+  if (compareSet.size < 2) return;
+  const items = [...compareSet].map(i => models[i]);
+  const fields = [
+    ['品牌', m => m.brand],
+    ['安装方式', m => m.catLabel],
+    ['上市时间', m => m.releaseDate],
+    ['容量', m => m.capacity],
+    ['微波', m => m.microwave],
+    ['蒸汽', m => m.steam],
+    ['烘烤', m => m.bake],
+    ['自清洁', m => m.clean],
+    ['价格', m => m.priceText + (m.priceNote ? `<br><small style="color:var(--gray-light)">${m.priceNote}</small>` : '')],
+    ['亮点', m => m.features],
+    ['京东', m => `<a href="${m.jd}" target="_blank" style="color:var(--blue);text-decoration:none">去搜索 ›</a>`],
+  ];
+  let html = `<div class="compare-scroll"><table class="compare-table">`;
+  html += `<thead><tr><th></th>`;
+  items.forEach(m => { html += `<th>${m.name}</th>`; });
+  html += `</tr></thead><tbody>`;
+  for (const [label, fn] of fields) {
+    html += `<tr><td>${label}</td>`;
+    items.forEach(m => { html += `<td>${fn(m)}</td>`; });
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  document.getElementById('compareContent').innerHTML = html;
+  document.getElementById('compareModal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompare() {
+  document.getElementById('compareModal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// ===== TABLE COLUMN HIGHLIGHT =====
+function highlightCol(col) {
+  document.querySelectorAll('#cmpTable tbody td').forEach(td => {
+    const idx = [...td.parentNode.children].indexOf(td);
+    td.classList.toggle('col-highlight', idx === col);
+  });
+}
+function clearCol() {
+  document.querySelectorAll('#cmpTable td.col-highlight').forEach(td => td.classList.remove('col-highlight'));
+}
+
+// ===== SCROLL SPY + NAV =====
+const sectionIds = ['types','compare','brands'];
+const nav = document.getElementById('topnav');
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY + 80;
+  let current = '';
+  for (const id of sectionIds) {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= scrollY) current = id;
+  }
+  document.querySelectorAll('.topnav a:not(.back-link)').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+});
+
+// ===== SCROLL REVEAL =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function initScrollReveal() {
+  document.querySelectorAll('.section-label,.section-title,.section-subtitle,.type-grid,.table-scroll,.filter-bar').forEach(el => {
+    el.classList.add('animate-on-scroll');
+    observer.observe(el);
+  });
+}
+
+// ===== STAGGER MODEL CARDS =====
+const origRender = renderModels;
+renderModels = function() {
+  origRender();
+  document.querySelectorAll('.model-card').forEach((card, i) => {
+    card.style.animationDelay = `${Math.min(i * 0.05, 0.6)}s`;
+  });
+};
+
+// INIT
+renderModels();
+initScrollReveal();
+</script>
+</body>
+</html>

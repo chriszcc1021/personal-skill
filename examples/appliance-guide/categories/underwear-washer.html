@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>内衣洗衣机选购指南</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --black:#1d1d1f;--gray-dark:#424245;--gray:#6e6e73;--gray-light:#86868b;
+    --gray-border:#d2d2d7;--bg:#fff;--bg-alt:#f5f5f7;
+    --blue:#0071e3;--blue-light:#e8f4fd;--green:#34c759;--green-light:#e8f8ec;
+    --purple:#af52de;--purple-light:#f3eafa;--orange:#ff9500;--orange-light:#fff4e6;
+    --red:#ff3b30;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+  /* ===== STICKY NAV ===== */
+  .topnav{
+    position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--gray-border);
+    display:flex;align-items:center;justify-content:center;gap:24px;
+    padding:12px 20px;overflow-x:auto;white-space:nowrap;
+  }
+  .topnav a{
+    font-size:14px;font-weight:500;color:var(--gray);text-decoration:none;
+    padding:6px 14px;border-radius:20px;transition:all 0.2s;flex-shrink:0;
+  }
+  .topnav a:hover{color:var(--black);background:var(--bg-alt)}
+  .topnav a.active{color:var(--black);background:var(--bg);border:1px solid var(--gray-border)}
+
+  /* ===== HERO ===== */
+  .hero{text-align:center;padding:100px 24px 70px;background:var(--bg-alt)}
+  .hero h1{font-size:clamp(36px,7vw,72px);font-weight:900;letter-spacing:-0.02em;line-height:1.05}
+  .hero p{font-size:clamp(16px,2.2vw,24px);color:var(--gray);margin-top:14px;max-width:580px;margin-left:auto;margin-right:auto}
+
+  /* ===== SECTIONS ===== */
+  .section{padding:80px 24px}
+  .section-alt{background:var(--bg-alt)}
+  .section-inner{max-width:980px;margin:0 auto}
+  .section-wide{max-width:1200px;margin:0 auto}
+  .section-label{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-light);margin-bottom:6px}
+  .section-title{font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-0.015em;line-height:1.1;margin-bottom:16px}
+  .section-subtitle{font-size:clamp(15px,1.8vw,19px);color:var(--gray);max-width:560px;line-height:1.5;margin-bottom:48px}
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar{
+    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;align-items:center;
+  }
+  .filter-group{display:flex;gap:6px;flex-wrap:wrap}
+  .filter-group-label{font-size:13px;font-weight:600;color:var(--gray-light);align-self:center;margin-right:4px}
+  .filter-btn{
+    font-size:13px;font-weight:500;padding:6px 16px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;
+  }
+  .filter-btn:hover{border-color:var(--black);color:var(--black)}
+  .filter-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+  .filter-btn.type-wall.active{background:var(--black);color:#fff;border-color:var(--black)}
+  .filter-btn.type-table.active{background:var(--black);color:#fff;border-color:var(--black)}
+  .filter-btn.type-floor.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+  /* Price slider */
+  .price-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .price-label{font-size:13px;color:var(--gray);white-space:nowrap}
+  .price-range{-webkit-appearance:none;width:160px;height:4px;border-radius:2px;background:#e0e0e0;outline:none}
+  .price-range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--black);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+  .price-value{font-size:14px;font-weight:600;color:var(--black);min-width:80px}
+
+  /* Sort */
+  .sort-btn{
+    font-size:13px;font-weight:500;padding:6px 14px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;margin-left:auto;
+  }
+  .sort-btn:hover{border-color:var(--black);color:var(--black)}
+  .sort-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+  /* ===== TYPE GRID ===== */
+  .type-grid{display:grid;grid-template-columns:1fr;gap:1px;background:var(--gray-border);border:1px solid var(--gray-border);border-radius:20px;overflow:hidden}
+  @media(min-width:768px){.type-grid{grid-template-columns:repeat(3,1fr)}}
+  .type-card{background:var(--bg);padding:36px 28px;cursor:pointer;transition:background 0.2s}
+  .type-card:hover{background:#fafafa}
+  .type-card.selected{background:var(--bg);border:2px solid var(--black)}
+  .type-card[data-type="table"].selected{background:var(--bg);border:2px solid var(--black)}
+  .type-card[data-type="floor"].selected{background:var(--bg);border:2px solid var(--black)}
+  .type-name{font-size:24px;font-weight:700;margin-bottom:2px}
+  .type-en{font-size:13px;color:var(--gray-light);margin-bottom:24px}
+  .type-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+  .type-section-label.good{color:var(--green)}
+  .type-section-label.bad{color:var(--red)}
+  .type-list{list-style:none;margin-bottom:24px}
+  .type-list li{font-size:14px;color:var(--gray-dark);padding:5px 0;line-height:1.4}
+
+  /* ===== CMP TABLE ===== */
+  .table-scroll{overflow-x:auto;border:1px solid var(--gray-border);border-radius:16px}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:14px}
+  .cmp-table thead th{padding:14px 18px;text-align:center;font-weight:600;font-size:15px;color:var(--black);border-bottom:1px solid var(--gray-border);background:var(--bg);position:sticky;top:0}
+  .cmp-table thead th:first-child{text-align:left;color:var(--gray-light);font-size:13px;font-weight:500}
+  .cmp-table tbody td{padding:12px 18px;text-align:center;color:var(--gray-dark);border-bottom:1px solid #ebebeb}
+  .cmp-table tbody td:first-child{text-align:left;font-weight:500;color:var(--black)}
+  .cmp-table tbody tr:last-child td{border-bottom:none}
+  .cmp-table tbody tr:hover td{background:#fafafa}
+  .cmp-table .best{font-weight:700;color:var(--black)}
+  .cmp-table .mid{color:var(--gray-dark)}
+  .cmp-table .weak{color:var(--gray-light)}
+  .cmp-table .bad{color:var(--red)}
+  .cmp-table td.col-highlight{background:var(--bg-alt)!important}
+
+  /* ===== MODEL CARDS ===== */
+  .model-count{font-size:14px;color:var(--gray-light);margin-bottom:20px}
+  .model-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:640px){.model-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:960px){.model-grid{grid-template-columns:repeat(3,1fr)}}
+
+  .model-card{
+    border:1px solid var(--gray-border);border-radius:16px;padding:24px;
+    background:var(--bg);display:flex;flex-direction:column;transition:all 0.3s;
+    position:relative;overflow:hidden;
+  }
+  .model-card:hover{box-shadow:0 8px 30px rgba(0,0,0,0.08);transform:translateY(-4px)}
+  .model-card.hidden{display:none}
+  .model-card .brand-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:2px}
+  .model-tier{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:4px}
+  .model-title{font-size:18px;font-weight:600;color:var(--black);margin-bottom:4px;line-height:1.25}
+  .model-type{font-size:13px;font-weight:500;margin-bottom:14px}
+  .type-wall-color{color:var(--black)}.type-table-color{color:var(--black)}.type-floor-color{color:var(--black)}
+  .model-specs{font-size:13px;color:var(--gray);line-height:1.6;flex:1;margin-bottom:16px}
+  .model-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-top:14px;border-top:1px solid #ebebeb;flex-wrap:wrap}
+  .model-price{font-size:20px;font-weight:600;color:var(--black);letter-spacing:-0.01em}
+  .model-price-note{font-size:11px;color:var(--gray-light);margin-top:1px}
+  .model-jd-link{font-size:13px;font-weight:500;color:var(--black);text-decoration:none;white-space:nowrap}
+  .model-jd-link:hover{text-decoration:underline}
+
+  /* ===== MODEL IMAGE ===== */
+  .model-img-wrap{display:flex;justify-content:center;margin-bottom:14px}
+  .model-img{width:100%;max-width:200px;height:140px;object-fit:contain;border-radius:8px}
+  .model-jd-link::after{content:' \203A'}
+
+  /* Compare checkbox */
+  .compare-check{
+    position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;
+    border:2px solid var(--gray-border);background:var(--bg);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+    font-size:13px;color:transparent;
+  }
+  .compare-check:hover{border-color:var(--black)}
+  .compare-check.checked{background:var(--black);border-color:var(--black);color:#fff}
+
+  /* Compare drawer */
+  .compare-drawer{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);
+    border-top:1px solid var(--gray-border);
+    padding:16px 24px;display:none;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .compare-drawer.visible{display:block}
+  .compare-drawer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .compare-items{display:flex;gap:8px;flex:1;flex-wrap:wrap}
+  .compare-item{
+    font-size:13px;font-weight:500;padding:6px 12px;border-radius:20px;
+    background:var(--bg-alt);color:var(--black);display:flex;align-items:center;gap:6px;
+  }
+  .compare-item .remove{cursor:pointer;color:var(--gray-light);font-size:16px;line-height:1}
+  .compare-item .remove:hover{color:var(--red)}
+  .compare-btn{
+    font-size:14px;font-weight:600;padding:10px 24px;border-radius:24px;
+    background:var(--black);color:#fff;border:none;cursor:pointer;font-family:inherit;
+    transition:background 0.2s;
+  }
+  .compare-btn:hover{background:var(--gray-dark)}
+  .compare-btn:disabled{background:var(--gray-border);color:var(--gray-light);cursor:default}
+
+  /* Compare modal */
+  .compare-modal-bg{
+    position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);
+    display:none;align-items:flex-end;justify-content:center;padding:0;
+  }
+  .compare-modal-bg.visible{display:flex}
+  .compare-modal{
+    background:var(--bg);border-radius:20px 20px 0 0;max-width:720px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:24px;position:relative;
+  }
+  @media(min-width:768px){
+    .compare-modal-bg{align-items:center;padding:20px}
+    .compare-modal{border-radius:20px}
+  }
+  .compare-modal-close{
+    position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;
+    border:none;background:var(--bg-alt);cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;color:var(--gray);
+  }
+  .compare-modal-close:hover{background:var(--gray-border)}
+  .compare-modal h3{font-size:24px;font-weight:700;margin-bottom:24px}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .compare-table{border-collapse:collapse;border:1px solid var(--gray-border);border-radius:12px;overflow:hidden;width:100%;min-width:500px}
+  .compare-table th{padding:14px 16px;font-size:14px;font-weight:600;color:var(--black);background:var(--bg-alt);border-bottom:1px solid var(--gray-border);text-align:left;white-space:nowrap}
+  .compare-table th:first-child{color:var(--gray);font-size:13px;font-weight:500;width:72px}
+  .compare-table td{padding:12px 16px;font-size:14px;color:var(--gray-dark);border-bottom:1px solid #ebebeb;text-align:left;vertical-align:top}
+  .compare-table td:first-child{font-weight:500;color:var(--gray);font-size:13px;white-space:nowrap;background:var(--bg-alt)}
+  .compare-table tr:last-child td{border-bottom:none}
+  .compare-table tr:hover td{background:#fafafa}
+  .compare-table tr:hover td:first-child{background:var(--bg-alt)}
+
+  /* ===== VERDICT ===== */
+  .type-verdict{margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-border)}
+  .type-verdict-title{font-size:13px;font-weight:600;color:var(--black);margin-bottom:4px}
+  .type-verdict-desc{font-size:13px;color:var(--gray-dark);line-height:1.5;margin-bottom:4px}
+  .type-verdict-models{font-size:12px;color:var(--gray);line-height:1.5}
+
+  .footer{padding:28px 24px;text-align:center;font-size:12px;color:var(--gray-light);border-top:1px solid var(--gray-border)}
+
+  /* Brand separator */
+  .brand-block{margin-bottom:60px}
+  .brand-block:last-child{margin-bottom:0}
+  .brand-header{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .brand-name{font-size:clamp(24px,3.5vw,36px);font-weight:700}
+  .brand-en{font-size:15px;color:var(--gray-light)}
+
+  /* No results */
+  .no-results{text-align:center;padding:60px 20px;color:var(--gray-light);font-size:16px;display:none}
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+  .hero h1{animation:fadeUp 0.8s ease both}
+  .hero p{animation:fadeUp 0.8s ease 0.15s both}
+
+  .animate-on-scroll{opacity:0;transform:translateY(32px);transition:opacity 0.6s ease,transform 0.6s ease}
+  .animate-on-scroll.visible{opacity:1;transform:translateY(0)}
+
+  .type-card{transition:background 0.2s,transform 0.3s,box-shadow 0.3s}
+  .type-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+
+  .model-card{opacity:0;animation:scaleIn 0.4s ease both}
+
+  .compare-drawer{animation:slideUp 0.3s ease both}
+  .compare-modal-bg{animation:fadeIn 0.2s ease both}
+  .compare-modal{animation:scaleIn 0.3s ease both}
+
+  .cmp-table tbody tr{transition:background 0.15s}
+  .filter-btn{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
+  .filter-btn:active{transform:scale(0.95)}
+
+  .topnav{transition:box-shadow 0.3s}
+  .topnav.scrolled{box-shadow:0 1px 8px rgba(0,0,0,0.06)}
+
+  @media(max-width:767px){
+    .hero{padding:72px 20px 56px}
+    .section{padding:56px 20px}
+    .topnav{gap:8px;padding:10px 16px}
+    .topnav a{font-size:13px;padding:5px 12px}
+    .filter-bar{gap:8px}
+    .price-range{width:120px}
+    .model-title{font-size:17px}
+    .compare-drawer{padding:12px 16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY NAV -->
+<nav class="topnav" id="topnav">
+  <a href="/appliance-guide/index.html">&larr; 返回首页</a>
+  <a href="#types">安装方式</a>
+  <a href="#compare">对比维度</a>
+  <a href="#brands">选购机型</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <h1>内衣洗衣机<br>选购指南</h1>
+  <p>壁挂、台面、落地三种安装方式全面对比<br>六大品牌 18 款机型，找到最适合你的那一台</p>
+</section>
+
+<!-- TYPE COMPARISON -->
+<section class="section" id="types">
+  <div class="section-inner">
+    <p class="section-label">安装方式</p>
+    <h2 class="section-title">三种方案，各有所长。</h2>
+    <p class="section-subtitle">点击任意卡片，下方机型列表会自动筛选对应安装类型。</p>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-card" data-type="wall" onclick="toggleTypeFilter('wall',this)">
+        <h3 class="type-name">壁挂式</h3>
+        <p class="type-en">Wall-mounted</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>不占地面空间，适合小户型</li>
+          <li>安装高度适中，取放衣物方便</li>
+          <li>滚筒设计对衣物磨损更小</li>
+          <li>多为洗烘一体，功能完整</li>
+        </ul>
+        <p class="type-section-label bad">不足</p>
+        <ul class="type-list">
+          <li>需要承重墙安装，有硬性条件</li>
+          <li>安装费用额外增加</li>
+          <li>运行震动可能传导到墙体</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">空间利用率最高 · 预算 1,500-3,500 元</p>
+          <p class="type-verdict-desc">承重墙 + 有安装条件的家庭首选，壁挂滚筒对贴身衣物更友好。</p>
+          <p class="type-verdict-models">推荐：小天鹅 TG30M60 · 大宇 DY-BGX08HE · 小吉 V7-xty Pro</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="table" onclick="toggleTypeFilter('table',this)">
+        <h3 class="type-name">台面式</h3>
+        <p class="type-en">Countertop</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>即放即用，无需安装</li>
+          <li>体积极小，放桌面/柜子即可</li>
+          <li>专为内衣设计，容量精准</li>
+          <li>部分支持洗烘脱一体</li>
+        </ul>
+        <p class="type-section-label bad">不足</p>
+        <ul class="type-list">
+          <li>容量最小，通常 0.5-1kg</li>
+          <li>需手动接排水管</li>
+          <li>高价位段性价比偏低</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">最灵活方便 · 预算 800-2,000 元</p>
+          <p class="type-verdict-desc">租房党、无法装壁挂的用户首选，只洗内衣袜子足够了。</p>
+          <p class="type-verdict-models">推荐：小吉 U10-MD Pro · 大宇 FM02PRO</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="floor" onclick="toggleTypeFilter('floor',this)">
+        <h3 class="type-name">落地小型</h3>
+        <p class="type-en">Compact Floor</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>容量最大，3-5kg 覆盖更多衣物</li>
+          <li>价格普遍最低，性价比高</li>
+          <li>安装零门槛，插电即用</li>
+          <li>技术成熟，品牌选择多</li>
+        </ul>
+        <p class="type-section-label bad">不足</p>
+        <ul class="type-list">
+          <li>占用地面空间</li>
+          <li>波轮设计对精致衣物磨损偏大</li>
+          <li>外观设计感普遍一般</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">大容量性价比之选 · 预算 400-1,600 元</p>
+          <p class="type-verdict-desc">需要同时洗母婴衣物、运动服等较多衣物的家庭，空间允许首选落地款。</p>
+          <p class="type-verdict-models">推荐：小天鹅 TB30VH90E · 海尔 XQB50-B278S · 美的 MB30V13E</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="section section-alt" id="compare">
+  <div class="section-inner">
+    <p class="section-label">横向对比</p>
+    <h2 class="section-title">逐项比，一目了然。</h2>
+    <p class="section-subtitle">鼠标悬停列头可高亮整列，方便纵向比较。</p>
+    <div class="table-scroll">
+      <table class="cmp-table" id="cmpTable">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th data-col="1" onmouseenter="highlightCol(1)" onmouseleave="clearCol()">壁挂式</th>
+            <th data-col="2" onmouseenter="highlightCol(2)" onmouseleave="clearCol()">台面式</th>
+            <th data-col="3" onmouseenter="highlightCol(3)" onmouseleave="clearCol()">落地小型</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>容量范围</td><td class="mid">1-3 kg</td><td class="weak">0.5-1 kg</td><td class="best">3-5 kg</td></tr>
+          <tr><td>空间占用</td><td class="best">不占地面</td><td class="mid">占桌面</td><td class="weak">占地面</td></tr>
+          <tr><td>安装难度</td><td class="weak">需承重墙</td><td class="best">免安装</td><td class="best">免安装</td></tr>
+          <tr><td>衣物保护</td><td class="best">滚筒最优</td><td class="mid">中等</td><td class="weak">波轮磨损大</td></tr>
+          <tr><td>杀菌能力</td><td class="best">高温煮洗</td><td class="best">高温煮洗</td><td class="mid">多为中温</td></tr>
+          <tr><td>烘干功能</td><td class="best">多数支持</td><td class="mid">部分支持</td><td class="weak">极少支持</td></tr>
+          <tr><td>噪音水平</td><td class="mid">45-55 dB</td><td class="best">40-50 dB</td><td class="weak">50-60 dB</td></tr>
+          <tr><td>价格区间</td><td>1,500-3,500</td><td>800-2,000</td><td>400-1,600</td></tr>
+          <tr><td>推荐人群</td><td>小户型精装</td><td>租房/单身</td><td>母婴家庭</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS & MODELS -->
+<section class="section" id="brands">
+  <div class="section-inner">
+    <p class="section-label">选购机型</p>
+    <h2 class="section-title">找到你的那一台。</h2>
+    <p class="section-subtitle">筛选安装方式、拖动价格滑块、按价格排序。点击右上角圆圈可勾选对比。</p>
+  </div>
+  <div class="section-wide">
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <span class="filter-group-label">安装</span>
+        <button class="filter-btn active" data-type="all" onclick="setTypeFilter('all')">全部</button>
+        <button class="filter-btn type-wall" data-type="wall" onclick="setTypeFilter('wall')">壁挂式</button>
+        <button class="filter-btn type-table" data-type="table" onclick="setTypeFilter('table')">台面式</button>
+        <button class="filter-btn type-floor" data-type="floor" onclick="setTypeFilter('floor')">落地小型</button>
+      </div>
+      <div class="price-filter">
+        <span class="price-label">预算上限</span>
+        <input type="range" class="price-range" id="priceSlider" min="300" max="4000" value="4000" step="100" oninput="onPriceChange(this.value)">
+        <span class="price-value" id="priceValue">不限</span>
+      </div>
+      <button class="sort-btn" id="sortBtn" onclick="toggleSort()">按价格排序 &uarr;</button>
+    </div>
+
+    <p class="model-count" id="modelCount"></p>
+    <div class="no-results" id="noResults">没有符合条件的机型，试试调整筛选条件</div>
+    <div class="model-grid" id="modelGrid"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>价格来源：京东官方旗舰店及主流电商渠道，为2025年5月参考价。实际售价以京东商品页面为准。</p>
+</footer>
+
+<!-- COMPARE DRAWER -->
+<div class="compare-drawer" id="compareDrawer">
+  <div class="compare-drawer-inner">
+    <div class="compare-items" id="compareItems"></div>
+    <button class="compare-btn" id="compareBtn" onclick="showCompare()" disabled>对比选中机型</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-bg" id="compareModal" onclick="if(event.target===this)closeCompare()">
+  <div class="compare-modal">
+    <button class="compare-modal-close" onclick="closeCompare()">&times;</button>
+    <h3>机型对比</h3>
+    <div id="compareContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== MODEL DATA =====
+const models = [
+  // ===== 壁挂式 =====
+  // 小天鹅
+  {brand:"小天鹅",brandEn:"Little Swan",name:"TG30M60",installType:"wall",installLabel:"壁挂式 · 滚筒",releaseDate:"2024-03",capacity:"3 kg",sterilize:"水魔方除菌",noise:"52 dB",energy:"1级能效",price:1599,priceText:"¥1,599",priceNote:"促销低至 ¥1,400",features:"超薄机身仅303mm，智能识别衣物材质自动调节程序，水魔方科技高效除菌，一级能效省电省水",img:"https://imgservice.suning.cn/uimg1/b2c/image/Hi_Qh8tKgS_6FlaJESowTg.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E5%B0%8F%E5%A4%A9%E9%B9%85TG30M60%E5%A3%81%E6%8C%82%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+  {brand:"小天鹅",brandEn:"Little Swan",name:"TG30-80WMD 小乌梅",installType:"wall",installLabel:"壁挂式 · 滚筒洗烘一体",releaseDate:"2024-09",capacity:"2 kg 洗 / 1 kg 烘",sterilize:"95\u00b0C高温煮洗",noise:"50 dB",energy:"1级能效",price:2499,priceText:"¥2,499",priceNote:"促销低至 ¥2,199",features:"水魔方冷水洗护色，95\u00b0C高温煮洗深层除菌除螨，纳米银离子抑菌门封，智能分区洗涤",img:"https://imgservice.suning.cn/uimg1/b2c/image/Z7RD16zLshAViDVx8yAbvA.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E5%B0%8F%E5%A4%A9%E9%B9%85%E5%B0%8F%E4%B9%8C%E6%A2%85%E5%A3%81%E6%8C%82%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // 大宇
+  {brand:"大宇",brandEn:"Daewoo",name:"DY-BGX08HE 洗烘款",installType:"wall",installLabel:"壁挂式 · 滚筒洗烘一体",releaseDate:"2024-06",capacity:"2.5 kg 洗 / 1.5 kg 烘",sterilize:"90\u00b0C高温 + 蒸汽除菌",noise:"48 dB",energy:"1级能效",price:2699,priceText:"¥2,699",priceNote:"促销低至 ¥2,399",features:"直驱变频超静音，90\u00b0C高温煮洗除螨，蒸汽除菌护衣，三重除菌系统，双仓自动投放洗涤剂",img:"https://imgservice.suning.cn/uimg1/b2c/image/KQdwx-GC8tKplSSendALZQ.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E5%A4%A7%E5%AE%87DY-BGX08HE%E5%A3%81%E6%8C%82%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+  {brand:"大宇",brandEn:"Daewoo",name:"DY-BGX08E 单洗款",installType:"wall",installLabel:"壁挂式 · 滚筒",releaseDate:"2024-06",capacity:"2.5 kg",sterilize:"90\u00b0C高温 + 蒸汽除菌",noise:"48 dB",energy:"1级能效",price:1899,priceText:"¥1,899",priceNote:"促销低至 ¥1,699",features:"直驱变频静音电机，90\u00b0C高温煮洗，蒸汽杀菌护衣，超薄320mm壁挂设计",img:"https://imgservice.suning.cn/uimg1/b2c/image/KQdwx-GC8tKplSSendALZQ.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E5%A4%A7%E5%AE%87DY-BGX08E%E5%A3%81%E6%8C%82%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // 小吉
+  {brand:"小吉",brandEn:"MINIJ",name:"V7-xty Pro",installType:"wall",installLabel:"壁挂式 · 滚筒洗烘一体",releaseDate:"2024-01",capacity:"1 kg 洗 / 0.7 kg 烘",sterilize:"95\u00b0C高温除螨",noise:"45 dB",energy:"1级能效",price:1499,priceText:"¥1,499",priceNote:"iF设计奖 2024",features:"水滴形创意外观获iF设计奖，智能洗涤剂投放系统，专属文胸/瑜伽服洗涤模式，App远程控制",img:"https://m.360buyimg.com/mobilecms/s500x500_jfs/t1/433105/19/8807/308647/6a02ed07Fa3d8e462/0258320320a8851f.jpg!q70.dpg",jd:"https://search.jd.com/Search?keyword=%E5%B0%8F%E5%90%89MINIJ+V7+Pro%E5%A3%81%E6%8C%82%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // 美的
+  {brand:"美的",brandEn:"Midea",name:"MG30DSN",installType:"wall",installLabel:"壁挂式 · 滚筒",releaseDate:"2024-05",capacity:"3 kg",sterilize:"60\u00b0C巴氏除菌",noise:"52 dB",energy:"1级能效",price:1399,priceText:"¥1,399",priceNote:"性价比之选",features:"BLDC变频电机静音运行，60\u00b0C巴氏除菌洗，15分钟快洗程序，304不锈钢内筒",img:"https://imgservice.suning.cn/uimg1/b2c/image/07rf0Tp3Z0fAMUy4vBVC8A.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E7%BE%8E%E7%9A%84MG30DSN%E5%A3%81%E6%8C%82%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // ===== 台面式 =====
+  // 小吉
+  {brand:"小吉",brandEn:"MINIJ",name:"U10-MD Pro 1kg",installType:"table",installLabel:"台面式 · 滚筒洗烘一体",releaseDate:"2024-10",capacity:"1 kg 洗 / 0.5 kg 烘",sterilize:"95\u00b0C高温 + 蒸汽除菌",noise:"45 dB",energy:"-",price:1899,priceText:"¥1,899",features:"台面迷你洗烘一体，95\u00b0C高温杀菌，夜间新风蒸汽除菌，高效去血渍模式，BLDC变频马达",img:"https://m.360buyimg.com/mobilecms/s500x500_jfs/t1/429940/36/10255/269397/69fd82a9Fdb4b990b/0258320320c9bf96.jpg!q70.dpg",jd:"https://search.jd.com/Search?keyword=%E5%B0%8F%E5%90%89U10-MD+Pro%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+  {brand:"小吉",brandEn:"MINIJ",name:"U10-MD Pro 0.5kg",installType:"table",installLabel:"台面式 · 滚筒洗烘一体",releaseDate:"2024-10",capacity:"0.5 kg 洗 / 0.3 kg 烘",sterilize:"95\u00b0C高温杀菌",noise:"42 dB",energy:"-",price:1499,priceText:"¥1,499",features:"超迷你316x332x400mm，不锈钢内桶，触控操作面板，支持除HPV病毒洗涤程序",img:"https://m.360buyimg.com/mobilecms/s500x500_jfs/t1/429940/36/10255/269397/69fd82a9Fdb4b990b/0258320320c9bf96.jpg!q70.dpg",jd:"https://search.jd.com/Search?keyword=%E5%B0%8F%E5%90%89U10+0.5kg%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // 大宇
+  {brand:"大宇",brandEn:"Daewoo",name:"FM02PRO",installType:"table",installLabel:"台面式 · 波轮洗烘脱一体",releaseDate:"2024-03",capacity:"0.5 kg",sterilize:"银离子除菌 + 高温",noise:"45 dB",energy:"-",price:1169,priceText:"¥1,169",priceNote:"历史低至 ¥809",features:"洗烘脱三合一，独立除HPV洗涤，银离子除菌，超薄迷你桌面放置，全自动柔音运行",img:"https://imgservice.suning.cn/uimg1/b2c/image/KQdwx-GC8tKplSSendALZQ.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E5%A4%A7%E5%AE%87FM02PRO%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // 松下
+  {brand:"松下",brandEn:"Panasonic",name:"XQB20-L1W",installType:"table",installLabel:"台面式 · 波轮",releaseDate:"2024-04",capacity:"2 kg",sterilize:"Ag+ 银离子除菌",noise:"48 dB",energy:"2级能效",price:899,priceText:"¥899",features:"松下品质入门台面款，Ag+银离子除菌，6种洗涤程序，透明可视窗设计，轻巧便携",img:"https://m.360buyimg.com/mobilecms/s500x500_jfs/t1/435264/34/3561/188669/6a02ff13Fd6c5b38f/00833203200ff0f9.jpg!q70.dpg",jd:"https://search.jd.com/Search?keyword=%E6%9D%BE%E4%B8%8BXQB20%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // ===== 落地小型 =====
+  // 小天鹅
+  {brand:"小天鹅",brandEn:"Little Swan",name:"TB30VH90E",installType:"floor",installLabel:"落地小型 · 波轮",releaseDate:"2024-01",capacity:"3 kg",sterilize:"高温蒸煮洗",noise:"54 dB",energy:"1级能效",price:599,priceText:"¥599",priceNote:"促销低至 ¥433",features:"高温蒸煮洗除菌除螨，一级能效省电，智能调节洗涤程序，紧凑机身占地小",img:"https://imgservice.suning.cn/uimg1/b2c/image/v_D64xz21vxlkGuJo6RiyQ.png_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E5%B0%8F%E5%A4%A9%E9%B9%85TB30VH90E%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+  {brand:"小天鹅",brandEn:"Little Swan",name:"TB30V80E",installType:"floor",installLabel:"落地小型 · 波轮",releaseDate:"2023-06",capacity:"3 kg",sterilize:"高温除菌",noise:"55 dB",energy:"1级能效",price:499,priceText:"¥499",features:"经典入门迷你波轮，高温除菌除螨，水位自动感知，10分钟快洗",img:"https://imgservice.suning.cn/uimg1/b2c/image/v_D64xz21vxlkGuJo6RiyQ.png_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E5%B0%8F%E5%A4%A9%E9%B9%85TB30V80E%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // 海尔
+  {brand:"海尔",brandEn:"Haier",name:"XQB50-B278S",installType:"floor",installLabel:"落地小型 · 波轮",releaseDate:"2023-03",capacity:"5 kg",sterilize:"HP电离除菌",noise:"54 dB",energy:"1级能效",price:1199,priceText:"¥1,199",features:"直驱变频电机超静音，HP电离除菌技术，桶自洁功能，5kg大容量覆盖母婴全场景",img:"https://imgservice.suning.cn/uimg1/b2c/image/2lp45S2t4RjxMc61t9V5QA.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E6%B5%B7%E5%B0%94XQB50-B278S%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+  {brand:"海尔",brandEn:"Haier",name:"XQB33-12A",installType:"floor",installLabel:"落地小型 · 波轮",releaseDate:"2025-04",capacity:"3.3 kg",sterilize:"桶自洁",noise:"56 dB",energy:"2级能效",price:699,priceText:"¥699",features:"超净洗技术深层去污，桶自洁保持内桶洁净，漂甩二合一省时，438x795x457mm紧凑机身",img:"https://imgservice.suning.cn/uimg1/b2c/image/2lp45S2t4RjxMc61t9V5QA.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E6%B5%B7%E5%B0%94XQB33-12A%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+  {brand:"海尔",brandEn:"Haier",name:"MBM33-R188S",installType:"floor",installLabel:"落地小型 · 波轮",releaseDate:"2024-09",capacity:"3.3 kg",sterilize:"烫烫洗 + 免清洗",noise:"55 dB",energy:"2级能效",price:799,priceText:"¥799",features:"烫烫洗高温除菌，免清洗技术减少内桶污垢，童锁安全设计，445x815x456mm",img:"https://imgservice.suning.cn/uimg1/b2c/image/2lp45S2t4RjxMc61t9V5QA.jpg_800w_800h_4e",jd:"https://search.jd.com/Search?keyword=%E6%B5%B7%E5%B0%94MBM33-R188S%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // 美的
+  {brand:"美的",brandEn:"Midea",name:"MB30V13E",installType:"floor",installLabel:"落地小型 · 波轮",releaseDate:"2024-06",capacity:"3 kg",sterilize:"高温除菌",noise:"54 dB",energy:"1级能效",price:549,priceText:"¥549",features:"一级能效节能省电，高温除菌洗，免清洗内桶，8大洗涤程序，品牌品质保障",img:"https://m.360buyimg.com/mobilecms/s500x500_jfs/t1/434615/35/4857/165336/6a032577Fbda10dc4/00833203202f64cd.jpg!q70.dpg",jd:"https://search.jd.com/Search?keyword=%E7%BE%8E%E7%9A%84MB30V13E%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+
+  // 松下
+  {brand:"松下",brandEn:"Panasonic",name:"XQB30-P3A2F",installType:"floor",installLabel:"落地小型 · 波轮",releaseDate:"2024-02",capacity:"3 kg",sterilize:"Ag+ 银离子除菌",noise:"52 dB",energy:"1级能效",price:899,priceText:"¥899",features:"Ag+银离子除菌技术，泡沫发生器深层去污，静音设计，人性化桶干燥功能",img:"https://m.360buyimg.com/mobilecms/s500x500_jfs/t1/435264/34/3561/188669/6a02ff13Fd6c5b38f/00833203200ff0f9.jpg!q70.dpg",jd:"https://search.jd.com/Search?keyword=%E6%9D%BE%E4%B8%8BXQB30-P3A2F%E8%BF%B7%E4%BD%A0%E6%B4%97%E8%A1%A3%E6%9C%BA"},
+];
+
+// ===== STATE =====
+let currentTypeFilter = 'all';
+let maxPrice = 4000;
+let sortAsc = false;
+let sortActive = false;
+let compareSet = new Set();
+
+// ===== RENDER =====
+function renderModels() {
+  let filtered = models.filter(m => {
+    if (currentTypeFilter !== 'all' && m.installType !== currentTypeFilter) return false;
+    if (m.price > maxPrice) return false;
+    return true;
+  });
+  if (sortActive) {
+    filtered.sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+  }
+  const grid = document.getElementById('modelGrid');
+  const countEl = document.getElementById('modelCount');
+  const noRes = document.getElementById('noResults');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    countEl.textContent = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+  countEl.textContent = '\u5171 ' + filtered.length + ' \u6b3e\u673a\u578b';
+
+  let html = '';
+  if (!sortActive) {
+    const brands = [...new Set(filtered.map(m => m.brand))];
+    for (const brand of brands) {
+      const brandModels = filtered.filter(m => m.brand === brand);
+      const first = brandModels[0];
+      html += '<div class="brand-block" style="grid-column:1/-1">' +
+        '<div class="brand-header"><h3 class="brand-name">' + brand + '</h3><span class="brand-en">' + first.brandEn + '</span></div>' +
+        '</div>';
+      for (const m of brandModels) html += cardHTML(m);
+    }
+  } else {
+    for (const m of filtered) html += cardHTML(m);
+  }
+  grid.innerHTML = html;
+}
+
+function cardHTML(m) {
+  const idx = models.indexOf(m);
+  const checked = compareSet.has(idx);
+  const typeClass = 'type-' + m.installType + '-color';
+  return '<div class="model-card" data-idx="' + idx + '">' +
+    '<div class="compare-check ' + (checked?'checked':'') + '" onclick="toggleCompare(' + idx + ',this)" title="\u52a0\u5165\u5bf9\u6bd4">\u2713</div>' +
+    (m.img ? '<div class="model-img-wrap"><img class="model-img" src="' + m.img + '" alt="' + m.name + '" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></div>' : '') +
+    '<span class="model-tier">' + m.capacity + '</span>' +
+    (sortActive ? '<span class="brand-tag">' + m.brand + '</span>' : '') +
+    '<h4 class="model-title">' + m.brand + ' ' + m.name + '</h4>' +
+    '<p class="model-type ' + typeClass + '">' + m.installLabel + '</p>' +
+    '<p class="model-specs">' + m.features +
+      '<br><span style="color:var(--gray-light);font-size:12px">' +
+      '\u6740\u83cc: ' + m.sterilize + ' \u00b7 \u566a\u97f3: ' + m.noise + ' \u00b7 \u80fd\u6548: ' + m.energy +
+      ' \u00b7 \u4e0a\u5e02: ' + m.releaseDate + '</span></p>' +
+    '<div class="model-price-row">' +
+      '<div>' +
+        '<div class="model-price">' + m.priceText + '</div>' +
+        (m.priceNote ? '<div class="model-price-note">' + m.priceNote + '</div>' : '') +
+      '</div>' +
+      '<a class="model-jd-link" href="' + m.jd + '" target="_blank" rel="noopener">\u4eac\u4e1c\u8d2d\u4e70</a>' +
+    '</div>' +
+  '</div>';
+}
+
+// ===== FILTERS =====
+function setTypeFilter(type) {
+  currentTypeFilter = type;
+  document.querySelectorAll('#filterBar .filter-btn[data-type]').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.type === type);
+  });
+  document.querySelectorAll('.type-card').forEach(function(c) {
+    c.classList.toggle('selected', type !== 'all' && c.dataset.type === type);
+  });
+  renderModels();
+}
+
+function toggleTypeFilter(type, el) {
+  if (currentTypeFilter === type) {
+    setTypeFilter('all');
+  } else {
+    setTypeFilter(type);
+  }
+}
+
+function onPriceChange(val) {
+  maxPrice = parseInt(val);
+  document.getElementById('priceValue').textContent = maxPrice >= 4000 ? '\u4e0d\u9650' : '\u2264 \uffe5' + maxPrice.toLocaleString();
+  renderModels();
+}
+
+function toggleSort() {
+  var btn = document.getElementById('sortBtn');
+  if (!sortActive) {
+    sortActive = true; sortAsc = true;
+    btn.textContent = '\u4ef7\u683c \u4f4e\u2192\u9ad8'; btn.classList.add('active');
+  } else if (sortAsc) {
+    sortAsc = false;
+    btn.textContent = '\u4ef7\u683c \u9ad8\u2192\u4f4e';
+  } else {
+    sortActive = false;
+    btn.textContent = '\u6309\u4ef7\u683c\u6392\u5e8f \u2191'; btn.classList.remove('active');
+  }
+  renderModels();
+}
+
+// ===== COMPARE =====
+function toggleCompare(idx, el) {
+  if (compareSet.has(idx)) { compareSet.delete(idx); el.classList.remove('checked'); }
+  else if (compareSet.size < 4) { compareSet.add(idx); el.classList.add('checked'); }
+  updateCompareDrawer();
+}
+
+function updateCompareDrawer() {
+  var drawer = document.getElementById('compareDrawer');
+  var items = document.getElementById('compareItems');
+  var btn = document.getElementById('compareBtn');
+  if (compareSet.size === 0) { drawer.classList.remove('visible'); return; }
+  drawer.classList.add('visible');
+  items.innerHTML = [...compareSet].map(function(idx) {
+    var m = models[idx];
+    return '<span class="compare-item">' + m.brand + ' ' + m.name + '<span class="remove" onclick="removeCompare(' + idx + ')">\u2715</span></span>';
+  }).join('');
+  btn.disabled = compareSet.size < 2;
+}
+
+function removeCompare(idx) {
+  compareSet.delete(idx);
+  updateCompareDrawer();
+  renderModels();
+}
+
+function showCompare() {
+  if (compareSet.size < 2) return;
+  var items = [...compareSet].map(function(i) { return models[i]; });
+  var fields = [
+    ['\u54c1\u724c', function(m){return m.brand}],
+    ['\u5b89\u88c5\u65b9\u5f0f', function(m){return m.installLabel}],
+    ['\u5bb9\u91cf', function(m){return m.capacity}],
+    ['\u6740\u83cc\u65b9\u5f0f', function(m){return m.sterilize}],
+    ['\u566a\u97f3', function(m){return m.noise}],
+    ['\u80fd\u6548', function(m){return m.energy}],
+    ['\u4e0a\u5e02\u65f6\u95f4', function(m){return m.releaseDate}],
+    ['\u4ef7\u683c', function(m){return m.priceText + (m.priceNote ? '<br><small style="color:var(--gray-light)">' + m.priceNote + '</small>' : '')}],
+    ['\u4eae\u70b9', function(m){return m.features}],
+    ['\u4eac\u4e1c', function(m){return '<a href="' + m.jd + '" target="_blank" style="color:var(--black);text-decoration:none">\u53bb\u8d2d\u4e70 \u203a</a>'}],
+  ];
+  var html = '<div class="compare-scroll"><table class="compare-table">';
+  html += '<thead><tr><th></th>';
+  items.forEach(function(m) { html += '<th>' + m.name + '</th>'; });
+  html += '</tr></thead><tbody>';
+  for (var i = 0; i < fields.length; i++) {
+    var label = fields[i][0], fn = fields[i][1];
+    html += '<tr><td>' + label + '</td>';
+    items.forEach(function(m) { html += '<td>' + fn(m) + '</td>'; });
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('compareContent').innerHTML = html;
+  document.getElementById('compareModal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompare() {
+  document.getElementById('compareModal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// ===== TABLE COLUMN HIGHLIGHT =====
+function highlightCol(col) {
+  document.querySelectorAll('#cmpTable tbody td').forEach(function(td) {
+    var idx = [...td.parentNode.children].indexOf(td);
+    td.classList.toggle('col-highlight', idx === col);
+  });
+}
+function clearCol() {
+  document.querySelectorAll('#cmpTable td.col-highlight').forEach(function(td) { td.classList.remove('col-highlight'); });
+}
+
+// ===== SCROLL SPY + NAV SHADOW =====
+var sectionIds = ['types','compare','brands'];
+var nav = document.getElementById('topnav');
+window.addEventListener('scroll', function() {
+  var scrollY = window.scrollY + 80;
+  var current = '';
+  for (var i = 0; i < sectionIds.length; i++) {
+    var el = document.getElementById(sectionIds[i]);
+    if (el && el.offsetTop <= scrollY) current = sectionIds[i];
+  }
+  document.querySelectorAll('.topnav a').forEach(function(a) {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+});
+
+// ===== SCROLL REVEAL =====
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function initScrollReveal() {
+  document.querySelectorAll('.section-label,.section-title,.section-subtitle,.type-grid,.table-scroll,.filter-bar').forEach(function(el) {
+    el.classList.add('animate-on-scroll');
+    observer.observe(el);
+  });
+}
+
+// ===== STAGGER MODEL CARDS =====
+var origRender = renderModels;
+renderModels = function() {
+  origRender();
+  document.querySelectorAll('.model-card').forEach(function(card, i) {
+    card.style.animationDelay = Math.min(i * 0.05, 0.6) + 's';
+  });
+};
+
+// INIT
+renderModels();
+initScrollReveal();
+</script>
+</body>
+</html>

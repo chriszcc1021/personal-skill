@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洗烘机选购指南</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --black:#1d1d1f;--gray-dark:#424245;--gray:#6e6e73;--gray-light:#86868b;
+    --gray-border:#d2d2d7;--bg:#fff;--bg-alt:#f5f5f7;
+    --blue:#0071e3;--blue-light:#e8f4fd;--green:#34c759;--green-light:#e8f8ec;
+    --purple:#af52de;--purple-light:#f3eafa;--orange:#ff9500;--orange-light:#fff4e6;
+    --red:#ff3b30;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+  /* ===== STICKY NAV ===== */
+  .topnav{
+    position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--gray-border);
+    display:flex;align-items:center;justify-content:center;gap:24px;
+    padding:12px 20px;overflow-x:auto;white-space:nowrap;
+  }
+  .topnav a{
+    font-size:14px;font-weight:500;color:var(--gray);text-decoration:none;
+    padding:6px 14px;border-radius:20px;transition:all 0.2s;flex-shrink:0;
+  }
+  .topnav a:hover{color:var(--black);background:var(--bg-alt)}
+  .topnav a.active{color:var(--black);background:var(--bg);border:1px solid var(--gray-border)}
+  .topnav .back-link{color:var(--gray-light);font-size:13px}
+  .topnav .back-link:hover{color:var(--blue)}
+
+  /* ===== HERO ===== */
+  .hero{text-align:center;padding:100px 24px 70px;background:linear-gradient(180deg,#f5f5f7 0%,#fff 100%)}
+  .hero h1{font-size:clamp(36px,7vw,72px);font-weight:900;letter-spacing:-0.02em;line-height:1.05}
+  .hero p{font-size:clamp(16px,2.2vw,24px);color:var(--gray);margin-top:14px;max-width:620px;margin-left:auto;margin-right:auto}
+
+  /* ===== SECTIONS ===== */
+  .section{padding:80px 24px}
+  .section-alt{background:var(--bg-alt)}
+  .section-inner{max-width:980px;margin:0 auto}
+  .section-wide{max-width:1200px;margin:0 auto}
+  .section-label{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-light);margin-bottom:6px}
+  .section-title{font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-0.015em;line-height:1.1;margin-bottom:16px}
+  .section-subtitle{font-size:clamp(15px,1.8vw,19px);color:var(--gray);max-width:600px;line-height:1.5;margin-bottom:48px}
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar{
+    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;align-items:center;
+  }
+  .filter-group{display:flex;gap:6px;flex-wrap:wrap}
+  .filter-group-label{font-size:13px;font-weight:600;color:var(--gray-light);align-self:center;margin-right:4px}
+  .filter-btn{
+    font-size:13px;font-weight:500;padding:6px 16px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;
+  }
+  .filter-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .filter-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+  /* Price slider */
+  .price-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .price-label{font-size:13px;color:var(--gray);white-space:nowrap}
+  .price-range{-webkit-appearance:none;width:160px;height:4px;border-radius:2px;background:#e0e0e0;outline:none}
+  .price-range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+  .price-value{font-size:14px;font-weight:600;color:var(--black);min-width:80px}
+
+  /* Sort */
+  .sort-btn{
+    font-size:13px;font-weight:500;padding:6px 14px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;margin-left:auto;
+  }
+  .sort-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .sort-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+  /* ===== TYPE GRID ===== */
+  .type-grid{display:grid;grid-template-columns:1fr;gap:1px;background:var(--gray-border);border:1px solid var(--gray-border);border-radius:20px;overflow:hidden}
+  @media(min-width:768px){.type-grid{grid-template-columns:repeat(3,1fr)}}
+  .type-card{background:var(--bg);padding:36px 28px;cursor:pointer;transition:background 0.2s}
+  .type-card:hover{background:#fafafa}
+  .type-card.selected{background:var(--bg);border:1px solid var(--gray-border)}
+  .type-name{font-size:24px;font-weight:700;margin-bottom:2px}
+  .type-en{font-size:13px;color:var(--gray-light);margin-bottom:24px}
+  .type-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+  .type-section-label.good{color:var(--green)}
+  .type-section-label.bad{color:var(--red)}
+  .type-list{list-style:none;margin-bottom:24px}
+  .type-list li{font-size:14px;color:var(--gray-dark);padding:5px 0;line-height:1.4}
+
+  /* ===== CMP TABLE ===== */
+  .table-scroll{overflow-x:auto;border:1px solid var(--gray-border);border-radius:16px}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:14px}
+  .cmp-table thead th{padding:14px 18px;text-align:center;font-weight:600;font-size:15px;color:var(--black);border-bottom:1px solid var(--gray-border);background:var(--bg);position:sticky;top:0}
+  .cmp-table thead th:first-child{text-align:left;color:var(--gray-light);font-size:13px;font-weight:500}
+  .cmp-table tbody td{padding:12px 18px;text-align:center;color:var(--gray-dark);border-bottom:1px solid #ebebeb}
+  .cmp-table tbody td:first-child{text-align:left;font-weight:500;color:var(--black)}
+  .cmp-table tbody tr:last-child td{border-bottom:none}
+  .cmp-table tbody tr:hover td{background:#fafafa}
+  .cmp-table .best{font-weight:700;color:var(--blue)}
+  .cmp-table .mid{color:var(--gray-dark)}
+  .cmp-table .weak{color:var(--gray-light)}
+  .cmp-table .bad{color:var(--red)}
+  .cmp-table td.col-highlight{background:var(--bg-alt)!important}
+
+  /* ===== MODEL CARDS ===== */
+  .model-count{font-size:14px;color:var(--gray-light);margin-bottom:20px}
+  .model-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:640px){.model-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:960px){.model-grid{grid-template-columns:repeat(3,1fr)}}
+
+  .model-card{
+    border:1px solid var(--gray-border);border-radius:16px;padding:24px;
+    background:var(--bg);display:flex;flex-direction:column;transition:all 0.3s;
+    position:relative;overflow:hidden;
+  }
+  .model-card:hover{box-shadow:0 8px 30px rgba(0,0,0,0.08);transform:translateY(-4px)}
+  .model-card.hidden{display:none}
+  .model-img-wrap{display:flex;justify-content:center;margin-bottom:14px}
+  .model-img{width:100%;max-width:200px;height:140px;object-fit:contain;border-radius:8px}
+  .model-card .brand-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:2px}
+  .model-tier{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:4px}
+  .model-title{font-size:18px;font-weight:600;color:var(--black);margin-bottom:4px;line-height:1.25}
+  .model-type-tag{font-size:13px;font-weight:500;margin-bottom:14px}
+  .tag-combo{color:var(--black)}.tag-heatpump{color:var(--black)}.tag-condense{color:var(--black)}
+  .model-specs{font-size:12px;color:var(--gray);line-height:1.8;margin-bottom:8px}
+  .model-specs span{display:inline-block;background:var(--bg-alt);padding:2px 8px;border-radius:6px;margin:2px 4px 2px 0}
+  .model-features{font-size:13px;color:var(--gray);line-height:1.6;flex:1;margin-bottom:16px}
+  .model-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-top:14px;border-top:1px solid #ebebeb;flex-wrap:wrap}
+  .model-price{font-size:20px;font-weight:600;color:var(--black);letter-spacing:-0.01em}
+  .model-price-note{font-size:11px;color:var(--gray-light);margin-top:1px}
+  .model-jd-link{font-size:13px;font-weight:500;color:var(--blue);text-decoration:none;white-space:nowrap}
+  .model-jd-link:hover{text-decoration:underline}
+  .model-jd-link::after{content:' ›'}
+
+  /* Compare checkbox */
+  .compare-check{
+    position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;
+    border:2px solid var(--gray-border);background:var(--bg);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+    font-size:13px;color:transparent;
+  }
+  .compare-check:hover{border-color:var(--blue)}
+  .compare-check.checked{background:var(--blue);border-color:var(--blue);color:#fff}
+
+  /* Compare drawer */
+  .compare-drawer{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);
+    border-top:1px solid var(--gray-border);
+    padding:16px 24px;display:none;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .compare-drawer.visible{display:block}
+  .compare-drawer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .compare-items{display:flex;gap:8px;flex:1;flex-wrap:wrap}
+  .compare-item{
+    font-size:13px;font-weight:500;padding:6px 12px;border-radius:20px;
+    background:var(--bg-alt);color:var(--black);display:flex;align-items:center;gap:6px;
+  }
+  .compare-item .remove{cursor:pointer;color:var(--gray-light);font-size:16px;line-height:1}
+  .compare-item .remove:hover{color:var(--red)}
+  .compare-btn{
+    font-size:14px;font-weight:600;padding:10px 24px;border-radius:24px;
+    background:var(--blue);color:#fff;border:none;cursor:pointer;font-family:inherit;
+    transition:background 0.2s;
+  }
+  .compare-btn:hover{background:#0077ed}
+  .compare-btn:disabled{background:var(--gray-border);color:var(--gray-light);cursor:default}
+
+  /* Compare modal */
+  .compare-modal-bg{
+    position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);
+    display:none;align-items:flex-end;justify-content:center;padding:0;
+  }
+  .compare-modal-bg.visible{display:flex}
+  .compare-modal{
+    background:var(--bg);border-radius:20px 20px 0 0;max-width:800px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:24px;position:relative;
+  }
+  @media(min-width:768px){
+    .compare-modal-bg{align-items:center;padding:20px}
+    .compare-modal{border-radius:20px}
+  }
+  .compare-modal-close{
+    position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;
+    border:none;background:var(--bg-alt);cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;color:var(--gray);
+  }
+  .compare-modal-close:hover{background:var(--gray-border)}
+  .compare-modal h3{font-size:24px;font-weight:700;margin-bottom:24px}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .compare-table{border-collapse:collapse;border:1px solid var(--gray-border);border-radius:12px;overflow:hidden;width:100%;min-width:500px}
+  .compare-table th{padding:14px 16px;font-size:14px;font-weight:600;color:var(--black);background:var(--bg-alt);border-bottom:1px solid var(--gray-border);text-align:left;white-space:nowrap}
+  .compare-table th:first-child{color:var(--gray);font-size:13px;font-weight:500;width:90px}
+  .compare-table td{padding:12px 16px;font-size:14px;color:var(--gray-dark);border-bottom:1px solid #ebebeb;text-align:left;vertical-align:top}
+  .compare-table td:first-child{font-weight:500;color:var(--gray);font-size:13px;white-space:nowrap;background:var(--bg-alt)}
+  .compare-table tr:last-child td{border-bottom:none}
+  .compare-table tr:hover td{background:#fafafa}
+  .compare-table tr:hover td:first-child{background:var(--bg-alt)}
+
+  /* ===== VERDICT ===== */
+  .type-verdict{margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-border)}
+  .type-verdict-title{font-size:13px;font-weight:600;color:var(--black);margin-bottom:4px}
+  .type-verdict-desc{font-size:13px;color:var(--gray-dark);line-height:1.5;margin-bottom:4px}
+  .type-verdict-models{font-size:12px;color:var(--gray);line-height:1.5}
+
+  .footer{padding:28px 24px;text-align:center;font-size:12px;color:var(--gray-light);border-top:1px solid var(--gray-border)}
+
+  /* Brand separator */
+  .brand-block{margin-bottom:60px}
+  .brand-block:last-child{margin-bottom:0}
+  .brand-header{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .brand-name{font-size:clamp(24px,3.5vw,36px);font-weight:700}
+  .brand-en{font-size:15px;color:var(--gray-light)}
+  .brand-desc{font-size:15px;color:var(--gray);margin-bottom:24px;max-width:560px}
+
+  /* No results */
+  .no-results{text-align:center;padding:60px 20px;color:var(--gray-light);font-size:16px;display:none}
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+  .hero h1{animation:fadeUp 0.8s ease both}
+  .hero p{animation:fadeUp 0.8s ease 0.15s both}
+
+  .animate-on-scroll{opacity:0;transform:translateY(32px);transition:opacity 0.6s ease,transform 0.6s ease}
+  .animate-on-scroll.visible{opacity:1;transform:translateY(0)}
+
+  .type-card{transition:background 0.2s,transform 0.3s,box-shadow 0.3s}
+  .type-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+
+  .model-card{opacity:0;animation:scaleIn 0.4s ease both}
+
+  .compare-drawer{animation:slideUp 0.3s ease both}
+  .compare-modal-bg{animation:fadeIn 0.2s ease both}
+  .compare-modal{animation:scaleIn 0.3s ease both}
+
+  .cmp-table tbody tr{transition:background 0.15s}
+  .filter-btn{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
+  .filter-btn:active{transform:scale(0.95)}
+
+  .topnav{transition:box-shadow 0.3s}
+  .topnav.scrolled{box-shadow:0 1px 8px rgba(0,0,0,0.06)}
+
+  @media(max-width:767px){
+    .hero{padding:72px 20px 56px}
+    .section{padding:56px 20px}
+    .topnav{gap:8px;padding:10px 16px}
+    .topnav a{font-size:13px;padding:5px 12px}
+    .filter-bar{gap:8px}
+    .price-range{width:120px}
+    .model-title{font-size:17px}
+    .compare-drawer{padding:12px 16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY NAV -->
+<nav class="topnav" id="topnav">
+  <a href="../index.html" class="back-link">← 返回首页</a>
+  <a href="#types">类型对比</a>
+  <a href="#compare">参数横评</a>
+  <a href="#brands">选购机型</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <h1>洗烘机<br>选购指南</h1>
+  <p>一体机 vs 套装，热泵 vs 冷凝<br>9 大品牌 30+ 款机型，帮你选对洗烘方案</p>
+</section>
+
+<!-- TYPE COMPARISON -->
+<section class="section" id="types">
+  <div class="section-inner">
+    <p class="section-label">洗烘方案</p>
+    <h2 class="section-title">三条路线，差异明显。</h2>
+    <p class="section-subtitle">一体机省空间但烘干弱，套装烘干强但占地大。点击卡片筛选对应机型。</p>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-card" data-type="combo" onclick="toggleTypeFilter('combo',this)">
+        <h3 class="type-name">洗烘一体机</h3>
+        <p class="type-en">Washer-Dryer Combo</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>一台搞定洗+烘，省空间</li>
+          <li>价格相对套装便宜</li>
+          <li>安装简单，一个水位一个电位</li>
+          <li>适合小户型、出租房</li>
+        </ul>
+        <p class="type-section-label bad">不足</p>
+        <ul class="type-list">
+          <li>烘干容量 ≤ 洗涤容量的60%</li>
+          <li>多为冷凝烘干，伤衣物、费电</li>
+          <li>烘干后衣物褶皱明显</li>
+          <li>洗烘不能同时进行</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">省空间之选 · ¥2,500–6,000</p>
+          <p class="type-verdict-desc">预算有限或空间不够的首选。日常少量烘干够用，但别指望大批量烘干效果。</p>
+          <p class="type-verdict-models">推荐：博世 WNA254U80W · 西门子 WN54B2X00W · 海尔 EG100HBD259SU1</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="heatpump" onclick="toggleTypeFilter('heatpump',this)">
+        <h3 class="type-name">热泵烘干套装</h3>
+        <p class="type-en">Heat Pump Dryer Set</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>热泵低温烘干，不伤衣物</li>
+          <li>烘干容量与洗涤容量 1:1</li>
+          <li>能效高，省电约50%</li>
+          <li>洗烘可同时进行，效率翻倍</li>
+          <li>烘干效果蓬松柔软，媲美日晒</li>
+        </ul>
+        <p class="type-section-label bad">不足</p>
+        <ul class="type-list">
+          <li>需要两台机器的空间</li>
+          <li>价格较高（套装 ¥6,000–15,000+）</li>
+          <li>需要两个电位和排水位</li>
+          <li>热泵滤网需要定期清理</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">品质生活之选 · ¥6,000–15,000</p>
+          <p class="type-verdict-desc">空间允许的话，强烈推荐套装方案。烘干效果和衣物护理完全不是一体机能比的。</p>
+          <p class="type-verdict-models">推荐：博世+WTU87RH80W · 西门子+WT47U6H00W · 小天鹅 TH100-H36WT</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="condense" onclick="toggleTypeFilter('condense',this)">
+        <h3 class="type-name">冷凝烘干套装</h3>
+        <p class="type-en">Condenser Dryer Set</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>价格比热泵套装低 30-50%</li>
+          <li>烘干速度比热泵快</li>
+          <li>结构简单，维护成本低</li>
+          <li>洗烘也可同时进行</li>
+        </ul>
+        <p class="type-section-label bad">不足</p>
+        <ul class="type-list">
+          <li>高温烘干（70-80°C），伤衣物</li>
+          <li>能耗高，电费约为热泵 2 倍</li>
+          <li>衣物缩水起球风险大</li>
+          <li>同样需要双机位空间</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">过渡方案 · ¥3,500–8,000</p>
+          <p class="type-verdict-desc">预算有限又想要独立烘干机的折中方案，但长期看电费差距会拉大。</p>
+          <p class="type-verdict-models">推荐：海尔 HBNS100-FQ176U1 · 美的 MH100-H03Y</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="section section-alt" id="compare">
+  <div class="section-inner">
+    <p class="section-label">横向对比</p>
+    <h2 class="section-title">关键参数，一目了然。</h2>
+    <p class="section-subtitle">鼠标悬停列头可高亮整列，方便纵向比较。</p>
+    <div class="table-scroll">
+      <table class="cmp-table" id="cmpTable">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th data-col="1" onmouseenter="highlightCol(1)" onmouseleave="clearCol()">洗烘一体机</th>
+            <th data-col="2" onmouseenter="highlightCol(2)" onmouseleave="clearCol()">热泵烘干套装</th>
+            <th data-col="3" onmouseenter="highlightCol(3)" onmouseleave="clearCol()">冷凝烘干套装</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>烘干效果</td><td class="weak">一般</td><td class="best">最佳</td><td class="mid">较好</td></tr>
+          <tr><td>衣物护理</td><td class="bad">较伤衣物</td><td class="best">低温柔和</td><td class="weak">高温伤衣</td></tr>
+          <tr><td>烘干容量</td><td class="weak">洗10kg/烘6kg</td><td class="best">洗10kg/烘10kg</td><td class="best">洗10kg/烘10kg</td></tr>
+          <tr><td>能耗</td><td class="mid">中等</td><td class="best">最省电</td><td class="bad">费电</td></tr>
+          <tr><td>占地空间</td><td class="best">最小（1台）</td><td class="weak">最大（2台）</td><td class="weak">最大（2台）</td></tr>
+          <tr><td>洗烘同时</td><td class="bad">不可以</td><td class="best">可以</td><td class="best">可以</td></tr>
+          <tr><td>安装复杂度</td><td class="best">最简单</td><td class="weak">需双机位</td><td class="weak">需双机位</td></tr>
+          <tr><td>价格区间</td><td>¥2,500–6,000</td><td>¥6,000–15,000</td><td>¥3,500–8,000</td></tr>
+          <tr><td>推荐场景</td><td>小户型/出租房</td><td>家庭/品质需求</td><td>预算有限的过渡</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS & MODELS -->
+<section class="section" id="brands">
+  <div class="section-inner">
+    <p class="section-label">选购机型</p>
+    <h2 class="section-title">找到你的洗烘方案。</h2>
+    <p class="section-subtitle">筛选类型、拖动价格滑块、按价格排序。点击右上角圆圈可勾选对比。</p>
+  </div>
+  <div class="section-wide">
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <span class="filter-group-label">类型</span>
+        <button class="filter-btn active" data-type-filter="all" onclick="setTypeFilter('all')">全部</button>
+        <button class="filter-btn type-combo" data-type-filter="combo" onclick="setTypeFilter('combo')">洗烘一体</button>
+        <button class="filter-btn type-heatpump" data-type-filter="heatpump" onclick="setTypeFilter('heatpump')">热泵套装</button>
+        <button class="filter-btn type-condense" data-type-filter="condense" onclick="setTypeFilter('condense')">冷凝套装</button>
+      </div>
+      <div class="price-filter">
+        <span class="price-label">预算上限</span>
+        <input type="range" class="price-range" id="priceSlider" min="2000" max="20000" value="20000" step="500" oninput="onPriceChange(this.value)">
+        <span class="price-value" id="priceValue">不限</span>
+      </div>
+      <button class="sort-btn" id="sortBtn" onclick="toggleSort()">按价格排序 ↑</button>
+    </div>
+
+    <p class="model-count" id="modelCount"></p>
+    <div class="no-results" id="noResults">没有符合条件的机型，试试调整筛选条件</div>
+    <div class="model-grid" id="modelGrid"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>价格来源：京东官方旗舰店及主流电商渠道（2025年5月参考价）。实际售价以商品页面为准。</p>
+</footer>
+
+<!-- COMPARE DRAWER -->
+<div class="compare-drawer" id="compareDrawer">
+  <div class="compare-drawer-inner">
+    <div class="compare-items" id="compareItems"></div>
+    <button class="compare-btn" id="compareBtn" onclick="showCompare()" disabled>对比选中机型</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-bg" id="compareModal" onclick="if(event.target===this)closeCompare()">
+  <div class="compare-modal">
+    <button class="compare-modal-close" onclick="closeCompare()">✕</button>
+    <h3>机型对比</h3>
+    <div id="compareContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== MODEL DATA =====
+const models = [
+  // ========== 博世 Bosch ==========
+  {brand:"博世",brandEn:"Bosch",name:"WNA254U80W",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:47,rpm:1400,features:"i-DOS智能投放，AntiStain去渍，活氧除菌，LED触控",price:5299,priceText:"¥5,299",priceNote:"促销约 ¥4,800",releaseDate:"2023-09",jd:"https://search.jd.com/Search?keyword=博世WNA254U80W",img:"https://media3.bosch-home.com/Product_Shots/600x337/WNA254U80W_def.webp"},
+  {brand:"博世",brandEn:"Bosch",name:"WNA2F2X1TI",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:47,rpm:1400,features:"i-DOS智能投放2.0，智能烘干感应，14种洗涤程序，羊毛洗",price:5999,priceText:"¥5,999",priceNote:"2024新款",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=博世WNA2F2X1TI",img:"https://media3.bosch-home.com/Product_Shots/600x337/WNA2F2X1TI_def.webp"},
+  {brand:"博世",brandEn:"Bosch",name:"WNA244U80W",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:48,rpm:1400,features:"AntiStain去渍，15分钟快洗，环保静音，夜间洗涤",price:3999,priceText:"¥3,999",priceNote:"性价比款",releaseDate:"2022-06",jd:"https://search.jd.com/Search?keyword=博世WNA244U80W",img:"https://media3.bosch-home.com/Product_Shots/600x337/WNA244U80W_def.webp"},
+  {brand:"博世",brandEn:"Bosch",name:"WTU87RH80W 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:9,dryMethod:"热泵",motor:"BLDC",energy:"一级",noise:42,rpm:1400,features:"热泵低温柔烘，自清洁冷凝器，SensitiveDrying匀柔烘，AntiVibration防震侧板",price:12999,priceText:"¥12,999",priceNote:"洗衣机+烘干机套装价",releaseDate:"2023-06",jd:"https://search.jd.com/Search?keyword=博世WTU87RH80W套装",img:"https://media3.bosch-home.com/Product_Shots/600x337/WTU87RH80W_def.webp"},
+  {brand:"博世",brandEn:"Bosch",name:"WTU87RH50W 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:9,dryMethod:"热泵",motor:"BLDC",energy:"一级",noise:43,rpm:1200,features:"热泵速干40分钟，防皱护理，内衣专洗，SensitiveDrying系统",price:9999,priceText:"¥9,999",priceNote:"洗+烘套装参考价",releaseDate:"2022-09",jd:"https://search.jd.com/Search?keyword=博世WTU87RH50W套装"},
+
+  // ========== 西门子 Siemens ==========
+  {brand:"西门子",brandEn:"Siemens",name:"WN54B2X00W",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:47,rpm:1400,features:"iQdrive变频电机，智能感温烘干，waterPerfect节水技术，LED触控",price:5699,priceText:"¥5,699",priceNote:"促销约 ¥5,200",releaseDate:"2023-06",jd:"https://search.jd.com/Search?keyword=西门子WN54B2X00W",img:"https://media3.bsh-group.com/Product_Shots/600x337/WN54B2X00W_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"WN54C2X40W",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:46,rpm:1400,features:"iSensoric智感系统，超氧除菌除味，WiFi智控，15种洗涤程序",price:6499,priceText:"¥6,499",priceNote:"2024旗舰一体机",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=西门子WN54C2X40W",img:"https://media3.bsh-group.com/Product_Shots/600x337/WN54C2X40W_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"WN52A1X00W",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:48,rpm:1400,features:"iQdrive变频，基础快洗15min，漂洗+程序",price:4299,priceText:"¥4,299",releaseDate:"2022-03",jd:"https://search.jd.com/Search?keyword=西门子WN52A1X00W",img:"https://media3.bsh-group.com/Product_Shots/600x337/WN52A1X00W_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"WT47U6H00W 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:9,dryMethod:"热泵",motor:"BLDC",energy:"一级",noise:42,rpm:1400,features:"热泵低温护衣，selfCleaning冷凝器，智能烘干传感器，不锈钢内筒",price:11999,priceText:"¥11,999",priceNote:"洗+烘套装参考价",releaseDate:"2023-03",jd:"https://search.jd.com/Search?keyword=西门子WT47U6H00W套装",img:"https://media3.bsh-group.com/Product_Shots/600x337/WT47U6H00W_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"WT47U9H00W 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:9,dryMethod:"热泵",motor:"BLDC",energy:"一级",noise:41,rpm:1400,features:"旗舰热泵，intelligentCleaning自清洁系统，Home Connect智能互联",price:14999,priceText:"¥14,999",priceNote:"高端套装旗舰",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=西门子WT47U9H00W套装",img:"https://media3.bsh-group.com/Product_Shots/600x337/WT47U9H00W_def.webp"},
+
+  // ========== 松下 Panasonic ==========
+  {brand:"松下",brandEn:"Panasonic",name:"XQG100-LD185",type:"combo",typeLabel:"洗烘一体 · 热泵",washKg:10,dryKg:7,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:41,rpm:1600,features:"nanoeX除菌除味，热泵一体机（稀有），DD直驱静音，泡沫净2.0",price:7999,priceText:"¥7,999",priceNote:"热泵一体机标杆",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=松下XQG100-LD185"},
+  {brand:"松下",brandEn:"Panasonic",name:"XQG100-LD169",type:"combo",typeLabel:"洗烘一体 · 热泵",washKg:10,dryKg:6,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:42,rpm:1600,features:"nanoeX除菌，热泵低温烘干，自动投放，光动银除菌",price:6499,priceText:"¥6,499",releaseDate:"2023-06",jd:"https://search.jd.com/Search?keyword=松下XQG100-LD169"},
+  {brand:"松下",brandEn:"Panasonic",name:"XQG100-SD139",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:46,rpm:1400,features:"泡沫净技术，光动银除菌，冷凝烘干，智能投放",price:4299,priceText:"¥4,299",priceNote:"入门款",releaseDate:"2023-03",jd:"https://search.jd.com/Search?keyword=松下XQG100-SD139"},
+  {brand:"松下",brandEn:"Panasonic",name:"NH-EH900G 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:9,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:40,rpm:1600,features:"双极除湿热泵，nanoeX护衣除菌，正反转防缠绕烘干，65°C柔烘",price:10999,priceText:"¥10,999",priceNote:"洗+烘套装参考价",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=松下NH-EH900G套装"},
+
+  // ========== 海尔 Haier ==========
+  {brand:"海尔",brandEn:"Haier",name:"EG100HBD259SU1",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:46,rpm:1400,features:"香薰洗，空气洗，525大筒径，精华洗2.0，WiFi智控",price:3599,priceText:"¥3,599",priceNote:"促销约 ¥3,200",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=海尔EG100HBD259SU1"},
+  {brand:"海尔",brandEn:"Haier",name:"XQG100-HBD14376LU1",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:7,dryMethod:"冷凝",motor:"DD直驱",energy:"一级",noise:44,rpm:1400,features:"直驱变频，AI智慧洗，525大筒径，微蒸汽空气洗，除菌螨",price:4999,priceText:"¥4,999",priceNote:"直驱旗舰一体机",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=海尔XQG100-HBD14376LU1"},
+  {brand:"海尔",brandEn:"Haier",name:"GHNE9-14 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:9,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:43,rpm:1400,features:"热泵正反转烘干，双喷淋漂洗，525筒径，自清洁抗菌窗垫",price:7999,priceText:"¥7,999",priceNote:"洗+烘套装参考价",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=海尔GHNE9-14热泵套装"},
+  {brand:"海尔",brandEn:"Haier",name:"HBNS100-FQ176U1 套装",type:"condense",typeLabel:"冷凝烘干套装",washKg:10,dryKg:10,dryMethod:"冷凝",motor:"BLDC",energy:"二级",noise:48,rpm:1200,features:"冷凝即排烘干，大容量双10kg，快速烘干40min，性价比套装",price:5499,priceText:"¥5,499",priceNote:"冷凝套装性价比之选",releaseDate:"2023-09",jd:"https://search.jd.com/Search?keyword=海尔HBNS100-FQ176U1套装"},
+
+  // ========== 小天鹅 Little Swan ==========
+  {brand:"小天鹅",brandEn:"Little Swan",name:"TD100V868WMUIAD5",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:7,dryMethod:"冷凝",motor:"DD直驱",energy:"一级",noise:44,rpm:1400,features:"水魔方冷水洗，DD直驱，银离子除菌，智能投放，超微净泡",price:4599,priceText:"¥4,599",priceNote:"旗舰一体机",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=小天鹅TD100V868WMUIAD5"},
+  {brand:"小天鹅",brandEn:"Little Swan",name:"TD100V66WMUIAD5",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:7,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:46,rpm:1400,features:"纳米银离子除菌，超微净泡，智能投放，15分钟快洗",price:3299,priceText:"¥3,299",priceNote:"促销约 ¥2,899",releaseDate:"2023-09",jd:"https://search.jd.com/Search?keyword=小天鹅TD100V66WMUIAD5"},
+  {brand:"小天鹅",brandEn:"Little Swan",name:"TD100VT096WDG-Y1T",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:47,rpm:1400,features:"入门款洗烘一体，除菌洗，智能感温烘干",price:2599,priceText:"¥2,599",releaseDate:"2023-06",jd:"https://search.jd.com/Search?keyword=小天鹅TD100VT096WDG"},
+  {brand:"小天鹅",brandEn:"Little Swan",name:"TH100-H36WT 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:10,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:42,rpm:1400,features:"热泵柔烘，紫外除菌，正反转防缠绕，水魔方冷水洗衣机配套",price:8999,priceText:"¥8,999",priceNote:"洗+烘套装参考价",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=小天鹅TH100-H36WT套装"},
+
+  // ========== 美的 Midea ==========
+  {brand:"美的",brandEn:"Midea",name:"MD100VT717WDY5",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:7,dryMethod:"冷凝",motor:"DD直驱",energy:"一级",noise:44,rpm:1400,features:"DD直驱变频，真丝柔洗，蒸汽除菌除螨，WiFi智控，智能投放",price:3999,priceText:"¥3,999",priceNote:"促销约 ¥3,500",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=美的MD100VT717WDY5"},
+  {brand:"美的",brandEn:"Midea",name:"MD100V33WIDY",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"BLDC",energy:"一级",noise:47,rpm:1400,features:"净泡洗2.0，ACP抗菌门封，多种洗涤程序，高性价比",price:2699,priceText:"¥2,699",priceNote:"入门性价比款",releaseDate:"2023-06",jd:"https://search.jd.com/Search?keyword=美的MD100V33WIDY"},
+  {brand:"美的",brandEn:"Midea",name:"MH100-H03Y 套装",type:"condense",typeLabel:"冷凝烘干套装",washKg:10,dryKg:10,dryMethod:"冷凝",motor:"BLDC",energy:"二级",noise:48,rpm:1200,features:"冷凝即排烘干，双10kg大容量，紫外除菌，快速烘30min",price:4999,priceText:"¥4,999",priceNote:"冷凝套装入门",releaseDate:"2023-09",jd:"https://search.jd.com/Search?keyword=美的MH100-H03Y套装"},
+  {brand:"美的",brandEn:"Midea",name:"MH100-H05W 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:10,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:43,rpm:1400,features:"热泵柔烘，紫外线除菌，DD直驱洗衣机配套，智能温湿感应",price:7499,priceText:"¥7,499",priceNote:"洗+烘套装参考价",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=美的MH100-H05W热泵套装"},
+
+  // ========== LG ==========
+  {brand:"LG",brandEn:"LG",name:"FCX10R4W",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"DD直驱",energy:"一级",noise:43,rpm:1400,features:"AI DD直驱电机，360°蒸汽除菌，TurboWash快速洗，ThinQ智能控制",price:5499,priceText:"¥5,499",priceNote:"促销约 ¥4,999",releaseDate:"2023-09",jd:"https://search.jd.com/Search?keyword=LG+FCX10R4W"},
+  {brand:"LG",brandEn:"LG",name:"FCX13Y4W",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:13,dryKg:8,dryMethod:"冷凝",motor:"DD直驱",energy:"一级",noise:44,rpm:1400,features:"超大容量13kg，AI DD电机，蒸汽除菌，涡轮强净，WiFi智控",price:6999,priceText:"¥6,999",priceNote:"大容量旗舰一体机",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=LG+FCX13Y4W"},
+  {brand:"LG",brandEn:"LG",name:"RC90V9AV4W 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:9,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:41,rpm:1400,features:"双重变频热泵，AI感应烘干，温和低温护衣，自动清洁冷凝器",price:12999,priceText:"¥12,999",priceNote:"洗+烘套装参考价",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=LG+RC90V9AV4W套装"},
+
+  // ========== 三星 Samsung ==========
+  {brand:"三星",brandEn:"Samsung",name:"WD10T654DBH/SC",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:10,dryKg:6,dryMethod:"冷凝",motor:"DD直驱",energy:"一级",noise:44,rpm:1400,features:"AI智能洗，蒸汽除菌，泡泡净洗，Smart Control手机控制",price:4999,priceText:"¥4,999",priceNote:"促销约 ¥4,500",releaseDate:"2023-06",jd:"https://search.jd.com/Search?keyword=三星WD10T654DBH"},
+  {brand:"三星",brandEn:"Samsung",name:"WD11T734DBE/SC",type:"combo",typeLabel:"洗烘一体 · 冷凝",washKg:11,dryKg:7,dryMethod:"冷凝",motor:"DD直驱",energy:"一级",noise:43,rpm:1400,features:"AI Ecobubble，蒸汽除菌，泡泡净2.0，11kg大容量",price:5999,priceText:"¥5,999",priceNote:"2024旗舰一体机",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=三星WD11T734DBE"},
+  {brand:"三星",brandEn:"Samsung",name:"DV90T7440BH 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:9,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:42,rpm:1400,features:"OptimalDry智能感应烘干，热泵低温护衣，抗菌内筒",price:10999,priceText:"¥10,999",priceNote:"洗+烘套装参考价",releaseDate:"2023-09",jd:"https://search.jd.com/Search?keyword=三星DV90T7440BH套装"},
+
+  // ========== COLMO ==========
+  {brand:"COLMO",brandEn:"COLMO",name:"CGU10-A1+CHZ10-A1 睿极套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:10,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:42,rpm:1400,features:"AVANT睿极系列，600mm纯平全嵌，AI智能投放，热泵低温柔烘，洗净比1.10",price:8999,priceText:"¥8,999",priceNote:"洗+烘套装参考价",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=COLMO+CGU10-A1+CHZ10-A1"},
+  {brand:"COLMO",brandEn:"COLMO",name:"CGU10H-C3+CHZ10H-C3 黑珍珠C3",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:10,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:41,rpm:1400,features:"黑珍珠系列，600mm纯平全嵌，AI轻干洗，净护柔洗，全变频热泵",price:11999,priceText:"¥11,999",priceNote:"高端热泵套装",releaseDate:"2024-06",jd:"https://search.jd.com/Search?keyword=COLMO+CGU10H-C3+CHZ10H-C3"},
+  {brand:"COLMO",brandEn:"COLMO",name:"北极星C2 套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:10,dryKg:10,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:42,rpm:1400,features:"北极星系列，纯平全嵌，AI智洗，热泵正反转柔烘，智能温湿感应",price:9999,priceText:"¥9,999",priceNote:"洗+烘套装参考价",releaseDate:"2024-03",jd:"https://search.jd.com/Search?keyword=COLMO+北极星+洗烘套装+C2"},
+  {brand:"COLMO",brandEn:"COLMO",name:"图灵T1 洗烘套装",type:"heatpump",typeLabel:"热泵烘干套装",washKg:12,dryKg:10,dryMethod:"热泵",motor:"DD直驱",energy:"一级",noise:40,rpm:1600,features:"TURING图灵旗舰，12kg大容量洗涤，纯平全嵌，全变频热泵，AI智能洗护",price:15999,priceText:"¥15,999",priceNote:"旗舰套装",releaseDate:"2024-09",jd:"https://search.jd.com/Search?keyword=COLMO+图灵+洗烘套装+T1"},
+];
+
+// ===== STATE =====
+let currentTypeFilter = 'all';
+let maxPrice = 20000;
+let sortAsc = false;
+let sortActive = false;
+let compareSet = new Set();
+
+// ===== RENDER =====
+function renderModels() {
+  let filtered = models.filter(m => {
+    if (currentTypeFilter !== 'all' && m.type !== currentTypeFilter) return false;
+    if (m.price > maxPrice) return false;
+    return true;
+  });
+  if (sortActive) {
+    filtered.sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+  }
+  const grid = document.getElementById('modelGrid');
+  const countEl = document.getElementById('modelCount');
+  const noRes = document.getElementById('noResults');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    countEl.textContent = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+  countEl.textContent = `共 ${filtered.length} 款机型`;
+
+  let html = '';
+  if (!sortActive) {
+    const brands = [...new Set(filtered.map(m => m.brand))];
+    for (const brand of brands) {
+      const brandModels = filtered.filter(m => m.brand === brand);
+      const first = brandModels[0];
+      html += `<div class="brand-block" style="grid-column:1/-1">
+        <div class="brand-header"><h3 class="brand-name">${brand}</h3><span class="brand-en">${first.brandEn}</span></div>
+      </div>`;
+      for (const m of brandModels) html += cardHTML(m);
+    }
+  } else {
+    for (const m of filtered) html += cardHTML(m);
+  }
+  grid.innerHTML = html;
+}
+
+function cardHTML(m) {
+  const idx = models.indexOf(m);
+  const checked = compareSet.has(idx);
+  const tagClass = 'tag-' + m.type;
+  return `<div class="model-card" data-idx="${idx}">
+    <div class="compare-check ${checked?'checked':''}" onclick="toggleCompare(${idx},this)" title="加入对比">✓</div>
+    ${m.img ? `<div class="model-img-wrap"><img class="model-img" src="${m.img}" alt="${m.name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+    <span class="model-tier">${m.brand}</span>
+    ${sortActive ? `<span class="brand-tag">${m.brand}</span>` : ''}
+    <h4 class="model-title">${m.name}</h4>
+    <p class="model-type-tag ${tagClass}">${m.typeLabel}</p>
+    <div class="model-specs">
+      <span>洗${m.washKg}kg</span><span>烘${m.dryKg}kg</span><span>${m.dryMethod}</span><span>${m.motor}</span><span>${m.energy}能效</span><span>${m.rpm}rpm</span><span>${m.noise}dB</span>
+    </div>
+    <p class="model-features">${m.features}</p>
+    <div class="model-price-row">
+      <div>
+        <div class="model-price">${m.priceText}</div>
+        ${m.priceNote ? `<div class="model-price-note">${m.priceNote}</div>` : ''}
+      </div>
+      <a class="model-jd-link" href="${m.jd}" target="_blank" rel="noopener">京东搜索</a>
+    </div>
+  </div>`;
+}
+
+// ===== FILTERS =====
+function setTypeFilter(type) {
+  currentTypeFilter = type;
+  document.querySelectorAll('#filterBar .filter-btn[data-type-filter]').forEach(b => {
+    b.classList.toggle('active', b.dataset.typeFilter === type);
+  });
+  document.querySelectorAll('.type-card').forEach(c => {
+    c.classList.toggle('selected', type !== 'all' && c.dataset.type === type);
+  });
+  renderModels();
+}
+
+function toggleTypeFilter(type, el) {
+  if (currentTypeFilter === type) {
+    setTypeFilter('all');
+  } else {
+    setTypeFilter(type);
+  }
+}
+
+function onPriceChange(val) {
+  maxPrice = parseInt(val);
+  document.getElementById('priceValue').textContent = maxPrice >= 20000 ? '不限' : `≤ ¥${maxPrice.toLocaleString()}`;
+  renderModels();
+}
+
+function toggleSort() {
+  const btn = document.getElementById('sortBtn');
+  if (!sortActive) {
+    sortActive = true; sortAsc = true;
+    btn.textContent = '价格 低→高'; btn.classList.add('active');
+  } else if (sortAsc) {
+    sortAsc = false;
+    btn.textContent = '价格 高→低';
+  } else {
+    sortActive = false;
+    btn.textContent = '按价格排序 ↑'; btn.classList.remove('active');
+  }
+  renderModels();
+}
+
+// ===== COMPARE =====
+function toggleCompare(idx, el) {
+  if (compareSet.has(idx)) { compareSet.delete(idx); el.classList.remove('checked'); }
+  else if (compareSet.size < 4) { compareSet.add(idx); el.classList.add('checked'); }
+  updateCompareDrawer();
+}
+
+function updateCompareDrawer() {
+  const drawer = document.getElementById('compareDrawer');
+  const items = document.getElementById('compareItems');
+  const btn = document.getElementById('compareBtn');
+  if (compareSet.size === 0) { drawer.classList.remove('visible'); return; }
+  drawer.classList.add('visible');
+  items.innerHTML = [...compareSet].map(idx => {
+    const m = models[idx];
+    return `<span class="compare-item">${m.brand} ${m.name}<span class="remove" onclick="removeCompare(${idx})">✕</span></span>`;
+  }).join('');
+  btn.disabled = compareSet.size < 2;
+}
+
+function removeCompare(idx) {
+  compareSet.delete(idx);
+  updateCompareDrawer();
+  renderModels();
+}
+
+function showCompare() {
+  if (compareSet.size < 2) return;
+  const items = [...compareSet].map(i => models[i]);
+  const fields = [
+    ['品牌', m => m.brand],
+    ['类型', m => m.typeLabel],
+    ['洗涤容量', m => m.washKg + 'kg'],
+    ['烘干容量', m => m.dryKg + 'kg'],
+    ['烘干方式', m => m.dryMethod],
+    ['电机类型', m => m.motor],
+    ['能效等级', m => m.energy],
+    ['噪音', m => m.noise + 'dB'],
+    ['转速', m => m.rpm + 'rpm'],
+    ['发布时间', m => m.releaseDate],
+    ['价格', m => m.priceText + (m.priceNote ? `<br><small style="color:var(--gray-light)">${m.priceNote}</small>` : '')],
+    ['亮点', m => m.features],
+    ['京东', m => `<a href="${m.jd}" target="_blank" style="color:var(--blue);text-decoration:none">去搜索 ›</a>`],
+  ];
+  let html = `<div class="compare-scroll"><table class="compare-table">`;
+  html += `<thead><tr><th></th>`;
+  items.forEach(m => { html += `<th>${m.name}</th>`; });
+  html += `</tr></thead><tbody>`;
+  for (const [label, fn] of fields) {
+    html += `<tr><td>${label}</td>`;
+    items.forEach(m => { html += `<td>${fn(m)}</td>`; });
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  document.getElementById('compareContent').innerHTML = html;
+  document.getElementById('compareModal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompare() {
+  document.getElementById('compareModal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// ===== TABLE COLUMN HIGHLIGHT =====
+function highlightCol(col) {
+  document.querySelectorAll('#cmpTable tbody td').forEach(td => {
+    const idx = [...td.parentNode.children].indexOf(td);
+    td.classList.toggle('col-highlight', idx === col);
+  });
+}
+function clearCol() {
+  document.querySelectorAll('#cmpTable td.col-highlight').forEach(td => td.classList.remove('col-highlight'));
+}
+
+// ===== SCROLL SPY + NAV SHADOW =====
+const sectionIds = ['types','compare','brands'];
+const nav = document.getElementById('topnav');
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY + 80;
+  let current = '';
+  for (const id of sectionIds) {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= scrollY) current = id;
+  }
+  document.querySelectorAll('.topnav a:not(.back-link)').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+});
+
+// ===== SCROLL REVEAL =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function initScrollReveal() {
+  document.querySelectorAll('.section-label,.section-title,.section-subtitle,.type-grid,.table-scroll,.filter-bar').forEach(el => {
+    el.classList.add('animate-on-scroll');
+    observer.observe(el);
+  });
+}
+
+// ===== STAGGER MODEL CARDS =====
+const origRender = renderModels;
+renderModels = function() {
+  origRender();
+  document.querySelectorAll('.model-card').forEach((card, i) => {
+    card.style.animationDelay = `${Math.min(i * 0.05, 0.6)}s`;
+  });
+};
+
+// INIT
+renderModels();
+initScrollReveal();
+</script>
+</body>
+</html>

@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洗碗机选购指南</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --black:#1d1d1f;--gray-dark:#424245;--gray:#6e6e73;--gray-light:#86868b;
+    --gray-border:#d2d2d7;--bg:#fff;--bg-alt:#f5f5f7;
+    --blue:#0071e3;--blue-light:#e8f4fd;--green:#34c759;--green-light:#e8f8ec;
+    --purple:#af52de;--purple-light:#f3eefa;--orange:#ff9500;--orange-light:#fff4e6;
+    --red:#ff3b30;--teal:#30b0c7;--teal-light:#e6f7fa;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;color:var(--black);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+  /* ===== STICKY NAV ===== */
+  .topnav{
+    position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--gray-border);
+    display:flex;align-items:center;justify-content:center;gap:24px;
+    padding:12px 20px;overflow-x:auto;white-space:nowrap;
+  }
+  .topnav a{
+    font-size:14px;font-weight:500;color:var(--gray);text-decoration:none;
+    padding:6px 14px;border-radius:20px;transition:all 0.2s;flex-shrink:0;
+  }
+  .topnav a:hover{color:var(--black);background:var(--bg-alt)}
+  .topnav a.active{color:var(--black);background:var(--bg-alt)}
+  .back-link{font-size:13px!important;color:var(--gray-light)!important}
+  .back-link:hover{color:var(--blue)!important}
+
+  /* ===== HERO ===== */
+  .hero{text-align:center;padding:100px 24px 70px;background:var(--bg-alt)}
+  .hero h1{font-size:clamp(36px,7vw,72px);font-weight:900;letter-spacing:-0.02em;line-height:1.05}
+  .hero p{font-size:clamp(16px,2.2vw,24px);color:var(--gray);margin-top:14px;max-width:620px;margin-left:auto;margin-right:auto}
+
+  /* ===== SECTIONS ===== */
+  .section{padding:80px 24px}
+  .section-alt{background:var(--bg-alt)}
+  .section-inner{max-width:980px;margin:0 auto}
+  .section-wide{max-width:1200px;margin:0 auto}
+  .section-label{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-light);margin-bottom:6px}
+  .section-title{font-size:clamp(28px,4.5vw,48px);font-weight:700;letter-spacing:-0.015em;line-height:1.1;margin-bottom:16px}
+  .section-subtitle{font-size:clamp(15px,1.8vw,19px);color:var(--gray);max-width:560px;line-height:1.5;margin-bottom:48px}
+
+  /* ===== CUSTOM PANEL BADGE ===== */
+  .panel-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:11px;font-weight:700;letter-spacing:0.03em;
+    padding:3px 10px;border-radius:12px;white-space:nowrap;
+  }
+  .panel-badge.yes{background:none;color:#15803d;border:none;padding:3px 0}
+  .panel-badge.no{background:none;color:var(--gray-light);border:none;padding:3px 0}
+  .panel-badge.partial{background:none;color:var(--gray-light);border:none;padding:3px 0}
+  .panel-badge-lg{font-size:13px;padding:5px 14px;border-radius:16px}
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar{
+    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;align-items:center;
+  }
+  .filter-group{display:flex;gap:6px;flex-wrap:wrap}
+  .filter-group-label{font-size:13px;font-weight:600;color:var(--gray-light);align-self:center;margin-right:4px}
+  .filter-btn{
+    font-size:13px;font-weight:500;padding:6px 16px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;
+  }
+  .filter-btn:hover{border-color:var(--black);color:var(--black)}
+  .filter-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+  .filter-btn.panel-yes.active{background:var(--black);border-color:var(--black);color:#fff}
+
+  /* Price slider */
+  .price-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .price-label{font-size:13px;color:var(--gray);white-space:nowrap}
+  .price-range{-webkit-appearance:none;width:160px;height:4px;border-radius:2px;background:#e0e0e0;outline:none}
+  .price-range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+  .price-value{font-size:14px;font-weight:600;color:var(--black);min-width:80px}
+
+  /* Sort */
+  .sort-btn{
+    font-size:13px;font-weight:500;padding:6px 14px;border-radius:20px;
+    border:1px solid var(--gray-border);background:var(--bg);color:var(--gray-dark);
+    cursor:pointer;transition:all 0.2s;font-family:inherit;margin-left:auto;
+  }
+  .sort-btn:hover{border-color:var(--black);color:var(--black)}
+  .sort-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+
+  /* ===== TYPE GRID ===== */
+  .type-grid{display:grid;grid-template-columns:1fr;gap:1px;background:var(--gray-border);border:1px solid var(--gray-border);border-radius:20px;overflow:hidden}
+  @media(min-width:768px){.type-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:1024px){.type-grid{grid-template-columns:repeat(4,1fr)}}
+  .type-card{background:var(--bg);padding:32px 24px;cursor:pointer;transition:background 0.2s}
+  .type-card:hover{background:#fafafa}
+  .type-card.selected{background:var(--bg);border:1px solid var(--gray-border)}
+  .type-name{font-size:22px;font-weight:700;margin-bottom:2px}
+  .type-en{font-size:13px;color:var(--gray-light);margin-bottom:20px}
+  .type-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+  .type-section-label.good{color:var(--green)}
+  .type-section-label.bad{color:var(--red)}
+  .type-list{list-style:none;margin-bottom:20px}
+  .type-list li{font-size:13px;color:var(--gray-dark);padding:4px 0;line-height:1.4}
+  .type-verdict{margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-border)}
+  .type-verdict-title{font-size:13px;font-weight:600;color:var(--black);margin-bottom:4px}
+  .type-verdict-desc{font-size:13px;color:var(--gray-dark);line-height:1.5;margin-bottom:4px}
+  .type-verdict-models{font-size:12px;color:var(--gray);line-height:1.5}
+
+  /* ===== CMP TABLE ===== */
+  .table-scroll{overflow-x:auto;border:1px solid var(--gray-border);border-radius:16px}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:14px}
+  .cmp-table thead th{padding:14px 18px;text-align:center;font-weight:600;font-size:15px;color:var(--black);border-bottom:1px solid var(--gray-border);background:var(--bg);position:sticky;top:0}
+  .cmp-table thead th:first-child{text-align:left;color:var(--gray-light);font-size:13px;font-weight:500}
+  .cmp-table tbody td{padding:12px 18px;text-align:center;color:var(--gray-dark);border-bottom:1px solid #ebebeb}
+  .cmp-table tbody td:first-child{text-align:left;font-weight:500;color:var(--black)}
+  .cmp-table tbody tr:last-child td{border-bottom:none}
+  .cmp-table tbody tr:hover td{background:#fafafa}
+  .cmp-table .best{font-weight:700;color:var(--blue)}
+  .cmp-table .mid{color:var(--gray-dark)}
+  .cmp-table .weak{color:var(--gray-light)}
+  .cmp-table .bad{color:var(--red)}
+  .cmp-table td.col-highlight{background:var(--bg-alt)!important}
+
+  /* ===== MODEL CARDS ===== */
+  .model-count{font-size:14px;color:var(--gray-light);margin-bottom:20px}
+  .model-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:640px){.model-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:960px){.model-grid{grid-template-columns:repeat(3,1fr)}}
+
+  .model-card{
+    border:1px solid var(--gray-border);border-radius:16px;padding:24px;
+    background:var(--bg);display:flex;flex-direction:column;transition:all 0.3s;
+    position:relative;overflow:hidden;
+  }
+  .model-card:hover{box-shadow:0 8px 30px rgba(0,0,0,0.08);transform:translateY(-4px)}
+  .model-card.hidden{display:none}
+  .model-img-wrap{display:flex;justify-content:center;margin-bottom:14px}
+  .model-img{width:100%;max-width:200px;height:140px;object-fit:contain;border-radius:8px}
+  .model-card .brand-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:2px}
+  .model-tier{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-light);margin-bottom:4px}
+  .model-title{font-size:18px;font-weight:600;color:var(--black);margin-bottom:6px;line-height:1.25}
+  .model-type{font-size:13px;font-weight:500;margin-bottom:4px}
+  .type-embed{color:var(--black)}.type-semi{color:var(--black)}.type-free{color:var(--black)}.type-counter{color:var(--black)}.type-sink{color:var(--black)}
+  .model-specs{font-size:12px;color:var(--gray);margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px}
+  .model-specs span{background:var(--bg-alt);padding:2px 8px;border-radius:8px}
+  .model-features{font-size:13px;color:var(--gray);line-height:1.6;flex:1;margin-bottom:16px}
+  .model-badges{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .model-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-top:14px;border-top:1px solid #ebebeb;flex-wrap:wrap}
+  .model-price{font-size:20px;font-weight:600;color:var(--black);letter-spacing:-0.01em}
+  .model-price-note{font-size:11px;color:var(--gray-light);margin-top:1px}
+  .model-jd-link{font-size:13px;font-weight:500;color:var(--blue);text-decoration:none;white-space:nowrap}
+  .model-jd-link:hover{text-decoration:underline}
+  .model-jd-link::after{content:' ›'}
+
+  /* Compare checkbox */
+  .compare-check{
+    position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;
+    border:2px solid var(--gray-border);background:var(--bg);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+    font-size:13px;color:transparent;
+  }
+  .compare-check:hover{border-color:var(--black)}
+  .compare-check.checked{background:var(--black);border-color:var(--black);color:#fff}
+
+  /* Compare drawer */
+  .compare-drawer{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);
+    border-top:1px solid var(--gray-border);
+    padding:16px 24px;display:none;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .compare-drawer.visible{display:block}
+  .compare-drawer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .compare-items{display:flex;gap:8px;flex:1;flex-wrap:wrap}
+  .compare-item{
+    font-size:13px;font-weight:500;padding:6px 12px;border-radius:20px;
+    background:var(--bg-alt);color:var(--black);display:flex;align-items:center;gap:6px;
+  }
+  .compare-item .remove{cursor:pointer;color:var(--gray-light);font-size:16px;line-height:1}
+  .compare-item .remove:hover{color:var(--red)}
+  .compare-btn{
+    font-size:14px;font-weight:600;padding:10px 24px;border-radius:24px;
+    background:var(--blue);color:#fff;border:none;cursor:pointer;font-family:inherit;
+    transition:background 0.2s;
+  }
+  .compare-btn:hover{background:#0077ed}
+  .compare-btn:disabled{background:var(--gray-border);color:var(--gray-light);cursor:default}
+
+  /* Compare modal */
+  .compare-modal-bg{
+    position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);
+    display:none;align-items:flex-end;justify-content:center;padding:0;
+  }
+  .compare-modal-bg.visible{display:flex}
+  .compare-modal{
+    background:var(--bg);border-radius:20px 20px 0 0;max-width:800px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:24px;position:relative;
+  }
+  @media(min-width:768px){
+    .compare-modal-bg{align-items:center;padding:20px}
+    .compare-modal{border-radius:20px}
+  }
+  .compare-modal-close{
+    position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;
+    border:none;background:var(--bg-alt);cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;color:var(--gray);
+  }
+  .compare-modal-close:hover{background:var(--gray-border)}
+  .compare-modal h3{font-size:24px;font-weight:700;margin-bottom:24px}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .compare-table{border-collapse:collapse;border:1px solid var(--gray-border);border-radius:12px;overflow:hidden;width:100%;min-width:500px}
+  .compare-table th{padding:14px 16px;font-size:14px;font-weight:600;color:var(--black);background:var(--bg-alt);border-bottom:1px solid var(--gray-border);text-align:left;white-space:nowrap}
+  .compare-table th:first-child{color:var(--gray);font-size:13px;font-weight:500;width:72px}
+  .compare-table td{padding:12px 16px;font-size:14px;color:var(--gray-dark);border-bottom:1px solid #ebebeb;text-align:left;vertical-align:top}
+  .compare-table td:first-child{font-weight:500;color:var(--gray);font-size:13px;white-space:nowrap;background:var(--bg-alt)}
+  .compare-table tr:last-child td{border-bottom:none}
+  .compare-table tr:hover td{background:#fafafa}
+  .compare-table tr:hover td:first-child{background:var(--bg-alt)}
+
+  /* Brand separator */
+  .brand-block{margin-bottom:60px}
+  .brand-block:last-child{margin-bottom:0}
+  .brand-header{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .brand-name{font-size:clamp(24px,3.5vw,36px);font-weight:700}
+  .brand-en{font-size:15px;color:var(--gray-light)}
+  .brand-desc{font-size:15px;color:var(--gray);margin-bottom:24px;max-width:560px}
+
+  /* No results */
+  .no-results{text-align:center;padding:60px 20px;color:var(--gray-light);font-size:16px;display:none}
+
+  .footer{padding:28px 24px;text-align:center;font-size:12px;color:var(--gray-light);border-top:1px solid var(--gray-border)}
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+  .hero h1{animation:fadeUp 0.8s ease both}
+  .hero p{animation:fadeUp 0.8s ease 0.15s both}
+
+  .animate-on-scroll{opacity:0;transform:translateY(32px);transition:opacity 0.6s ease,transform 0.6s ease}
+  .animate-on-scroll.visible{opacity:1;transform:translateY(0)}
+
+  .type-card{transition:background 0.2s,transform 0.3s,box-shadow 0.3s}
+  .type-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+
+  .model-card{opacity:0;animation:scaleIn 0.4s ease both}
+
+  .compare-drawer{animation:slideUp 0.3s ease both}
+  .compare-modal-bg{animation:fadeIn 0.2s ease both}
+  .compare-modal{animation:scaleIn 0.3s ease both}
+
+  .cmp-table tbody tr{transition:background 0.15s}
+  .filter-btn{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
+  .filter-btn:active{transform:scale(0.95)}
+
+  .topnav{transition:box-shadow 0.3s}
+  .topnav.scrolled{box-shadow:0 1px 8px rgba(0,0,0,0.06)}
+
+  @media(max-width:767px){
+    .hero{padding:72px 20px 56px}
+    .section{padding:56px 20px}
+    .topnav{gap:8px;padding:10px 16px}
+    .topnav a{font-size:13px;padding:5px 12px}
+    .filter-bar{gap:8px}
+    .price-range{width:120px}
+    .model-title{font-size:17px}
+    .compare-drawer{padding:12px 16px}
+    .type-grid{grid-template-columns:1fr!important}
+  }
+  @media(min-width:768px) and (max-width:1023px){
+    .type-grid{grid-template-columns:repeat(2,1fr)!important}
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY NAV -->
+<nav class="topnav" id="topnav">
+  <a href="../index.html" class="back-link">← 返回首页</a>
+  <a href="#types">安装方式</a>
+  <a href="#compare">对比维度</a>
+  <a href="#brands">选购机型</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <h1>洗碗机<br>选购指南</h1>
+  <p>九大品牌 35+ 款主流型号全面对比<br>重点标注「可换门板」全嵌入机型，助你找到最合适的那一台</p>
+</section>
+
+<!-- TYPE COMPARISON -->
+<section class="section" id="types">
+  <div class="section-inner">
+    <p class="section-label">安装方式</p>
+    <h2 class="section-title">四种安装方案，按需选择。</h2>
+    <p class="section-subtitle">点击卡片筛选对应安装类型。全嵌入式支持换装全屋定制门板，与橱柜完美融合。</p>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-card" data-type="embed" onclick="toggleTypeFilter('embed',this)">
+        <h3 class="type-name">全嵌入式</h3>
+        <p class="type-en">Fully Integrated · 可换门板</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>支持换装定制门板，与橱柜完美统一</li>
+          <li>控制面板隐藏在门板顶部，外观极简</li>
+          <li>容量通常最大，13–16 套主流</li>
+          <li>高端机型烘干效果最佳</li>
+        </ul>
+        <p class="type-section-label bad">注意</p>
+        <ul class="type-list">
+          <li>需要提前预留橱柜尺寸</li>
+          <li>门板需额外定制，增加成本</li>
+          <li>安装复杂度较高</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">新装修首选 · ¥3,000–10,000</p>
+          <p class="type-verdict-desc">追求厨房整体美观的最佳方案。装修阶段提前规划橱柜开孔即可。</p>
+          <p class="type-verdict-models">推荐：西门子 SJ63HX00KC · 慧曼 S3 · 美的 RX600Pro · 博世 SJV4HCX00C</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="semi" onclick="toggleTypeFilter('semi',this)">
+        <h3 class="type-name">半嵌入式</h3>
+        <p class="type-en">Semi-Integrated · 面板外露</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>控制面板外露，操作更直观</li>
+          <li>嵌入橱柜，节省空间</li>
+          <li>安装难度低于全嵌入</li>
+        </ul>
+        <p class="type-section-label bad">注意</p>
+        <ul class="type-list">
+          <li>无法换装定制门板</li>
+          <li>面板外露影响整体性</li>
+          <li>品牌选择相对有限</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">实用之选 · ¥3,000–6,000</p>
+          <p class="type-verdict-desc">兼顾嵌入美观与操作便利，不想折腾门板定制的好选择。</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="free" onclick="toggleTypeFilter('free',this)">
+        <h3 class="type-name">独立式</h3>
+        <p class="type-en">Freestanding · 灵活摆放</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>无需改造橱柜，即买即用</li>
+          <li>可独立放置或嵌入</li>
+          <li>搬家可带走，灵活性最高</li>
+        </ul>
+        <p class="type-section-label bad">注意</p>
+        <ul class="type-list">
+          <li>占用地面空间</li>
+          <li>与橱柜风格难统一</li>
+          <li>部分机型噪音偏大</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">老房改造首选 · ¥2,500–6,000</p>
+          <p class="type-verdict-desc">已装修完毕、不想动橱柜的家庭最佳方案。</p>
+        </div>
+      </div>
+      <div class="type-card" data-type="counter" onclick="toggleTypeFilter('counter',this)">
+        <h3 class="type-name">台式 / 水槽式</h3>
+        <p class="type-en">Countertop / Sink · 小巧灵活</p>
+        <p class="type-section-label good">优势</p>
+        <ul class="type-list">
+          <li>免安装或简单安装</li>
+          <li>适合小户型、租房</li>
+          <li>价格门槛低</li>
+          <li>水槽式兼顾果蔬清洗</li>
+        </ul>
+        <p class="type-section-label bad">注意</p>
+        <ul class="type-list">
+          <li>容量小，4–8 套</li>
+          <li>功能相对精简</li>
+          <li>占用台面空间</li>
+        </ul>
+        <div class="type-verdict">
+          <p class="type-verdict-title">入门体验 · ¥1,500–6,000</p>
+          <p class="type-verdict-desc">轻量需求、小家庭或租房过渡的性价比之选。方太水槽式独树一帜。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="section section-alt" id="compare">
+  <div class="section-inner">
+    <p class="section-label">横向对比</p>
+    <h2 class="section-title">关键维度，一目了然。</h2>
+    <p class="section-subtitle">鼠标悬停列头可高亮整列，方便纵向比较。</p>
+    <div class="table-scroll">
+      <table class="cmp-table" id="cmpTable">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th data-col="1" onmouseenter="highlightCol(1)" onmouseleave="clearCol()">全嵌入式</th>
+            <th data-col="2" onmouseenter="highlightCol(2)" onmouseleave="clearCol()">半嵌入式</th>
+            <th data-col="3" onmouseenter="highlightCol(3)" onmouseleave="clearCol()">独立式</th>
+            <th data-col="4" onmouseenter="highlightCol(4)" onmouseleave="clearCol()">台式/水槽式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>可换门板</td><td class="best">支持</td><td class="bad">不支持</td><td class="bad">不支持</td><td class="bad">不支持</td></tr>
+          <tr><td>容量（套数）</td><td class="best">13–16 套</td><td class="mid">12–14 套</td><td class="mid">12–16 套</td><td class="weak">4–8 套</td></tr>
+          <tr><td>外观整体性</td><td class="best">最佳</td><td class="mid">较好</td><td class="weak">一般</td><td class="weak">一般</td></tr>
+          <tr><td>安装难度</td><td class="weak">较高</td><td class="mid">中等</td><td class="best">最低</td><td class="best">免安装</td></tr>
+          <tr><td>灵活性</td><td class="weak">固定</td><td class="weak">固定</td><td class="best">可移动</td><td class="best">可移动</td></tr>
+          <tr><td>烘干效果</td><td class="best">热风/晶蕴</td><td class="mid">热交换/余热</td><td class="mid">热风/余热</td><td class="weak">余热为主</td></tr>
+          <tr><td>噪音控制</td><td class="best">最安静</td><td class="mid">较安静</td><td class="mid">中等</td><td class="weak">偏大</td></tr>
+          <tr><td>价格区间</td><td>¥3,000–10,000</td><td>¥3,000–6,000</td><td>¥2,500–6,000</td><td>¥1,500–6,000</td></tr>
+          <tr><td>适合场景</td><td>新装修</td><td>嵌入式橱柜</td><td>老房/灵活</td><td>小户型/租房</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS & MODELS -->
+<section class="section" id="brands">
+  <div class="section-inner">
+    <p class="section-label">选购机型</p>
+    <h2 class="section-title">找到你的那一台。</h2>
+    <p class="section-subtitle">筛选安装方式、是否支持换门板、拖动价格滑块。点击右上角圆圈可勾选对比。</p>
+  </div>
+  <div class="section-wide">
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <span class="filter-group-label">安装</span>
+        <button class="filter-btn active" data-type="all" onclick="setTypeFilter('all')">全部</button>
+        <button class="filter-btn type-embed" data-type="embed" onclick="setTypeFilter('embed')">全嵌入</button>
+        <button class="filter-btn type-semi" data-type="semi" onclick="setTypeFilter('semi')">半嵌入</button>
+        <button class="filter-btn type-free" data-type="free" onclick="setTypeFilter('free')">独立式</button>
+        <button class="filter-btn type-counter" data-type="counter" onclick="setTypeFilter('counter')">台式/水槽</button>
+      </div>
+      <div class="filter-group">
+        <button class="filter-btn panel-yes" data-panel="yes" onclick="togglePanelFilter()">仅看可换门板</button>
+      </div>
+      <div class="price-filter">
+        <span class="price-label">预算上限</span>
+        <input type="range" class="price-range" id="priceSlider" min="1500" max="12000" value="12000" step="500" oninput="onPriceChange(this.value)">
+        <span class="price-value" id="priceValue">不限</span>
+      </div>
+      <button class="sort-btn" id="sortBtn" onclick="toggleSort()">按价格排序 ↑</button>
+    </div>
+
+    <p class="model-count" id="modelCount"></p>
+    <div class="no-results" id="noResults">没有符合条件的机型，试试调整筛选条件</div>
+    <div class="model-grid" id="modelGrid"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>价格来源：京东官方旗舰店及主流电商渠道，为 2025 年 5 月参考价。实际售价以购买时商品页面为准。</p>
+  <p style="margin-top:4px">「可换门板」指全嵌入式机型支持安装全屋定制的木质/同色门板，实现与橱柜视觉统一。</p>
+</footer>
+
+<!-- COMPARE DRAWER -->
+<div class="compare-drawer" id="compareDrawer">
+  <div class="compare-drawer-inner">
+    <div class="compare-items" id="compareItems"></div>
+    <button class="compare-btn" id="compareBtn" onclick="showCompare()" disabled>对比选中机型</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-bg" id="compareModal" onclick="if(event.target===this)closeCompare()">
+  <div class="compare-modal">
+    <button class="compare-modal-close" onclick="closeCompare()">✕</button>
+    <h3>机型对比</h3>
+    <div id="compareContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== MODEL DATA =====
+const models = [
+  // ===== 西门子 Siemens =====
+  {brand:"西门子",brandEn:"Siemens",name:"SJ63HX00KC",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"晶蕴烘干",energyClass:"一级能效",noise:42,features:"晶蕴烘干系统，iQdrive 变频电机，varioSpeed Plus 加速模式，智能感应洗，14 种程序",releaseDate:"2024-06",price:7999,priceText:"¥7,999",jd:"https://search.jd.com/Search?keyword=西门子SJ63HX00KC洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA03006202_SJ63HX00KC_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"SJ636X03JC",tier:"高端",type:"semi",typeLabel:"半嵌入式 · 13套",capacity:13,customPanel:false,dryMethod:"热交换烘干",energyClass:"一级能效",noise:44,features:"热交换烘干，超净洗 2.0，自动开门烘干，varioFlex 可调碗篮",releaseDate:"2023-03",price:5499,priceText:"¥5,499",jd:"https://search.jd.com/Search?keyword=西门子SJ636X03JC洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA02898792_SJ636X03JC_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"SJ256I16JC",tier:"高端",type:"free",typeLabel:"独立式 · 14套",capacity:14,customPanel:false,dryMethod:"晶蕴烘干",energyClass:"一级能效",noise:42,features:"晶蕴烘干，独立摆放或嵌入两用，varioSpeed Plus，AquaStop 全方位防漏",releaseDate:"2023-06",price:6299,priceText:"¥6,299",jd:"https://search.jd.com/Search?keyword=西门子SJ256I16JC洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA02898792_SJ256I16JC_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"SJ23HW00KC",tier:"中端",type:"free",typeLabel:"独立式 · 12套",capacity:12,customPanel:false,dryMethod:"热交换烘干",energyClass:"二级能效",noise:46,features:"热交换烘干，intensiveZone 加强洗区域，varioFlex 碗篮系统",releaseDate:"2023-09",price:3999,priceText:"¥3,999",jd:"https://search.jd.com/Search?keyword=西门子SJ23HW00KC洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA02898792_SJ23HW00KC_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"SJ43HS00KC",tier:"中端",type:"semi",typeLabel:"半嵌入式 · 12套",capacity:12,customPanel:false,dryMethod:"余热烘干",energyClass:"二级能效",noise:48,features:"余热+冷凝烘干，AquaStop 防漏，speedMatic 碗篮快调",releaseDate:"2022-11",price:3499,priceText:"¥3,499",jd:"https://search.jd.com/Search?keyword=西门子SJ43HS00KC洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA02898792_SJ43HS00KC_def.webp"},
+  {brand:"西门子",brandEn:"Siemens",name:"SJ63EX00KC",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 14套",capacity:14,customPanel:true,dryMethod:"晶蕴烘干",energyClass:"一级能效",noise:42,features:"晶蕴烘干 zeolith®，TimeLight 地面投影显示，Home Connect 智能互联",releaseDate:"2024-03",price:8999,priceText:"¥8,999",jd:"https://search.jd.com/Search?keyword=西门子SJ63EX00KC洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA03006202_SJ63EX00KC_def.webp"},
+
+  // ===== 博世 Bosch =====
+  {brand:"博世",brandEn:"Bosch",name:"SJV4HCX00C",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"晶蕴烘干",energyClass:"一级能效",noise:42,features:"PerfectDry 晶蕴烘干，Home Connect 智能互联，ExtraDry 加强烘干，VarioFlex Pro 碗篮",releaseDate:"2024-03",price:7499,priceText:"¥7,499",jd:"https://search.jd.com/Search?keyword=博世SJV4HCX00C洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA03006202_SJV4HCX00C_def.webp"},
+  {brand:"博世",brandEn:"Bosch",name:"SBV6ZCX00E",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 14套",capacity:14,customPanel:true,dryMethod:"晶蕴烘干",energyClass:"一级能效",noise:40,features:"PerfectDry 晶蕴烘干，PrecisionWash 精准喷淋，TimeLight 投影，静音 40dB",releaseDate:"2024-09",price:9999,priceText:"¥9,999",jd:"https://search.jd.com/Search?keyword=博世SBV6ZCX00E洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA03006202_SBV6ZCX00E_def.webp"},
+  {brand:"博世",brandEn:"Bosch",name:"SJI46IS00C",tier:"高端",type:"semi",typeLabel:"半嵌入式 · 14套",capacity:14,customPanel:false,dryMethod:"晶蕴烘干",energyClass:"一级能效",noise:42,features:"PerfectDry 晶蕴烘干，半嵌入设计面板外露，AquaStop 防漏系统",releaseDate:"2023-06",price:5999,priceText:"¥5,999",jd:"https://search.jd.com/Search?keyword=博世SJI46IS00C洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA02898792_SJI46IS00C_def.webp"},
+  {brand:"博世",brandEn:"Bosch",name:"SJU4HKS00C",tier:"中端",type:"free",typeLabel:"独立式 · 13套",capacity:13,customPanel:false,dryMethod:"热交换烘干",energyClass:"一级能效",noise:44,features:"热交换烘干，独立摆放/嵌入两用，AquaStop 全方位防漏，6 种程序",releaseDate:"2023-09",price:4299,priceText:"¥4,299",jd:"https://search.jd.com/Search?keyword=博世SJU4HKS00C洗碗机",img:"https://media3.bsh-group.com/Images/600x/MCSA02898792_SJU4HKS00C_def.webp"},
+
+  // ===== 美的 Midea =====
+  {brand:"美的",brandEn:"Midea",name:"RX600Pro",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:43,features:"72h 长效存储，热风循环烘干，双驱变频，银离子抑菌，智能开门烘干",releaseDate:"2024-06",price:4999,priceText:"¥4,999",priceNote:"国补后约 ¥4,199",jd:"https://search.jd.com/Search?keyword=美的RX600Pro洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/dishwasher/RX600Pro.png"},
+  {brand:"美的",brandEn:"Midea",name:"RX600",tier:"高端",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:44,features:"热风烘干，变频电机，三层碗篮设计，智能感应洗",releaseDate:"2023-09",price:3999,priceText:"¥3,999",priceNote:"活动低至 ¥3,499",jd:"https://search.jd.com/Search?keyword=美的RX600洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/dishwasher/RX600.png"},
+  {brand:"美的",brandEn:"Midea",name:"RX50",tier:"中端",type:"embed",typeLabel:"全嵌入式 · 15套",capacity:15,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:45,features:"热风烘干，一级水效，15 套大容量，双泵驱动",releaseDate:"2024-01",price:3499,priceText:"¥3,499",priceNote:"国补后约 ¥2,899",jd:"https://search.jd.com/Search?keyword=美的RX50洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/dishwasher/RX50.png"},
+  {brand:"美的",brandEn:"Midea",name:"GX1000Pro",tier:"高端",type:"free",typeLabel:"独立式 · 16套",capacity:16,customPanel:false,dryMethod:"热风烘干",energyClass:"一级能效",noise:44,features:"独立式/半嵌入两用，热风烘干，三层碗篮，UV 紫外除菌",releaseDate:"2024-03",price:3999,priceText:"¥3,999",jd:"https://search.jd.com/Search?keyword=美的GX1000Pro洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/dishwasher/GX1000Pro.png"},
+  {brand:"美的",brandEn:"Midea",name:"P60",tier:"中端",type:"semi",typeLabel:"半嵌入式 · 13套",capacity:13,customPanel:false,dryMethod:"PTC热风",energyClass:"一级能效",noise:46,features:"PTC 热风烘干，13 套容量，双层碗篮，快速洗 29 分钟",releaseDate:"2023-06",price:2999,priceText:"¥2,999",jd:"https://search.jd.com/Search?keyword=美的P60洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/dishwasher/P60.png"},
+  {brand:"美的",brandEn:"Midea",name:"M30",tier:"入门",type:"counter",typeLabel:"台式 · 4套",capacity:4,customPanel:false,dryMethod:"PTC热风",energyClass:"二级能效",noise:50,features:"免安装台式，PTC 热风烘干，果蔬清洗模式，5 种程序",releaseDate:"2023-03",price:1699,priceText:"¥1,699",jd:"https://search.jd.com/Search?keyword=美的M30台式洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/dishwasher/M30.png"},
+
+  // ===== 方太 Fotile =====
+  {brand:"方太",brandEn:"Fotile",name:"JPBCD16E-V6",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:42,features:"双龙卷洗技术，AI 智能感应洗，热风循环烘干，开门速干，16 套超大容量",releaseDate:"2024-06",price:7999,priceText:"¥7,999",jd:"https://search.jd.com/Search?keyword=方太V6洗碗机",img:"https://www.fotile.com/uploads/dishwasher/V6.png"},
+  {brand:"方太",brandEn:"Fotile",name:"JPBCD16E-V5",tier:"高端",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:44,features:"飞碟高压喷淋，热风对流烘干，智能开门烘干，双泵排水",releaseDate:"2024-01",price:5999,priceText:"¥5,999",jd:"https://search.jd.com/Search?keyword=方太V5洗碗机",img:"https://www.fotile.com/uploads/dishwasher/V5.png"},
+  {brand:"方太",brandEn:"Fotile",name:"JPBCD16E-V3",tier:"中端",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"余热+开门烘干",energyClass:"一级能效",noise:45,features:"高压喷淋洗涤，余热+开门辅助烘干，三层碗篮，一级水效",releaseDate:"2023-06",price:4299,priceText:"¥4,299",jd:"https://search.jd.com/Search?keyword=方太V3洗碗机",img:"https://www.fotile.com/uploads/dishwasher/V3.png"},
+  {brand:"方太",brandEn:"Fotile",name:"JPSD2T-C6B",tier:"旗舰",type:"counter",typeLabel:"水槽式 · 8套",capacity:8,customPanel:false,dryMethod:"余热烘干",energyClass:"一级能效",noise:46,features:"水槽式设计，高效除农残 99%，超声波+湍流双效清洗，不占额外空间",releaseDate:"2024-03",price:5999,priceText:"¥5,999",jd:"https://search.jd.com/Search?keyword=方太C6B水槽洗碗机",img:"https://www.fotile.com/uploads/dishwasher/C6B.png"},
+  {brand:"方太",brandEn:"Fotile",name:"JPSD2T-C5B",tier:"高端",type:"counter",typeLabel:"水槽式 · 6套",capacity:6,customPanel:false,dryMethod:"余热烘干",energyClass:"一级能效",noise:48,features:"嵌入水槽安装，海鲜/果蔬去农残清洗，6 套适合 2-4 口之家",releaseDate:"2023-01",price:4999,priceText:"¥4,999",jd:"https://search.jd.com/Search?keyword=方太C5B水槽洗碗机",img:"https://www.fotile.com/uploads/dishwasher/C5B.png"},
+
+  // ===== 慧曼 Humantouch =====
+  {brand:"慧曼",brandEn:"Humantouch",name:"S3",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:42,features:"全网高性价比全嵌王者，双变频电机+水泵，热风循环烘干，UV 除菌，三层碗篮",releaseDate:"2024-06",price:4299,priceText:"¥4,299",priceNote:"活动低至 ¥3,699",jd:"https://search.jd.com/Search?keyword=慧曼S3洗碗机",img:"https://img14.360buyimg.com/n1/jfs/t1/humantouch_S3.jpg"},
+  {brand:"慧曼",brandEn:"Humantouch",name:"S1 Pro",tier:"高端",type:"embed",typeLabel:"全嵌入式 · 15套",capacity:15,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:43,features:"热风循环烘干，72h 长效新风存储，变频电机，三层碗篮可调",releaseDate:"2024-01",price:3499,priceText:"¥3,499",priceNote:"活动低至 ¥2,999",jd:"https://search.jd.com/Search?keyword=慧曼S1Pro洗碗机",img:"https://img14.360buyimg.com/n1/jfs/t1/humantouch_S1Pro.jpg"},
+  {brand:"慧曼",brandEn:"Humantouch",name:"HTD-B5",tier:"中端",type:"embed",typeLabel:"全嵌入式 · 15套",capacity:15,customPanel:true,dryMethod:"PTC热风",energyClass:"一级能效",noise:45,features:"PTC 热风烘干，变频电机，全嵌入可换门板，性价比之选",releaseDate:"2023-06",price:2699,priceText:"¥2,699",priceNote:"国补后约 ¥2,199",jd:"https://search.jd.com/Search?keyword=慧曼B5洗碗机",img:"https://img14.360buyimg.com/n1/jfs/t1/humantouch_B5.jpg"},
+  {brand:"慧曼",brandEn:"Humantouch",name:"HTD-C3",tier:"入门",type:"embed",typeLabel:"全嵌入式 · 13套",capacity:13,customPanel:true,dryMethod:"余热+开门",energyClass:"二级能效",noise:47,features:"余热+开门烘干，全嵌入可换门板，双层碗篮，入门级价格",releaseDate:"2023-01",price:1999,priceText:"¥1,999",jd:"https://search.jd.com/Search?keyword=慧曼C3洗碗机",img:"https://img14.360buyimg.com/n1/jfs/t1/humantouch_C3.jpg"},
+
+  // ===== 海尔 Haier =====
+  {brand:"海尔",brandEn:"Haier",name:"W5000S",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:42,features:"三层碗篮设计，双变频电机，热风+开门烘干，80°C 高温除菌",releaseDate:"2024-06",price:4999,priceText:"¥4,999",priceNote:"活动低至 ¥4,299",jd:"https://search.jd.com/Search?keyword=海尔W5000S洗碗机",img:"https://haier.com/content/dam/haier/cn/dishwasher/W5000S.png"},
+  {brand:"海尔",brandEn:"Haier",name:"W3000S",tier:"高端",type:"free",typeLabel:"独立式 · 16套",capacity:16,customPanel:false,dryMethod:"热风烘干",energyClass:"一级能效",noise:44,features:"独立/半嵌入两用，热风烘干，智能感应洗，80°C 除菌",releaseDate:"2024-01",price:3999,priceText:"¥3,999",jd:"https://search.jd.com/Search?keyword=海尔W3000S洗碗机",img:"https://haier.com/content/dam/haier/cn/dishwasher/W3000S.png"},
+  {brand:"海尔",brandEn:"Haier",name:"EYW152286BKDU1",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:40,features:"中式大容量旗舰，热风循环烘干，精控双喷臂，80°C 高温强效除菌洗",releaseDate:"2024-09",price:5999,priceText:"¥5,999",jd:"https://search.jd.com/Search?keyword=海尔EYW152286BKDU1洗碗机",img:"https://haier.com/content/dam/haier/cn/dishwasher/EYW152286BKDU1.png"},
+  {brand:"海尔",brandEn:"Haier",name:"HTAW50STGBUS",tier:"入门",type:"counter",typeLabel:"台式 · 6套",capacity:6,customPanel:false,dryMethod:"PTC热风",energyClass:"二级能效",noise:50,features:"免安装台式，PTC 热风烘干，果蔬洗模式，小巧适合租房",releaseDate:"2023-06",price:1999,priceText:"¥1,999",jd:"https://search.jd.com/Search?keyword=海尔台式洗碗机",img:"https://haier.com/content/dam/haier/cn/dishwasher/HTAW50STGBUS.png"},
+
+  // ===== 老板 Robam =====
+  {brand:"老板",brandEn:"Robam",name:"WB799D",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:42,features:"三叉喷臂 360° 立体冲洗，热风循环烘干，开门速干，APP 智能互联",releaseDate:"2024-06",price:5999,priceText:"¥5,999",jd:"https://search.jd.com/Search?keyword=老板WB799D洗碗机",img:"https://www.robam.com/uploads/dishwasher/WB799D.png"},
+  {brand:"老板",brandEn:"Robam",name:"WB780A",tier:"高端",type:"semi",typeLabel:"半嵌入式 · 15套",capacity:15,customPanel:false,dryMethod:"热风烘干",energyClass:"一级能效",noise:44,features:"热风烘干，三叉喷臂，半嵌入式设计，中式深腔碗篮",releaseDate:"2024-01",price:4499,priceText:"¥4,499",jd:"https://search.jd.com/Search?keyword=老板WB780A洗碗机",img:"https://www.robam.com/uploads/dishwasher/WB780A.png"},
+  {brand:"老板",brandEn:"Robam",name:"WB770A",tier:"中端",type:"free",typeLabel:"独立式 · 16套",capacity:16,customPanel:false,dryMethod:"余热+热交换",energyClass:"一级能效",noise:46,features:"独立式灵活摆放，16 套大容量，中式碗篮深腔设计",releaseDate:"2023-09",price:3699,priceText:"¥3,699",jd:"https://search.jd.com/Search?keyword=老板WB770A洗碗机",img:"https://www.robam.com/uploads/dishwasher/WB770A.png"},
+
+  // ===== 松下 Panasonic =====
+  {brand:"松下",brandEn:"Panasonic",name:"NP-D68XQMS",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 15套",capacity:15,customPanel:true,dryMethod:"独立烘干",energyClass:"一级能效",noise:43,features:"独立烘干系统 nanoe™ X 除菌，15 套中式碗篮，静音变频",releaseDate:"2024-06",price:5999,priceText:"¥5,999",jd:"https://search.jd.com/Search?keyword=松下NP-D68XQMS洗碗机",img:"https://panasonic.cn/content/dam/pim/cn/dishwasher/NP-D68XQMS.png"},
+  {brand:"松下",brandEn:"Panasonic",name:"NP-60F1MSA",tier:"高端",type:"embed",typeLabel:"全嵌入式 · 14套",capacity:14,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:44,features:"热风烘干，nanoe™ 除菌，14 套容量，全嵌可换门板",releaseDate:"2024-01",price:4999,priceText:"¥4,999",jd:"https://search.jd.com/Search?keyword=松下NP-60F1MSA洗碗机",img:"https://panasonic.cn/content/dam/pim/cn/dishwasher/NP-60F1MSA.png"},
+  {brand:"松下",brandEn:"Panasonic",name:"NP-TF6WK1Y",tier:"中端",type:"counter",typeLabel:"台式 · 6套",capacity:6,customPanel:false,dryMethod:"PTC热风",energyClass:"二级能效",noise:48,features:"免安装台式，80°C 除菌，PTC 热风烘干，小巧便携",releaseDate:"2023-06",price:2799,priceText:"¥2,799",jd:"https://search.jd.com/Search?keyword=松下NP-TF6WK1Y洗碗机",img:"https://panasonic.cn/content/dam/pim/cn/dishwasher/NP-TF6WK1Y.png"},
+  {brand:"松下",brandEn:"Panasonic",name:"NP-K8RWH1D",tier:"入门",type:"counter",typeLabel:"台式 · 4套",capacity:4,customPanel:false,dryMethod:"余热烘干",energyClass:"三级能效",noise:52,features:"小户型专属，免安装接水龙头，29 分钟快洗，节水省电",releaseDate:"2023-01",price:1799,priceText:"¥1,799",jd:"https://search.jd.com/Search?keyword=松下NP-K8RWH1D洗碗机",img:"https://panasonic.cn/content/dam/pim/cn/dishwasher/NP-K8RWH1D.png"},
+
+  // ===== COLMO =====
+  {brand:"COLMO",brandEn:"COLMO",name:"G53",tier:"高端",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风烘干",energyClass:"一级能效",noise:42,features:"美的高端子品牌，双变频电机，热风循环烘干，72h 长效鲜存，全嵌可换门板",releaseDate:"2024-03",price:5999,priceText:"¥5,999",jd:"https://search.jd.com/Search?keyword=COLMO+G53洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/colmo/dishwasher/G53.png"},
+  {brand:"COLMO",brandEn:"COLMO",name:"G55",tier:"旗舰",type:"embed",typeLabel:"全嵌入式 · 16套",capacity:16,customPanel:true,dryMethod:"热风+紫外烘干",energyClass:"一级能效",noise:40,features:"旗舰级全嵌入，热风+紫外线双重烘干除菌，AI 智能感应洗涤，三层碗篮，全嵌可换门板",releaseDate:"2024-06",price:7999,priceText:"¥7,999",jd:"https://search.jd.com/Search?keyword=COLMO+G55洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/colmo/dishwasher/G55.png"},
+  {brand:"COLMO",brandEn:"COLMO",name:"B7",tier:"中端",type:"embed",typeLabel:"全嵌入式 · 15套",capacity:15,customPanel:true,dryMethod:"PTC热风",energyClass:"一级能效",noise:44,features:"PTC 热风烘干，变频电机，15 套大容量，全嵌入可换门板，性价比之选",releaseDate:"2024-01",price:4299,priceText:"¥4,299",jd:"https://search.jd.com/Search?keyword=COLMO+B7洗碗机",img:"https://img1.midea.com/content/dam/midea-aem/cn/colmo/dishwasher/B7.png"},
+];
+
+// ===== STATE =====
+let currentTypeFilter = 'all';
+let panelFilter = false;
+let maxPrice = 12000;
+let sortAsc = false;
+let sortActive = false;
+let compareSet = new Set();
+
+// ===== RENDER =====
+function renderModels() {
+  let filtered = models.filter(m => {
+    if (currentTypeFilter !== 'all' && m.type !== currentTypeFilter) return false;
+    if (panelFilter && !m.customPanel) return false;
+    if (m.price > maxPrice) return false;
+    return true;
+  });
+  if (sortActive) {
+    filtered.sort((a, b) => sortAsc ? a.price - b.price : b.price - a.price);
+  }
+  const grid = document.getElementById('modelGrid');
+  const countEl = document.getElementById('modelCount');
+  const noRes = document.getElementById('noResults');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    countEl.textContent = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+  countEl.textContent = `共 ${filtered.length} 款机型`;
+
+  let html = '';
+  if (!sortActive) {
+    const brands = [...new Set(filtered.map(m => m.brand))];
+    for (const brand of brands) {
+      const brandModels = filtered.filter(m => m.brand === brand);
+      const first = brandModels[0];
+      html += `<div class="brand-block" style="grid-column:1/-1">
+        <div class="brand-header"><h3 class="brand-name">${brand}</h3><span class="brand-en">${first.brandEn}</span></div>
+      </div>`;
+      for (const m of brandModels) html += cardHTML(m);
+    }
+  } else {
+    for (const m of filtered) html += cardHTML(m);
+  }
+  grid.innerHTML = html;
+}
+
+function cardHTML(m) {
+  const idx = models.indexOf(m);
+  const checked = compareSet.has(idx);
+  const typeClass = 'type-' + m.type;
+  const panelBadge = m.customPanel
+    ? '<span class="panel-badge yes panel-badge-lg">可换门板</span>'
+    : '<span class="panel-badge no">不可换门板</span>';
+  return `<div class="model-card" data-idx="${idx}">
+    <div class="compare-check ${checked?'checked':''}" onclick="toggleCompare(${idx},this)" title="加入对比">✓</div>
+    ${m.img ? `<div class="model-img-wrap"><img class="model-img" src="${m.img}" alt="${m.name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+    <span class="model-tier">${m.tier}</span>
+    ${sortActive ? `<span class="brand-tag">${m.brand}</span>` : ''}
+    <h4 class="model-title">${m.name}</h4>
+    <p class="model-type ${typeClass}">${m.typeLabel}</p>
+    <div class="model-badges">${panelBadge}</div>
+    <div class="model-specs">
+      <span>${m.dryMethod}</span>
+      <span>${m.energyClass}</span>
+      <span>${m.noise}dB</span>
+      <span>${m.releaseDate}</span>
+    </div>
+    <p class="model-features">${m.features}</p>
+    <div class="model-price-row">
+      <div>
+        <div class="model-price">${m.priceText}</div>
+        ${m.priceNote ? `<div class="model-price-note">${m.priceNote}</div>` : ''}
+      </div>
+      <a class="model-jd-link" href="${m.jd}" target="_blank" rel="noopener">京东购买</a>
+    </div>
+  </div>`;
+}
+
+// ===== FILTERS =====
+function setTypeFilter(type) {
+  currentTypeFilter = type;
+  document.querySelectorAll('#filterBar .filter-btn[data-type]').forEach(b => {
+    b.classList.toggle('active', b.dataset.type === type);
+  });
+  document.querySelectorAll('.type-card').forEach(c => {
+    c.classList.toggle('selected', type !== 'all' && c.dataset.type === type);
+  });
+  renderModels();
+}
+
+function toggleTypeFilter(type, el) {
+  if (currentTypeFilter === type) {
+    setTypeFilter('all');
+  } else {
+    setTypeFilter(type);
+  }
+}
+
+function togglePanelFilter() {
+  panelFilter = !panelFilter;
+  document.querySelector('.filter-btn.panel-yes').classList.toggle('active', panelFilter);
+  renderModels();
+}
+
+function onPriceChange(val) {
+  maxPrice = parseInt(val);
+  document.getElementById('priceValue').textContent = maxPrice >= 12000 ? '不限' : `≤ ¥${maxPrice.toLocaleString()}`;
+  renderModels();
+}
+
+function toggleSort() {
+  const btn = document.getElementById('sortBtn');
+  if (!sortActive) {
+    sortActive = true; sortAsc = true;
+    btn.textContent = '价格 低→高'; btn.classList.add('active');
+  } else if (sortAsc) {
+    sortAsc = false;
+    btn.textContent = '价格 高→低';
+  } else {
+    sortActive = false;
+    btn.textContent = '按价格排序 ↑'; btn.classList.remove('active');
+  }
+  renderModels();
+}
+
+// ===== COMPARE =====
+function toggleCompare(idx, el) {
+  if (compareSet.has(idx)) { compareSet.delete(idx); el.classList.remove('checked'); }
+  else if (compareSet.size < 4) { compareSet.add(idx); el.classList.add('checked'); }
+  updateCompareDrawer();
+}
+
+function updateCompareDrawer() {
+  const drawer = document.getElementById('compareDrawer');
+  const items = document.getElementById('compareItems');
+  const btn = document.getElementById('compareBtn');
+  if (compareSet.size === 0) { drawer.classList.remove('visible'); return; }
+  drawer.classList.add('visible');
+  items.innerHTML = [...compareSet].map(idx => {
+    const m = models[idx];
+    return `<span class="compare-item">${m.brand} ${m.name}<span class="remove" onclick="removeCompare(${idx})">✕</span></span>`;
+  }).join('');
+  btn.disabled = compareSet.size < 2;
+}
+
+function removeCompare(idx) {
+  compareSet.delete(idx);
+  updateCompareDrawer();
+  renderModels();
+}
+
+function showCompare() {
+  if (compareSet.size < 2) return;
+  const items = [...compareSet].map(i => models[i]);
+  const fields = [
+    ['品牌', m => m.brand],
+    ['安装方式', m => m.typeLabel],
+    ['可换门板', m => m.customPanel ? '<span class="panel-badge yes">支持</span>' : '<span class="panel-badge no">不支持</span>'],
+    ['容量', m => m.capacity + ' 套'],
+    ['烘干方式', m => m.dryMethod],
+    ['能效等级', m => m.energyClass],
+    ['噪音', m => m.noise + ' dB'],
+    ['发布时间', m => m.releaseDate],
+    ['价格', m => m.priceText + (m.priceNote ? `<br><small style="color:var(--gray-light)">${m.priceNote}</small>` : '')],
+    ['亮点', m => m.features],
+    ['京东', m => `<a href="${m.jd}" target="_blank" style="color:var(--blue);text-decoration:none">去购买 ›</a>`],
+  ];
+  let html = `<div class="compare-scroll"><table class="compare-table">`;
+  html += `<thead><tr><th></th>`;
+  items.forEach(m => { html += `<th>${m.name}</th>`; });
+  html += `</tr></thead><tbody>`;
+  for (const [label, fn] of fields) {
+    html += `<tr><td>${label}</td>`;
+    items.forEach(m => { html += `<td>${fn(m)}</td>`; });
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  document.getElementById('compareContent').innerHTML = html;
+  document.getElementById('compareModal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompare() {
+  document.getElementById('compareModal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// ===== TABLE COLUMN HIGHLIGHT =====
+function highlightCol(col) {
+  document.querySelectorAll('#cmpTable tbody td').forEach(td => {
+    const idx = [...td.parentNode.children].indexOf(td);
+    td.classList.toggle('col-highlight', idx === col);
+  });
+}
+function clearCol() {
+  document.querySelectorAll('#cmpTable td.col-highlight').forEach(td => td.classList.remove('col-highlight'));
+}
+
+// ===== SCROLL SPY + NAV =====
+const sectionIds = ['types','compare','brands'];
+const nav = document.getElementById('topnav');
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY + 80;
+  let current = '';
+  for (const id of sectionIds) {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= scrollY) current = id;
+  }
+  document.querySelectorAll('.topnav a:not(.back-link)').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+});
+
+// ===== SCROLL REVEAL =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function initScrollReveal() {
+  document.querySelectorAll('.section-label,.section-title,.section-subtitle,.type-grid,.table-scroll,.filter-bar').forEach(el => {
+    el.classList.add('animate-on-scroll');
+    observer.observe(el);
+  });
+}
+
+// ===== STAGGER MODEL CARDS =====
+const origRender = renderModels;
+renderModels = function() {
+  origRender();
+  document.querySelectorAll('.model-card').forEach((card, i) => {
+    card.style.animationDelay = `${Math.min(i * 0.05, 0.6)}s`;
+  });
+};
+
+// INIT
+renderModels();
+initScrollReveal();
+</script>
+</body>
+</html>
