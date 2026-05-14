@@ -293,21 +293,21 @@
 <!-- HERO -->
 <section class="hero" id="hero">
   <p class="hero-label">厨房烹饪电器</p>
-  <h1>微蒸烤一体机<br>选购指南</h1>
-  <p>嵌入式 vs 台面式全面对比，10 大品牌 34 款机型<br>点击卡片对比，滑动筛选价格</p>
+  <h1>微蒸烤一体机</h1>
+  <p>10 大品牌 34 款机型</p>
 </section>
 
 <!-- TYPE COMPARISON -->
 <section class="section" id="types">
   <div class="section-inner">
     <p class="section-label">安装方式</p>
-    <h2 class="section-title">两种方案，各取所需。</h2>
+    <h2 class="section-title">两种方案</h2>
     <p class="section-subtitle">点击任意卡片，下方机型列表会自动筛选对应安装类型。</p>
     <div class="type-grid" id="typeGrid">
       <div class="type-card" data-type="embed" onclick="toggleTypeFilter('embed',this)">
         <h3 class="type-name">嵌入式</h3>
         <p class="type-en">Built-in — 橱柜嵌装</p>
-        <p class="type-section-label good">做得好的</p>
+        <p class="type-section-label good">优点</p>
         <ul class="type-list">
           <li>厨房一体化设计，美观大气</li>
           <li>容量大，通常 40–60L，烤整鸡无压力</li>
@@ -315,7 +315,7 @@
           <li>散热设计更专业，安全性高</li>
           <li>主流高端品牌覆盖丰富</li>
         </ul>
-        <p class="type-section-label bad">做不到的</p>
+        <p class="type-section-label bad">缺点</p>
         <ul class="type-list">
           <li>需要预留橱柜空间，装修前规划</li>
           <li>安装需走电线，后期移位困难</li>
@@ -330,14 +330,14 @@
       <div class="type-card" data-type="counter" onclick="toggleTypeFilter('counter',this)">
         <h3 class="type-name">台面式</h3>
         <p class="type-en">Countertop — 桌面独立</p>
-        <p class="type-section-label good">做得好的</p>
+        <p class="type-section-label good">优点</p>
         <ul class="type-list">
           <li>即买即用，无需装修改造</li>
           <li>可搬家带走，租房友好</li>
           <li>价格相对亲民，2,000 元起步</li>
           <li>部分机型功能不输嵌入式</li>
         </ul>
-        <p class="type-section-label bad">做不到的</p>
+        <p class="type-section-label bad">缺点</p>
         <ul class="type-list">
           <li>占用台面空间，小厨房压力大</li>
           <li>容量较小，通常 20–35L</li>
@@ -358,7 +358,7 @@
 <section class="section section-dark" id="compare">
   <div class="section-inner">
     <p class="section-label">横向对比</p>
-    <h2 class="section-title">逐项比，一目了然。</h2>
+    <h2 class="section-title">横向对比</h2>
     <p class="section-subtitle">鼠标悬停列头可高亮整列，方便纵向比较。</p>
     <div class="table-scroll">
       <table class="cmp-table" id="cmpTable">
@@ -389,7 +389,7 @@
 <section class="section" id="brands">
   <div class="section-inner">
     <p class="section-label">选购机型</p>
-    <h2 class="section-title">找到你的那一台。</h2>
+    <h2 class="section-title">所有机型</h2>
     <p class="section-subtitle">筛选安装类型、拖动价格滑块、按价格排序。点击右上角圆圈可勾选对比。</p>
   </div>
   <div class="section-wide">
@@ -460,7 +460,7 @@ const models = [
   {brand:"老板",brandEn:"Robam",tier:"旗舰",name:"CQ9066",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"50L",microwave:"900W",steam:"双核直喷蒸汽 / 2200W",bake:"上下独立 + 3D热风 / 2600W",clean:"高温蒸汽自清洁 + 一键除垢",features:"双核蒸汽引擎，120°C过温蒸，3D热风均匀烤制，ROKI智能烹饪系统，9寸大屏",price:12999,priceText:"¥12,999",priceNote:"活动低至 ¥10,800",jd:"https://search.jd.com/Search?keyword=老板CQ9066微蒸烤"},
   {brand:"老板",brandEn:"Robam",tier:"高端",name:"CQ976",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2023-09",capacity:"48L",microwave:"900W",steam:"直喷蒸汽 / 2000W",bake:"上下独立 + 热风 / 2400W",clean:"蒸汽自清洁",features:"105°C过温蒸，上下独控精准烘焙，ROKI智能菜谱150+",price:9999,priceText:"¥9,999",priceNote:"活动低至 ¥8,200",jd:"https://search.jd.com/Search?keyword=老板CQ976微蒸烤"},
   {brand:"老板",brandEn:"Robam",tier:"高端",name:"CQ972",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2024-03",capacity:"50L",microwave:"—",steam:"直喷蒸汽 / 1800W",bake:"上下独立 + 3D热风 / 2400W",clean:"一键蒸汽清洁",features:"无微波纯蒸烤，50L大容量，3层烤位，搪瓷内胆",price:7999,priceText:"¥7,999",priceNote:"活动低至 ¥6,500",jd:"https://search.jd.com/Search?keyword=老板CQ972蒸烤"},
-  {brand:"老板",brandEn:"Robam",tier:"中端",name:"CQ926",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-03",capacity:"42L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"入门嵌入式蒸烤，性价比之选，搪瓷内腔",price:5999,priceText:"¥5,999",priceNote:"促销约 ¥4,800",jd:"https://search.jd.com/Search?keyword=老板CQ926蒸烤"},
+  {brand:"老板",brandEn:"Robam",tier:"中端",name:"CQ926",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-03",capacity:"42L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"入门嵌入式蒸烤，日常款，搪瓷内腔",price:5999,priceText:"¥5,999",priceNote:"促销约 ¥4,800",jd:"https://search.jd.com/Search?keyword=老板CQ926蒸烤"},
 
   // ===== 美的 Midea =====
   {brand:"美的",brandEn:"Midea",tier:"旗舰",name:"BS5051W",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"50L",microwave:"900W",steam:"直喷蒸汽 / 2000W",bake:"上下独立 + 热风循环 / 2500W",clean:"蒸汽自清洁 + 除垢",features:"50L搪瓷内胆，105°C过温蒸，智能菜谱APP联控，性价比出色",price:7999,priceText:"¥7,999",priceNote:"活动低至 ¥6,500",jd:"https://search.jd.com/Search?keyword=美的BS5051W微蒸烤"},
@@ -487,7 +487,7 @@ const models = [
   // ===== 华帝 Vatti =====
   {brand:"华帝",brandEn:"Vatti",tier:"旗舰",name:"i23012",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"48L",microwave:"900W",steam:"直喷蒸汽 / 2000W",bake:"上下独立 + 3D热风 / 2500W",clean:"蒸汽自清洁",features:"48L搪瓷内胆，双直喷蒸汽，3D热风精准控温，VCOO智能系统，彩屏触控",price:8999,priceText:"¥8,999",priceNote:"活动低至 ¥7,200",jd:"https://search.jd.com/Search?keyword=华帝i23012微蒸烤"},
   {brand:"华帝",brandEn:"Vatti",tier:"高端",name:"i23009",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2023-09",capacity:"42L",microwave:"850W",steam:"直喷蒸汽 / 1800W",bake:"上下独立 + 热风 / 2400W",clean:"蒸汽自清洁",features:"42L性价比微蒸烤，搪瓷内胆，上下管独立控温，APP智能菜谱",price:6999,priceText:"¥6,999",priceNote:"活动低至 ¥5,800",jd:"https://search.jd.com/Search?keyword=华帝i23009微蒸烤"},
-  {brand:"华帝",brandEn:"Vatti",tier:"中端",name:"i23006",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-03",capacity:"40L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"入门嵌入式蒸烤，40L实用容量，搪瓷内腔，性价比之选",price:4999,priceText:"¥4,999",priceNote:"促销约 ¥3,999",jd:"https://search.jd.com/Search?keyword=华帝i23006蒸烤"},
+  {brand:"华帝",brandEn:"Vatti",tier:"中端",name:"i23006",cat:"embed",catLabel:"嵌入式 · 蒸烤一体",releaseDate:"2023-03",capacity:"40L",microwave:"—",steam:"直喷蒸汽 / 1600W",bake:"上下独立 + 热风 / 2200W",clean:"蒸汽自清洁",features:"入门嵌入式蒸烤，40L实用容量，搪瓷内腔，日常款",price:4999,priceText:"¥4,999",priceNote:"促销约 ¥3,999",jd:"https://search.jd.com/Search?keyword=华帝i23006蒸烤"},
 
   // ===== COLMO =====
   {brand:"COLMO",brandEn:"COLMO",tier:"旗舰",name:"CZSUE50",cat:"embed",catLabel:"嵌入式 · 微蒸烤三合一",releaseDate:"2024-06",capacity:"50L",microwave:"1000W 变频",steam:"双直喷蒸汽 / 2400W",bake:"上下独立 + 4D热风 / 3200W",clean:"高温蒸汽自清洁 + 除垢",features:"美的集团顶级子品牌，50L搪瓷内胆，变频微波+双直喷蒸汽，4D热风精准烘焙，智能菜谱200+",price:15999,priceText:"¥15,999",priceNote:"活动低至 ¥13,500",jd:"https://search.jd.com/Search?keyword=COLMO+CZSUE50+微蒸烤"},

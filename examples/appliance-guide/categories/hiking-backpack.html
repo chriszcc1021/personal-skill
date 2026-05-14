@@ -323,9 +323,9 @@
 
 <!-- HERO -->
 <section class="hero" id="hero">
-  <p class="hero-label">户外装备选购</p>
-  <h1>登山包<br>选购指南</h1>
-  <p>12 个品牌 41 款主流型号全面对比。按容量用途分类，滑动筛选价格，勾选对比参数。</p>
+  <p class="hero-label">户外装备</p>
+  <h1>登山包 · 选购对比</h1>
+  <p>12 个品牌 41 款机型</p>
   <div class="hero-stats">
     <div class="hero-stat"><div class="num">41</div><div class="label">款型号</div></div>
     <div class="hero-stat"><div class="num">12</div><div class="label">个品牌</div></div>
@@ -428,7 +428,7 @@
         <tbody>
           <tr><td>代表品牌</td><td class="best">攀山鼠 / Arc'teryx / Gregory / Osprey</td><td class="mid">Deuter / Mammut / TNF / Salomon</td><td>凯乐石 / 迪卡侬 / 探路者 / 骆驼</td></tr>
           <tr><td>背负系统</td><td class="best">顶级（Butterfly Bridge/AG反重力等）</td><td class="mid">优秀（Aircomfort/Spine等）</td><td>基础-良好</td></tr>
-          <tr><td>自重控制</td><td class="best">极致轻量</td><td class="mid">轻量</td><td>适中偏重</td></tr>
+          <tr><td>自重控制</td><td class="best">超轻量</td><td class="mid">轻量</td><td>适中偏重</td></tr>
           <tr><td>面料耐久</td><td class="best">顶级（Kevlar/CORDURA/N100D+）</td><td class="mid">优秀</td><td>良好</td></tr>
           <tr><td>防水性能</td><td class="best">强（15K防水/PFC-free DWR/AC2）</td><td class="mid">较强（DWR涂层）</td><td>基础防泼水</td></tr>
           <tr><td>舒适透气</td><td class="best">最佳</td><td class="mid">优秀</td><td>一般</td></tr>
@@ -447,7 +447,7 @@
 <section class="section" id="brands">
   <div class="section-inner">
     <p class="section-label">选购型号</p>
-    <h2 class="section-title">找到适合你的包。</h2>
+    <h2 class="section-title">所有机型</h2>
     <p class="section-subtitle">按容量分类筛选、拖动价格滑块、按价格排序。点击右上角圆圈可勾选对比。</p>
   </div>
   <div class="section-wide">
@@ -501,13 +501,13 @@
 // ===== MODEL DATA =====
 const models = [
   // === 高端：始祖鸟 Arc'teryx ===
-  {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Aerios 30",cat:"hike",catLabel:"30L / 轻量登山",volume:"30L",weight:"0.96kg",backSystem:"AeroForm 透气背板",material:"N420d 液晶聚合物面料",waterproof:"AC2 防水涂层",scene:"一日徒步 / 技术攀登",highlight:"肩带口袋速取设计，冰镐快挂系统，极致轻量",price:2290,priceText:"¥2,290",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/aerios-30.jpg",jd:"https://search.jd.com/Search?keyword=始祖鸟Aerios+30+登山包"},
+  {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Aerios 30",cat:"hike",catLabel:"30L / 轻量登山",volume:"30L",weight:"0.96kg",backSystem:"AeroForm 透气背板",material:"N420d 液晶聚合物面料",waterproof:"AC2 防水涂层",scene:"一日徒步 / 技术攀登",highlight:"肩带口袋速取设计，冰镐快挂系统，超轻量",price:2290,priceText:"¥2,290",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/aerios-30.jpg",jd:"https://search.jd.com/Search?keyword=始祖鸟Aerios+30+登山包"},
   {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Aerios 45",cat:"hike",catLabel:"45L / 轻量登山",volume:"45L",weight:"1.25kg",backSystem:"AeroForm 透气背板",material:"N420d 液晶聚合物面料",waterproof:"AC2 防水涂层",scene:"1-2日徒步 / 轻装穿越",highlight:"超轻大容量，可调节腰带，登山杖/冰镐挂载",price:2890,priceText:"¥2,890",releaseDate:"2024-03",img:"",jd:"https://search.jd.com/Search?keyword=始祖鸟Aerios+45+登山包"},
   {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Alpha FL 30",cat:"hike",catLabel:"30L / 技术攀登",volume:"30L",weight:"0.66kg",backSystem:"极简泡棉背板",material:"N400r-AC2 防撕裂尼龙",waterproof:"防水卷口+热压缝",scene:"高山攀登 / 冲顶",highlight:"超轻防水，卷口密封，流线型设计，极端环境适用",price:2690,priceText:"¥2,690",releaseDate:"2023-09",img:"",jd:"https://search.jd.com/Search?keyword=始祖鸟Alpha+FL+30+登山包"},
   {brand:"始祖鸟",brandEn:"Arc'teryx",tier:"高端",name:"Mantis 26",cat:"city",catLabel:"26L / 日常城市",volume:"26L",weight:"0.74kg",backSystem:"加厚泡棉背板",material:"N630d CORDURA 尼龙",waterproof:"DWR 防泼水",scene:"城市通勤 / 轻量户外",highlight:"电脑隔层，多口袋收纳，都市户外两用",price:1590,priceText:"¥1,590",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=始祖鸟Mantis+26+背包"},
 
   // === 高端：Gregory ===
-  {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Baltoro 65",cat:"trek",catLabel:"65L / 重装穿越",volume:"65L",weight:"2.27kg",backSystem:"FreeFloat A3 悬浮背负",material:"210D Crypt Ripstop",waterproof:"含防雨罩",scene:"多日重装穿越 / 长线徒步",highlight:"背包界劳斯莱斯，FreeFloat悬浮背负，髋骨完美贴合。可选 55/65/75L",price:3200,priceText:"¥3,200",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/baltoro-65.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Baltoro+65+登山包"},
+  {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Baltoro 65",cat:"trek",catLabel:"65L / 重装穿越",volume:"65L",weight:"2.27kg",backSystem:"FreeFloat A3 悬浮背负",material:"210D Crypt Ripstop",waterproof:"含防雨罩",scene:"多日重装穿越 / 长线徒步",highlight:"FreeFloat 悬浮背负，髋骨贴合度高。可选 55/65/75L",price:3200,priceText:"¥3,200",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/baltoro-65.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Baltoro+65+登山包"},
   {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Zulu 45",cat:"hike",catLabel:"45L / 轻量登山",volume:"45L",weight:"1.47kg",backSystem:"FreeFloat 透气背板",material:"210D Crypt Ripstop",waterproof:"含防雨罩",scene:"1-2日徒步 / 中等负重",highlight:"透气性极佳，多尺码适配，背负舒适度标杆。可选 30/35/40/45L",price:1850,priceText:"¥1,850",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/zulu-45.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Zulu+45+登山包"},
   {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Paragon 48",cat:"hike",catLabel:"48L / 轻量登山",volume:"48L",weight:"1.52kg",backSystem:"FreeFloat 可调节背板",material:"210D Crypt Ripstop",waterproof:"含防雨罩",scene:"轻装穿越 / 2日徒步",highlight:"2025新款，Garmin InReach肩带口袋，轻量化设计",price:2200,priceText:"¥2,200",releaseDate:"2025-01",img:"/appliance-guide/images/backpacks/paragon-48.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Paragon+48+登山包"},
   {brand:"格里高利",brandEn:"Gregory",tier:"高端",name:"Nano 20",cat:"city",catLabel:"20L / 日常城市",volume:"20L",weight:"0.54kg",backSystem:"泡棉背板",material:"100D x 210D 尼龙",waterproof:"DWR 防泼水",scene:"日常通勤 / 近郊徒步",highlight:"超轻极简，折叠收纳，单日休闲首选",price:590,priceText:"¥590",releaseDate:"2024-06",img:"/appliance-guide/images/backpacks/nano-20.jpg",jd:"https://search.jd.com/Search?keyword=Gregory+Nano+20+背包"},
@@ -542,7 +542,7 @@ const models = [
   {brand:"凯乐石",brandEn:"Kailas",tier:"性价比",name:"巅峰 BC 65+10",cat:"trek",catLabel:"75L / 重装穿越",volume:"65+10L",weight:"2.20kg",backSystem:"SAS 专业背负系统",material:"420D CORDURA 尼龙",waterproof:"含防雨罩",scene:"多日穿越 / 高海拔登山",highlight:"国产重装标杆，CORDURA面料，专业级背负",price:899,priceText:"¥899",releaseDate:"2024-01",img:"",jd:"https://search.jd.com/Search?keyword=凯乐石+巅峰BC+65+登山包"},
 
   // === 性价比：迪卡侬 Decathlon ===
-  {brand:"迪卡侬",brandEn:"Decathlon/Forclaz",tier:"性价比",name:"MH100 20L",cat:"city",catLabel:"20L / 日常城市",volume:"20L",weight:"0.39kg",backSystem:"泡棉背板",material:"Polyester",waterproof:"基础防泼水",scene:"入门徒步 / 休闲出行",highlight:"极致入门，不到百元的户外背包",price:89,priceText:"¥89",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/mh100-20l.jpg",jd:"https://search.jd.com/Search?keyword=迪卡侬+MH100+20L+登山包"},
+  {brand:"迪卡侬",brandEn:"Decathlon/Forclaz",tier:"性价比",name:"MH100 20L",cat:"city",catLabel:"20L / 日常城市",volume:"20L",weight:"0.39kg",backSystem:"泡棉背板",material:"Polyester",waterproof:"基础防泼水",scene:"入门徒步 / 休闲出行",highlight:"入门，百元入门",price:89,priceText:"¥89",releaseDate:"2024-01",img:"/appliance-guide/images/backpacks/mh100-20l.jpg",jd:"https://search.jd.com/Search?keyword=迪卡侬+MH100+20L+登山包"},
   {brand:"迪卡侬",brandEn:"Decathlon/Forclaz",tier:"性价比",name:"MT500 Air 38L",cat:"hike",catLabel:"38L / 轻量登山",volume:"38L",weight:"1.55kg",backSystem:"Air Mesh 透气网架",material:"210D Ripstop 尼龙",waterproof:"含防雨罩",scene:"一日徒步 / 入门登山",highlight:"千元内最佳透气背负，网架设计，自带防雨罩",price:599,priceText:"¥599",releaseDate:"2024-06",img:"",jd:"https://search.jd.com/Search?keyword=迪卡侬+MT500+Air+38+登山包"},
   {brand:"迪卡侬",brandEn:"Decathlon/Forclaz",tier:"性价比",name:"MT500 Air 70L",cat:"trek",catLabel:"70L / 重装穿越",volume:"70L",weight:"2.30kg",backSystem:"Air Mesh 可调节网架",material:"210D Ripstop 尼龙",waterproof:"含防雨罩",scene:"多日穿越 / 入门重装",highlight:"入门重装性价比之王，透气网架可调背长",price:799,priceText:"¥799",releaseDate:"2024-03",img:"/appliance-guide/images/backpacks/mt500-air-70l.jpg",jd:"https://search.jd.com/Search?keyword=迪卡侬+MT500+Air+70+登山包"},
 
