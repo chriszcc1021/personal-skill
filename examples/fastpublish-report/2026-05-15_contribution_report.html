@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>FASTPUBLISH · REPO ANALYSIS</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+<link rel="stylesheet" href="https://fonts.loli.net/css2?family=Doto:wght@400;700;800;900&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{
+    --bg:#000000; --surface:#0A0A0A; --raised:#111111;
+    --border:#1F1F1F; --border-v:#2A2A2A;
+    --t-disabled:#555; --t-secondary:#888; --t-primary:#E8E8E8; --t-display:#FFFFFF;
+    --accent:#D71921; --success:#4A9E5C; --warning:#D4A843;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--t-primary);font-family:'Space Grotesk','DM Sans',system-ui,sans-serif;font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  /* Dot pattern texture top-right */
+  body{background-image:
+    radial-gradient(circle at center, rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255,255,255,0.015) 0%, transparent 280px);
+    background-size:18px 18px, 100% 100%;
+    background-position:right -200px top -200px, 0 0;
+    background-repeat:no-repeat, no-repeat;
+    min-height:100vh;
+  }
+
+  /* ===== Topbar (dashboard) ===== */
+  .topbar{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 32px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase}
+  .tb-l{display:flex;align-items:center;gap:10px;color:var(--t-display)}
+  .tb-l .brand-dot{width:8px;height:8px;background:var(--accent);display:inline-block;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .tb-c{color:var(--t-secondary);display:flex;gap:32px}
+  .tb-c a{color:var(--t-secondary);text-decoration:none}
+  .tb-c a.active{color:var(--t-display)}
+  .tb-r{justify-self:end;display:flex;align-items:center;gap:14px;color:var(--t-secondary)}
+  .tb-live{background:var(--accent);color:#fff;padding:3px 7px;font-weight:700;letter-spacing:0.14em}
+
+  /* ===== Update button + progress ===== */
+  .upd-btn{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border:0;padding:5px 12px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;overflow:hidden;min-width:160px;justify-content:center;transition:opacity 0.15s}
+  .upd-btn:not(:disabled):not(.run):not(.ok):not(.fail)::after{content:"";position:absolute;inset:-2px;border:1px solid var(--accent);opacity:0;pointer-events:none;transition:opacity 0.2s}
+  .upd-btn:not(:disabled):not(.run):hover::after{opacity:1;animation:btnScan 1.8s linear infinite}
+  @keyframes btnScan{0%{clip-path:inset(0 100% 0 0)}50%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(0 0 0 100%)}}
+  .upd-btn:hover{opacity:0.9}
+  .upd-btn:disabled{cursor:not-allowed;background:var(--raised);color:var(--t-secondary)}
+  .upd-btn .upd-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,0.22);transition:width 0.4s ease}
+  .upd-btn.run{background:var(--raised);color:var(--t-display);border:1px solid var(--border-v)}
+  .upd-btn.run .upd-fill{background:var(--accent)}
+  .upd-btn.ok{background:#0d3d12;color:#aef0b6;border:1px solid #1e6c25}
+  .upd-btn.fail{background:#3d0d10;color:#f0aeb3;border:1px solid #6c1e25}
+  .upd-btn .upd-text{position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px}
+  .upd-btn .upd-text::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+  .upd-btn.run .upd-text::before{animation:pulse 1s infinite}
+
+  /* ===== Layout ===== */
+  .wrap{max-width:1240px;margin:0 auto;padding:64px 32px 96px}
+
+  /* ===== Labels ===== */
+  .lbl{font-family:'Space Mono',monospace;font-size:12px;font-weight:400;letter-spacing:0.12em;text-transform:uppercase;color:var(--t-secondary);line-height:1.4}
+
+  /* ===== HERO — asymmetric, 8:4 ===== */
+  .hero{display:grid;grid-template-columns:2fr 1fr;gap:64px;padding:48px 0 80px;align-items:end;border-bottom:1px solid var(--border)}
+  .hero-l .lbl-top{margin-bottom:24px;color:var(--t-disabled);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .hero-stamp{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 10px;background:var(--raised);border:1px solid var(--border-v);border-radius:0;font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:var(--t-primary);text-transform:uppercase}
+  .hero-stamp-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 var(--accent);animation:hsPulse 2s infinite}
+  @keyframes hsPulse{0%{box-shadow:0 0 0 0 rgba(215,25,33,0.7)}70%{box-shadow:0 0 0 6px rgba(215,25,33,0)}100%{box-shadow:0 0 0 0 rgba(215,25,33,0)}}
+  .hero-num{font-family:'Doto',monospace;font-weight:800;font-size:240px;line-height:0.85;letter-spacing:-0.04em;color:var(--t-display);margin-bottom:8px;display:flex;align-items:flex-end;gap:20px}
+  .hero-num .unit{font-family:'Space Mono',monospace;font-size:11px;font-weight:400;letter-spacing:0.12em;color:var(--t-secondary);text-transform:uppercase;padding-bottom:24px;align-self:center;line-height:1.5}
+  .hero-sub{font-family:'Space Grotesk','PingFang SC','Noto Sans CJK SC',sans-serif;font-size:19px;color:var(--t-primary);max-width:600px;line-height:1.6;margin-top:32px}
+  .hero-sub b{color:var(--t-display);font-weight:500}
+
+  .hero-r{display:flex;flex-direction:column;gap:28px;padding-bottom:12px;border-left:1px solid var(--border);padding-left:36px}
+  .mstat .num{font-family:'Space Mono',monospace;font-size:40px;font-weight:400;color:var(--t-display);line-height:1;letter-spacing:-0.02em}
+  .mstat .num small{font-family:'Space Mono',monospace;font-size:16px;color:var(--t-secondary);margin-left:4px}
+  .mstat .lbl{margin-top:8px;font-size:11.5px}
+  .mstat.alert .num{color:var(--accent)}
+  .mstat.alert .lbl{color:var(--accent)}
+
+  /* ===== Skill 主笔分布 section ===== */
+  .seg-section{margin-top:80px;padding-top:56px;border-top:1px solid var(--border)}
+  .seg-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px}
+  .seg-head h2{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:28px;font-weight:500;color:var(--t-display);letter-spacing:-0.015em}
+  .seg-head .lbl{color:var(--t-disabled);font-size:11px}
+  .distbars{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+  .distrow{display:grid;grid-template-columns:220px 1fr 70px;gap:24px;align-items:center}
+  .distname{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:17px;color:var(--t-display);text-align:right;line-height:1.2}
+  .distname b{font-weight:500}
+  .distextra{font-family:'Space Mono',monospace;font-size:11px;color:var(--t-disabled);letter-spacing:0.04em;display:block;margin-top:3px}
+  .disttrack{height:42px;background:var(--raised);position:relative;border-left:1px solid var(--border-v)}
+  .distbar{height:100%;background:var(--t-display);display:flex;align-items:center;padding:0 16px;min-width:130px;transform:scaleX(0);transform-origin:left center;transition:transform 0.9s cubic-bezier(0.25,0.1,0.25,1),background 0.2s}
+  .in-view .distbar,.seg-section.in-view .distbar{transform:scaleX(1)}
+  .distrow:hover .distbar{background:var(--accent)}
+  .distbar .distnum{opacity:0;transition:opacity 0.4s ease 0.6s}
+  .in-view .distbar .distnum,.seg-section.in-view .distbar .distnum{opacity:1}
+  @media (prefers-reduced-motion: reduce){.distbar{transform:scaleX(1)!important;transition:none!important} .distbar .distnum{opacity:1!important}}
+  .distnum{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#000;letter-spacing:0.02em}
+  .distpct{font-family:'Space Mono',monospace;font-size:22px;font-weight:400;color:var(--t-display);letter-spacing:-0.01em;text-align:right}
+  .distfoot{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:11.5px;color:var(--t-disabled);letter-spacing:0.04em;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+
+  /* ===== Section header ===== */
+  .sec{margin-top:96px}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:32px;padding-bottom:14px;border-bottom:1px solid var(--t-display)}
+  .sec-head h2{font-family:'Space Grotesk','PingFang SC','Noto Sans CJK SC',sans-serif;font-size:28px;font-weight:500;letter-spacing:-0.015em;color:var(--t-display)}
+  .sec-head .lbl{color:var(--t-secondary)}
+
+  /* ===== Heatmap ===== */
+  .hmwrap{background:var(--surface);border:1px solid var(--border);padding:32px;overflow-x:auto}
+
+  /* ===== Cards ===== */
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+  .card{background:var(--surface);border:1px solid var(--border);padding:28px 32px;display:flex;flex-direction:column}
+  .card.span2{grid-column:1 / -1}
+  .chead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:18px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+  .chead h3{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:36px;font-weight:500;letter-spacing:-0.02em;color:var(--t-display);margin-top:10px;line-height:1.05}
+  .chead .sub{font-family:'Space Mono',monospace;font-size:10px;color:var(--t-disabled);margin-top:6px;letter-spacing:0.06em;text-transform:uppercase}
+  .cgrade{text-align:right;flex-shrink:0}
+  .ghuge{font-family:'Doto',monospace;font-size:72px;font-weight:800;line-height:0.85;color:var(--t-display);letter-spacing:-0.04em;margin-bottom:8px}
+  .verdict{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:17px;color:var(--t-primary);line-height:1.6;margin-bottom:24px;padding:14px 18px;background:rgba(215,25,33,0.06);border-left:3px solid var(--accent)}
+
+  .cmetrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:18px 0 24px;border-bottom:1px solid var(--border);margin-bottom:24px}
+  .cmetrics .big{font-family:'Space Mono',monospace;font-size:28px;font-weight:400;color:var(--t-display);letter-spacing:-0.01em;line-height:1}
+  .cmetrics .lbl{margin-top:8px;font-size:11px}
+
+  .warn-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(215,25,33,0.08);border-left:2px solid var(--accent);margin-bottom:24px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--t-primary)}
+  .dot-red{width:8px;height:8px;background:var(--accent);display:inline-block;border-radius:50%;animation:pulse 1.5s ease-in-out infinite}
+  .warn-txt b{color:var(--accent);font-weight:700}
+
+  .ccols{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px}
+  .col .lbl{margin-bottom:12px}
+  .col ul{list-style:none;padding:0}
+  .col ul li{padding:10px 0;font-size:15px;line-height:1.55;color:var(--t-primary);border-top:1px solid var(--border);position:relative;padding-left:22px}
+  .col ul li:first-child{border-top:none}
+  .hi-mark,.ga-mark{font-family:'Space Mono',monospace;position:absolute;left:0;top:8px;font-weight:700;color:var(--t-secondary);font-size:14px}
+
+  .commits{background:var(--raised);padding:18px 20px;margin-bottom:20px;border:1px solid var(--border)}
+  .commits > .lbl{margin-bottom:12px}
+  .commits ol{list-style:none;padding:0}
+  .commits ol li{padding:10px 0;border-top:1px solid var(--border-v)}
+  .commits ol li:first-child{border-top:none;padding-top:4px}
+  .cidx{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--t-disabled);letter-spacing:0.06em;margin-right:10px}
+  .csubj{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:15px;color:var(--t-display);font-weight:500}
+  .cmeta{font-family:'Space Mono',monospace;font-size:11.5px;color:var(--t-secondary);letter-spacing:0.06em;text-transform:uppercase;margin-top:4px;margin-left:36px}
+  .ktag{display:inline-block;font-family:'Space Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:0.12em;padding:2px 6px;margin-right:8px;border:1px solid var(--border-v);vertical-align:1px}
+  .ktag.k-skill{color:#f0aeb3;border-color:#6c1e25;background:rgba(215,25,33,0.10)}
+  .ktag.k-know {color:#aef0b6;border-color:#1e6c25;background:rgba(25,180,80,0.08)}
+  .ktag.k-tool {color:#f0d8ae;border-color:#6c4f1e;background:rgba(215,150,25,0.10)}
+
+  /* ===== Commit row clickable ===== */
+  .crow{display:block;color:inherit;text-decoration:none;padding:8px 10px;margin:-8px -10px;border-radius:0;transition:background 0.15s}
+  .crow:hover{background:var(--raised);text-decoration:none}
+  .crow:hover .csubj{color:var(--t-display);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
+  .crow:hover .cmeta{color:var(--t-primary)}
+
+  /* ===== Avatar ===== */
+  .cavatar{width:56px;height:56px;flex-shrink:0;display:block;margin-top:4px;border-radius:50%;transition:transform 0.25s cubic-bezier(0.25,0.1,0.25,1),box-shadow 0.25s}
+  .chead:hover .cavatar{transform:scale(1.06);box-shadow:0 0 0 2px var(--accent)}
+  .chead{align-items:flex-start;gap:18px}
+  .chead-l{flex:1;min-width:0}
+
+  /* ===== Heatmap tooltip ===== */
+  .hmwrap{position:relative}
+  /* ===== Heatmap cell typewriter pop-in ===== */
+  .hm-cell{cursor:crosshair;opacity:0;transform-origin:center;transform:scale(0.4);transition:opacity 0.12s linear,transform 0.18s cubic-bezier(0.34,1.56,0.64,1),stroke 0.15s}
+  .hmwrap.in-view .hm-cell{opacity:1;transform:scale(1)}
+  .hm-cell:hover{stroke:var(--accent);stroke-width:1.5}
+  #hm-tip{position:fixed;display:none;background:rgba(15,15,15,0.97);color:var(--t-display);padding:12px 14px;border:1px solid #444;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;letter-spacing:0.04em;pointer-events:none;z-index:50;min-width:220px;max-width:340px;box-shadow:0 8px 24px rgba(0,0,0,0.6);white-space:nowrap}
+  #hm-tip .tip-h{color:var(--accent);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:8px;font-size:10.5px}
+  #hm-tip .tip-m{color:var(--t-secondary);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+  #hm-tip .tip-top{color:var(--t-primary);margin-top:6px;white-space:normal}
+  #hm-tip .tip-top .ts{color:#888;display:inline-block;width:60px}
+
+  /* ===== Mini X-axis date cursor under heatmap ===== */
+  .hmwrap{overflow:hidden}
+  #hm-cursor{position:absolute;top:0;bottom:0;width:1px;background:var(--accent);pointer-events:none;display:none;opacity:0.7}
+  #hm-cursor-lbl{position:absolute;background:var(--accent);color:#fff;padding:3px 8px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.1em;pointer-events:none;display:none;white-space:nowrap;z-index:51}
+
+  /* ===== Update button hover hint ===== */
+  .upd-btn[data-since]:hover::after{
+    content:attr(data-since);
+    position:absolute;top:calc(100% + 8px);right:0;
+    background:rgba(15,15,15,0.97);color:var(--t-primary);
+    padding:6px 10px;border:1px solid #444;
+    font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+    white-space:nowrap;pointer-events:none;z-index:60;
+  }
+
+  .cfoot{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;padding-top:18px;border-top:1px solid var(--border)}
+  .ctags-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+
+  /* Skill table row link + keyword chips (Nothing design: high contrast monochrome) */
+  .skill-row:hover{background:var(--raised)}
+  .skill-link{color:var(--t-display);text-decoration:none;border-bottom:1px solid transparent}
+  .skill-link:hover{color:var(--accent);border-bottom-color:var(--accent)}
+  .kw-cell{padding:6px 12px;vertical-align:middle;white-space:nowrap;line-height:1}
+  .kw-cell .kw{margin-right:5px}
+  .kw-cell .kw:last-child{margin-right:0}
+  .kw{display:inline-block;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.1em;padding:3px 8px;text-transform:uppercase;line-height:1.4;vertical-align:middle}
+  .kw-good{color:#0a0a0a;background:#E8E8E8;border:1px solid #E8E8E8}
+  .kw-bad {color:#E8E8E8;background:transparent;border:1px solid #666}
+  .bar-red{background:var(--accent)!important;opacity:0.85}
+  .tag{font-family:'Space Mono',monospace;font-size:11px;font-weight:400;letter-spacing:0.08em;text-transform:uppercase;color:var(--t-secondary);padding:5px 12px;border:1px solid var(--border-v)}
+
+  /* ===== Tables ===== */
+  table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border)}
+  th{font-family:'Space Mono',monospace;text-align:left;font-weight:700;color:var(--t-display);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:18px 20px;border-bottom:1px solid var(--t-display)}
+  td{padding:18px 20px;border-bottom:1px solid var(--border);font-size:15px;color:var(--t-primary);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td.nm{font-family:'Space Grotesk','PingFang SC',sans-serif;font-weight:500;color:var(--t-display);letter-spacing:0.02em;font-size:15px}
+  td.auth{font-family:'Space Mono',monospace;font-size:12px;color:var(--t-secondary);letter-spacing:0.06em;text-transform:uppercase}
+  td.num{text-align:right;font-family:'Space Mono',monospace;font-size:14px}
+  td.rank{font-family:'Space Mono',monospace;color:var(--t-disabled);font-size:12px;letter-spacing:0.06em;width:56px}
+  td.total{font-family:'Space Mono',monospace;font-weight:700;color:var(--t-display);font-size:15px}
+
+  .sd{display:inline-block;width:10px;height:10px;border-radius:50%}
+  .sd-on{background:var(--t-display)}
+  .sd-mid{background:var(--t-secondary)}
+  .sd-low{background:var(--t-disabled)}
+  .sd-off{background:transparent;border:1px solid var(--t-disabled)}
+  .sd-red{background:var(--accent)}
+
+  .bc{display:flex;align-items:center;gap:12px}
+  .bc .bar{height:5px;background:var(--t-display);min-width:2px;display:inline-block;transform-origin:left center;transform:scaleX(0);transition:transform 0.9s cubic-bezier(0.25,0.1,0.25,1)}
+  body.loaded .bc .bar{transform:scaleX(1)}
+  .bc span{font-family:'Space Mono',monospace;font-size:13px;color:var(--t-primary);letter-spacing:0.04em}
+
+  /* === Page entrance: cards fade-up stagger === */
+  .card{opacity:0;transform:translateY(12px);transition:opacity 0.5s cubic-bezier(0.25,0.1,0.25,1),transform 0.5s cubic-bezier(0.25,0.1,0.25,1)}
+  body.loaded .card{opacity:1;transform:translateY(0)}
+  body.loaded .card:nth-child(1){transition-delay:0ms}
+  body.loaded .card:nth-child(2){transition-delay:80ms}
+  body.loaded .card:nth-child(3){transition-delay:160ms}
+  body.loaded .card:nth-child(4){transition-delay:240ms}
+  body.loaded .card:nth-child(5){transition-delay:320ms}
+  body.loaded .card:nth-child(6){transition-delay:400ms}
+
+  /* === Top scroll-progress 1px red line === */
+  #scroll-prog{position:fixed;top:0;left:0;height:1.5px;width:0;background:var(--accent);z-index:200;transition:width 0.08s linear;pointer-events:none}
+
+  /* === Back-to-top button === */
+  #go-top{position:fixed;right:24px;bottom:24px;width:40px;height:40px;background:var(--accent);color:#fff;border:0;font-family:'Space Mono',monospace;font-size:18px;font-weight:700;cursor:pointer;opacity:0;transform:translateY(12px);transition:opacity 0.25s cubic-bezier(0.25,0.1,0.25,1),transform 0.25s cubic-bezier(0.25,0.1,0.25,1);z-index:150;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+  #go-top.show{opacity:1;transform:translateY(0)}
+  #go-top:hover{background:#a5141b}
+  @media (prefers-reduced-motion: reduce){#go-top{transition:none}}
+
+  /* === Enhanced hover: commit row with red rail === */
+  .crow{position:relative}
+  .crow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:0;background:var(--accent);transition:width 0.18s cubic-bezier(0.25,0.1,0.25,1)}
+  .crow:hover{padding-left:18px;transition:padding 0.18s cubic-bezier(0.25,0.1,0.25,1),background 0.15s}
+  .crow:hover::before{width:2px}
+
+  /* === Enhanced hover: skill row bar turns red === */
+  .skill-row{transition:background 0.15s}
+  .skill-row .bar{transition:transform 0.9s cubic-bezier(0.25,0.1,0.25,1),background 0.18s}
+  .skill-row:hover .bar{background:var(--accent)}
+  .skill-row:hover .bar-red{opacity:1}
+
+  /* === Respect user motion preferences === */
+  @media (prefers-reduced-motion: reduce){
+    .card,.bc .bar,.crow,.skill-row .bar{transition:none!important;animation:none!important}
+    .card{opacity:1;transform:none}
+    .bc .bar{transform:scaleX(1)}
+  }
+
+  /* === Scroll-in reveal for sections + standalone rows === */
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity 0.45s cubic-bezier(0.25,0.1,0.25,1),transform 0.45s cubic-bezier(0.25,0.1,0.25,1)}
+  .reveal.in-view{opacity:1;transform:none}
+  .stagger-row{opacity:0;transform:translateY(8px);transition:opacity 0.35s cubic-bezier(0.25,0.1,0.25,1),transform 0.35s cubic-bezier(0.25,0.1,0.25,1)}
+  .stagger-row.in-view{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){
+    .reveal,.stagger-row{opacity:1!important;transform:none!important;transition:none!important}
+    .hm-cell{opacity:1!important}
+  }
+
+  /* ===== Caveat (bottom, dashboard-style) ===== */
+  .caveat{background:var(--surface);border:1px solid var(--border);padding:24px 32px;margin-top:48px}
+  .caveat .lbl{margin-bottom:16px;color:var(--t-secondary)}
+  .caveat ol{list-style:none;counter-reset:ca;padding:0}
+  .caveat ol li{counter-increment:ca;padding:14px 0 14px 56px;position:relative;font-size:15.5px;line-height:1.65;color:var(--t-primary);border-top:1px solid var(--border)}
+  .caveat ol li:first-child{border-top:none}
+  .caveat ol li:before{content:"[" counter(ca,decimal-leading-zero) "]";position:absolute;left:0;top:11px;font-family:'Space Mono',monospace;font-size:10px;font-weight:400;color:var(--t-disabled);letter-spacing:0.08em}
+  .caveat ol li b{color:var(--t-display);font-weight:500}
+
+  /* ===== Findings ===== */
+  .findings{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--surface);border:1px solid var(--border)}
+  .finding{padding:36px 28px;border-right:1px solid var(--border);position:relative}
+  .finding:last-child{border-right:none}
+  .finding .fn{font-family:'Doto',monospace;font-size:64px;font-weight:800;color:var(--t-disabled);line-height:0.9;margin-bottom:18px;letter-spacing:-0.04em}
+  .finding h3{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:500;line-height:1.3;color:var(--t-display);margin-bottom:14px;letter-spacing:-0.005em}
+  .finding p{font-size:13px;line-height:1.65;color:var(--t-secondary)}
+  .finding p b{color:var(--t-primary);font-weight:500}
+  .finding.win{background:var(--raised)}
+  .finding.win .fn{color:var(--accent)}
+  .finding.win .arrow{display:inline-block;color:var(--accent);font-weight:700;font-family:'Space Mono',monospace}
+
+  .followup{background:var(--surface);border:1px solid var(--border);padding:20px 28px;margin-top:0;border-top:none;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:0.04em;color:var(--t-primary);display:flex;flex-wrap:wrap;gap:32px}
+  .followup .lbl{color:var(--t-secondary);letter-spacing:0.1em}
+  .followup .fu-item{display:flex;align-items:center;gap:10px}
+  .followup .fu-num{font-family:'Doto',monospace;font-size:20px;font-weight:700;color:var(--t-display);letter-spacing:-0.02em}
+
+  /* ===== Method ===== */
+  .method{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--surface);border:1px solid var(--border)}
+  .method > div{padding:20px 26px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .method > div:nth-child(3n){border-right:none}
+  .method > div:nth-last-child(-n+3){border-bottom:none}
+  .method .lbl{margin-bottom:8px}
+  .method p{font-size:14.5px;line-height:1.6;color:var(--t-primary)}
+
+  footer{margin-top:96px;padding-top:32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline;font-family:'Space Mono',monospace;font-size:12px;color:var(--t-disabled);letter-spacing:0.1em;text-transform:uppercase}
+  footer .ver-red{color:var(--accent)}
+
+  @media (max-width:900px){
+    .wrap{padding:32px 16px}
+    .hero{grid-template-columns:1fr;gap:32px}
+    .hero-num{font-size:144px}
+    .hero-r{border-left:none;padding-left:0;border-top:1px solid var(--border);padding-top:24px}
+    .cards{grid-template-columns:1fr}
+    .card.span2{grid-column:auto}
+    .cmetrics{grid-template-columns:repeat(3,1fr)}
+    .findings,.method{grid-template-columns:1fr}
+    .finding,.method > div{border-right:none;border-bottom:1px solid var(--border)}
+    .ccols{grid-template-columns:1fr}
+    .topbar{padding:12px 16px;grid-template-columns:1fr auto;font-size:9px}
+    .tb-c{display:none}
+  }
+</style></head><body>
+<div id="scroll-prog"></div>
+<button id="go-top" type="button" aria-label="返回顶部">↑</button>
+
+<!-- DASHBOARD TOP BAR -->
+<div class="topbar">
+  <div class="tb-l"><span class="brand-dot"></span><span>FASTPUBLISH</span><span style="color:var(--t-disabled);margin-left:8px">/ 仓库画像</span></div>
+  <div class="tb-c"><a class="active">[ 分析 ]</a><a>SKILLS</a><a>贡献者</a><a>历史</a></div>
+  <div class="tb-r"><button id="updBtn" class="upd-btn" type="button" onclick="runUpdate()"><span class="upd-fill"></span><span class="upd-text" id="updTxt">UPDATE REPORT</span></button><span>2026-05-15</span><span style="color:var(--t-disabled)">·</span><span>HTTP</span></div>
+</div>
+
+<div class="wrap">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-l">
+    <div class="lbl lbl-top">[ 内部 ] FASTPUBLISH 仓库画像 // 30 天 // 6 位贡献者 <span class="hero-stamp"><span class="hero-stamp-dot"></span>UPDATED 2026-05-15 15:10 GMT+8</span></div>
+    <div class="hero-num">111<span class="unit">提交总数</span></div>
+    <div class="hero-sub">基于 git 全历史的贡献者画像。<b>看 commit 数会得出错误结论</b>，看净增行数也会，必须把产出类型拆开看。</div>
+  </div>
+  <div class="hero-r">
+    <div class="mstat"><div class="num">41<small>/29</small></div><div class="lbl">参与评分 SKILLS</div></div>
+    <div class="mstat"><div class="num">06</div><div class="lbl">贡献者数</div></div>
+    <div class="mstat"><div class="num">30D</div><div class="lbl">采样窗口</div></div>
+    <div class="mstat alert"><div class="num">00</div><div class="lbl">● 零引用 SKILLS</div></div>
+  </div>
+</section>
+
+<!-- SEGMENTED BAR: skill authorship distribution -->
+<section class="seg-section">
+  <div class="seg-head">
+    <h2>Skill 主笔分布</h2>
+    <div class="lbl">[ 横向条 = 该贡献者主笔的 skill 数占比 ]</div>
+  </div>
+  <div class="distbars">
+    <div class="distrow">
+      <div class="distname"><b>Charles Liu</b><span class="distextra">wei.liu</span></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:100%;opacity:1.00">
+          <span class="distnum">20 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">49%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Pingfan</b></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:40%;opacity:0.87">
+          <span class="distnum">8 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">20%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Huang Yu</b><span class="distextra">DeeDee</span></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:35%;opacity:0.74">
+          <span class="distnum">7 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">17%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Chenchen Zhang</b><span class="distextra">张鱼哥</span></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:20%;opacity:0.61">
+          <span class="distnum">4 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">10%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Peicheng Zheng</b></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:10%;opacity:0.48">
+          <span class="distnum">2 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">5%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Zhang Yaokuang</b></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:0%;opacity:0.35">
+          <span class="distnum">0 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">0%</div>
+    </div></div><div class="distfoot"><span>主笔 skill 数 ÷ 全员主笔总数 41 = 占比</span><span>29 个 skill 中 41 个有明确主笔</span></div>
+</section>
+
+<!-- HEATMAP -->
+<section class="sec">
+  <div class="sec-head"><h2>时间序列</h2><div class="lbl">[ 01 ] 每日 churn / 30 天</div></div>
+  <div class="hmwrap"><svg width="432" height="188" viewBox="0 0 432 188" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg" font-family="Space Mono, monospace"><text x="160" y="14" font-size="9" fill="#666" letter-spacing="0.5">04-17</text><text x="230" y="14" font-size="9" fill="#666" letter-spacing="0.5">04-24</text><text x="300" y="14" font-size="9" fill="#666" letter-spacing="0.5">05-08</text><text x="370" y="14" font-size="9" fill="#666" letter-spacing="0.5">05-13</text><text x="150" y="39.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">CHARLES LIU</text><rect x="160" y="26" width="12" height="18" fill="rgba(255,255,255,0.60)" data-date="2026-04-17" data-name="CHARLES LIU" data-commits="3" data-churn="2595" data-tops="dd2fd1a fix: restore UTF-8 encoding for corrupte|9601afc feat: multi-agent architecture + switch |ac3d0c4 fix: add .gitattributes for UTF-8 LF nor" class="hm-cell"></rect><rect x="174" y="26" width="12" height="18" fill="rgba(255,255,255,0.56)" data-date="2026-04-20" data-name="CHARLES LIU" data-commits="3" data-churn="1641" data-tops="1d1e47c feat: implement action plan - pilot infr|4b2700a feat: add branch management strategy, ch|9a78b34 docs(knowledge): clarify R-series retent" class="hm-cell"></rect><rect x="188" y="26" width="12" height="18" fill="rgba(255,255,255,0.60)" data-date="2026-04-21" data-name="CHARLES LIU" data-commits="2" data-churn="2576" data-tops="fa58644 chore: update docs, workflows, and asset|a779cda chore: add ppt export scripts" class="hm-cell"></rect><rect x="202" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="216" y="26" width="12" height="18" fill="rgba(255,255,255,0.70)" data-date="2026-04-23" data-name="CHARLES LIU" data-commits="2" data-churn="9521" data-tops="f7a9b9e feat: scaffold data skills architecture |f36b903 docs: add multi-agent workflow hardening" class="hm-cell"></rect><rect x="230" y="26" width="12" height="18" fill="rgba(255,255,255,0.53)" data-date="2026-04-24" data-name="CHARLES LIU" data-commits="1" data-churn="1026" data-tops="7870d50 docs: add player pain-points knowledge s" class="hm-cell"></rect><rect x="244" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="258" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="272" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="300" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="26" width="12" height="18" fill="rgba(255,255,255,0.59)" data-date="2026-05-09" data-name="CHARLES LIU" data-commits="1" data-churn="2394" data-tops="2bd8313 Add GNG retention reporting workflows" class="hm-cell"></rect><rect x="328" y="26" width="12" height="18" fill="rgba(255,255,255,0.56)" data-date="2026-05-10" data-name="CHARLES LIU" data-commits="1" data-churn="1527" data-tops="8c5840f Add GOBS and Fast Publish progress repor" class="hm-cell"></rect><rect x="342" y="26" width="12" height="18" fill="rgba(255,255,255,0.60)" data-date="2026-05-11" data-name="CHARLES LIU" data-commits="1" data-churn="2696" data-tops="1673b3d Add GNG Indonesia FGD reports and recap" class="hm-cell"></rect><rect x="356" y="26" width="12" height="18" fill="rgba(255,255,255,0.65)" data-date="2026-05-12" data-name="CHARLES LIU" data-commits="3" data-churn="5213" data-tops="3d85c10 Add GNG MCP weekly report workflow|477dbe2 Add GNG report HTML prototype|b08a042 Add GNG raw-data reporting standard and " class="hm-cell"></rect><rect x="370" y="26" width="12" height="18" fill="rgba(255,255,255,0.68)" data-date="2026-05-13" data-name="CHARLES LIU" data-commits="5" data-churn="7604" data-tops="5d121d7 Unify PM orchestration and add query pro|f0b30e1 Improve GNG weekly report HTML workflow|1faeeb9 Improve data agent readiness workflow" class="hm-cell"></rect><rect x="384" y="26" width="12" height="18" fill="rgba(255,255,255,0.59)" data-date="2026-05-14" data-name="CHARLES LIU" data-commits="3" data-churn="2242" data-tops="2f7cc31 Upgrade data pipeline skills and GNG rep|c65e8e8 docs: add agent hygiene governance|517a3ff feat: add skill-evolution - Data Agent s" class="hm-cell"></rect><rect x="398" y="26" width="12" height="18" fill="rgba(255,255,255,0.65)" data-date="2026-05-15" data-name="CHARLES LIU" data-commits="3" data-churn="5045" data-tops="072cf0a feat: solidify report portal and data ag|e785ab1 chore: register project contribution rep" class="hm-cell"></rect><text x="150" y="61.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">HUANG YU</text><rect x="160" y="48" width="12" height="18" fill="rgba(255,255,255,0.49)" data-date="2026-04-17" data-name="HUANG YU" data-commits="1" data-churn="599" data-tops="0d46e41 新增角色知识库并移除稀有度字段" class="hm-cell"></rect><rect x="174" y="48" width="12" height="18" fill="rgba(255,255,255,0.46)" data-date="2026-04-20" data-name="HUANG YU" data-commits="3" data-churn="408" data-tops="afe8bca feat(knowledge): 新增地图知识库文档与地图参考素材|c45356d docs: 增加轻量协作规范并补充入口链接|398d3ce 规范化角色总览文档格式" class="hm-cell"></rect><rect x="188" y="48" width="12" height="18" fill="rgba(255,255,255,0.62)" data-date="2026-04-21" data-name="HUANG YU" data-commits="1" data-churn="3323" data-tops="f93d813 docs(meeting-notes): 新增会议纪要目录规范并整理3场会议纪要" class="hm-cell"></rect><rect x="202" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="216" y="48" width="12" height="18" fill="rgba(255,255,255,0.74)" data-date="2026-04-23" data-name="HUANG YU" data-commits="2" data-churn="16826" data-tops="4997a31 Add issue-tracker tool station and proto|866b183 docs: archive 2026-04-23 AI tea talk not" class="hm-cell"></rect><rect x="230" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="244" y="48" width="12" height="18" fill="rgba(255,255,255,0.58)" data-date="2026-04-27" data-name="HUANG YU" data-commits="2" data-churn="2124" data-tops="ca0c165 Implement issue-tracker workflow actions|695afa3 assets: add character and map reference " class="hm-cell"></rect><rect x="258" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="272" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="48" width="12" height="18" fill="rgba(255,255,255,0.65)" data-date="2026-05-07" data-name="HUANG YU" data-commits="2" data-churn="5306" data-tops="a3d377a Add issue-tracker auth and protected wor|db9b934 Advance issue-tracker survey intake and " class="hm-cell"></rect><rect x="300" y="48" width="12" height="18" fill="rgba(255,255,255,0.61)" data-date="2026-05-08" data-name="HUANG YU" data-commits="3" data-churn="3002" data-tops="72a3905 Advance issue-tracker survey ingestion a|4837dab Refresh issue-tracker handbook and sourc|1bc39c3 Fix stale session redirect loop on login" class="hm-cell"></rect><rect x="314" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="48" width="12" height="18" fill="rgba(255,255,255,0.63)" data-date="2026-05-12" data-name="HUANG YU" data-commits="1" data-churn="4037" data-tops="e38aeac Advance issue tracker ops workflow" class="hm-cell"></rect><rect x="370" y="48" width="12" height="18" fill="rgba(255,255,255,0.68)" data-date="2026-05-13" data-name="HUANG YU" data-commits="14" data-churn="7531" data-tops="124b6db Add survey clustered draft review flow|3b7255e feat(issue-tracker): refine ops strategy|40817e4 Add Jira create dry-run and readback" class="hm-cell"></rect><rect x="384" y="48" width="12" height="18" fill="rgba(255,255,255,0.60)" data-date="2026-05-14" data-name="HUANG YU" data-commits="8" data-churn="2530" data-tops="a81972b Improve KuangBro natural chat flow|b9b2f0d feat(issue-tracker): persist ops strateg|7c3f8bb Unify Jira draft approve and create flow" class="hm-cell"></rect><rect x="398" y="48" width="12" height="18" fill="rgba(255,255,255,0.85)" data-date="2026-05-15" data-name="HUANG YU" data-commits="7" data-churn="66470" data-tops="ded915f Track BeeHive localization assets|31f8446 Add BeeHive localization workflow statio|627c4bf Add unified issue triage skill" class="hm-cell"></rect><text x="150" y="83.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">PINGFAN</text><rect x="160" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="174" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="188" y="70" width="12" height="18" fill="rgba(255,255,255,0.62)" data-date="2026-04-21" data-name="PINGFAN" data-commits="1" data-churn="3242" data-tops="544aeeb Add PM orchestrator workspace and planni" class="hm-cell"></rect><rect x="202" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="216" y="70" width="12" height="18" fill="rgba(255,255,255,0.54)" data-date="2026-04-23" data-name="PINGFAN" data-commits="1" data-churn="1142" data-tops="57f76dd Add Ops brain GNG deck and publishing sk" class="hm-cell"></rect><rect x="230" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="244" y="70" width="12" height="18" fill="rgba(255,255,255,0.49)" data-date="2026-04-27" data-name="PINGFAN" data-commits="1" data-churn="648" data-tops="e4a490c Update PM release orchestration workflow" class="hm-cell"></rect><rect x="258" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="272" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="300" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="70" width="12" height="18" fill="rgba(255,255,255,0.70)" data-date="2026-05-12" data-name="PINGFAN" data-commits="1" data-churn="9690" data-tops="99ca667 Add ops brain skills" class="hm-cell"></rect><rect x="370" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="384" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="398" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><text x="150" y="105.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">CHENCHEN ZHANG</text><rect x="160" y="92" width="12" height="18" fill="rgba(255,255,255,0.48)" data-date="2026-04-17" data-name="CHENCHEN ZHANG" data-commits="1" data-churn="553" data-tops="b648d51 feat: 添加活动规划 SKILL + 地区节日表 + 资源表参考" class="hm-cell"></rect><rect x="174" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="188" y="92" width="12" height="18" fill="rgba(255,255,255,0.53)" data-date="2026-04-21" data-name="CHENCHEN ZHANG" data-commits="4" data-churn="1043" data-tops="366bd47 feat(live-ops): 补充上版本活动数据、日历及商城配置|cce4d1b feat(event_planner): v0.3 - 补充活动目的体系/数据目|c27006a feat(event_analysis): 新增活动分析skill v0.1 -" class="hm-cell"></rect><rect x="202" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="216" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="230" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="244" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="258" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="272" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="300" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="92" width="12" height="18" fill="rgba(255,255,255,0.62)" data-date="2026-05-12" data-name="CHENCHEN ZHANG" data-commits="3" data-churn="3677" data-tops="a82d7c5 Add research FGD report skill|f228707 Add GNG 3C FGD research knowledge base|c48719a Add Codex project guardrails" class="hm-cell"></rect><rect x="370" y="92" width="12" height="18" fill="rgba(255,255,255,0.67)" data-date="2026-05-13" data-name="CHENCHEN ZHANG" data-commits="2" data-churn="6401" data-tops="213aa5f Archive GNG May 2026 FGD report|1c8bccf Harden FGD report skill format rules" class="hm-cell"></rect><rect x="384" y="92" width="12" height="18" fill="rgba(255,255,255,0.68)" data-date="2026-05-14" data-name="CHENCHEN ZHANG" data-commits="2" data-churn="8048" data-tops="bc99ed6 Improve event planner gantt output|cf527fa event_analysis: upgrade skill from doc-o" class="hm-cell"></rect><rect x="398" y="92" width="12" height="18" fill="rgba(255,255,255,0.60)" data-date="2026-05-15" data-name="CHENCHEN ZHANG" data-commits="1" data-churn="2702" data-tops="da7ba04 feat(skill): add project-contribution-re" class="hm-cell"></rect><text x="150" y="127.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">PEICHENG ZHENG</text><rect x="160" y="114" width="12" height="18" fill="rgba(255,255,255,0.18)" data-date="2026-04-17" data-name="PEICHENG ZHENG" data-commits="2" data-churn="7" data-tops="23ad134 Update modes.md|1c055bc Update monetization.md" class="hm-cell"></rect><rect x="174" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="188" y="114" width="12" height="18" fill="rgba(255,255,255,0.67)" data-date="2026-04-21" data-name="PEICHENG ZHENG" data-commits="2" data-churn="6797" data-tops="6a36657 add sensor-tower-workflow skill|b13b963 Create sensor-tower-workflow" class="hm-cell"></rect><rect x="202" y="114" width="12" height="18" fill="rgba(255,255,255,0.18)" data-date="2026-04-22" data-name="PEICHENG ZHENG" data-commits="1" data-churn="10" data-tops="8dd1642 Update version-registry.md" class="hm-cell"></rect><rect x="216" y="114" width="12" height="18" fill="rgba(255,255,255,0.33)" data-date="2026-04-23" data-name="PEICHENG ZHENG" data-commits="1" data-churn="72" data-tops="4fd8683 add product key feature 2.3" class="hm-cell"></rect><rect x="230" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="244" y="114" width="12" height="18" fill="rgba(255,255,255,0.55)" data-date="2026-04-27" data-name="PEICHENG ZHENG" data-commits="4" data-churn="1430" data-tops="b136221 add version release scheduling skill and|2c780ea update release scheduling knowledge and |e67e8d9 add v2.3 ops schedule document" class="hm-cell"></rect><rect x="258" y="114" width="12" height="18" fill="rgba(255,255,255,0.18)" data-date="2026-04-28" data-name="PEICHENG ZHENG" data-commits="1" data-churn="6" data-tops="34a668c update release cadence scope definitions" class="hm-cell"></rect><rect x="272" y="114" width="12" height="18" fill="rgba(255,255,255,0.36)" data-date="2026-04-30" data-name="PEICHENG ZHENG" data-commits="1" data-churn="115" data-tops="e3a54e4 add sensor tower report rendering rules" class="hm-cell"></rect><rect x="286" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="300" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="370" y="114" width="12" height="18" fill="rgba(255,255,255,1.00)" data-date="2026-05-13" data-name="PEICHENG ZHENG" data-commits="4" data-churn="507869" data-tops="3248a77 add planning wiki sync automation|3fa4ade add confluence sync setup|ceea2cd add version manager agent" class="hm-cell"></rect><rect x="384" y="114" width="12" height="18" fill="rgba(255,255,255,0.61)" data-date="2026-05-14" data-name="PEICHENG ZHENG" data-commits="4" data-churn="2947" data-tops="a2a7b4c update ops priority html and add report |4832464 add v2.3 ops feature priority report|c22ef4f add v2.3 ops feature priority report" class="hm-cell"></rect><rect x="398" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><text x="150" y="149.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">ZHANG YAOKUANG</text><rect x="160" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="174" y="136" width="12" height="18" fill="rgba(255,255,255,0.51)" data-date="2026-04-20" data-name="ZHANG YAOKUANG" data-commits="1" data-churn="821" data-tops="d08fb19 docs(knowledge): import Malaysia marketi" class="hm-cell"></rect><rect x="188" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="202" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="216" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="230" y="136" width="12" height="18" fill="rgba(255,255,255,0.44)" data-date="2026-04-24" data-name="ZHANG YAOKUANG" data-commits="1" data-churn="309" data-tops="89ce2e6 docs: add selling point extractor playbo" class="hm-cell"></rect><rect x="244" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="258" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="272" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="300" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="370" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="384" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="398" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><text x="160" y="176" font-size="9" fill="#666" letter-spacing="0.8">[ DENSITY = LOG(CHURN) ]</text></svg><div id="hm-cursor"></div><div id="hm-cursor-lbl"></div><div id="hm-tip"></div></div>
+</section>
+
+<!-- CARDS -->
+<section class="sec">
+  <div class="sec-head"><h2>贡献者画像</h2><div class="lbl">[ 02 ] 画像 · 评级 · 代表 commit</div></div>
+  <div class="cards">
+    <article class="card" id="card-charles">
+      <header class="chead">
+        <img class="cavatar" src="avatars/av_charles.png" alt="" onerror="this.style.display='none'">
+        <div class="chead-l">
+          <div class="lbl">架构 · ARCHITECT　·　[01/06]</div>
+          <h3>Charles Liu</h3>
+          <div class="sub">wei.liu</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">A</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">skill 体系的单点支柱。Top 10 里 7 个都是他主笔。</p>
+      <div class="cmetrics">
+        <div><div class="big">28</div><div class="lbl">提交</div></div>
+        <div><div class="big">20</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">37</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">12</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">74.0</div><div class="lbl">SKILL 质量均分</div></div>
+      </div>
+      
+      <div class="ctags-row"><span class="tag">架构</span><span class="tag">全栈主笔</span><span class="tag">高引用</span></div>
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>15 个 skill 主笔，data-monitor / weekly-report / specific-analysis 三件套 22/25</li><li><span class='hi-mark'>+</span>50 个 knowledge 文件，跨度 14 天最长</li><li><span class='hi-mark'>+</span>三件套已被周报/告警/归因三条业务线串起来</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>skill-evolution 结构完整但零引用，疑似实验未上</li><li><span class='ga-mark'>−</span>bus factor = 1，他停手项目立刻减速</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/f7a9b9e" target="_blank" rel="noopener">
+            <span class="cidx">[01]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">feat: scaffold data skills architecture and report pipeline</span>
+            <div class="cmeta">f7a9b9e · 2026-04-23 · 7,341 行 · 48 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/072cf0a" target="_blank" rel="noopener">
+            <span class="cidx">[02]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">feat: solidify report portal and data agent workflows</span>
+            <div class="cmeta">072cf0a · 2026-05-15 · 5,044 行 · 52 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/5d121d7" target="_blank" rel="noopener">
+            <span class="cidx">[03]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">Unify PM orchestration and add query protocols</span>
+            <div class="cmeta">5d121d7 · 2026-05-13 · 3,347 行 · 36 个文件</div>
+          </a>
+        </li></ol></div>
+    </article>
+    <article class="card" id="card-huangyu">
+      <header class="chead">
+        <img class="cavatar" src="avatars/av_huangyu.png" alt="" onerror="this.style.display='none'">
+        <div class="chead-l">
+          <div class="lbl">内容 · CONTENT　·　[02/06]</div>
+          <h3>Huang Yu</h3>
+          <div class="sub">DeeDee</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">A-</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">把游戏内容知识库从零填到 26 个文件，commits 数最高。</p>
+      <div class="cmetrics">
+        <div><div class="big">44</div><div class="lbl">提交</div></div>
+        <div><div class="big">07</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">28</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">11</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">64.2</div><div class="lbl">SKILL 质量均分</div></div>
+      </div>
+      
+      <div class="ctags-row"><span class="tag">策划知识</span><span class="tag">高产</span><span class="tag">文档型</span></div>
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>26 个 knowledge/game 文件</li><li><span class='hi-mark'>+</span>issue-tracker tool station 原型也是他起的（14k 行）</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>工具化产出 = 1 个 skill；文档为主</li><li><span class='ga-mark'>−</span>10 天集中产出后未持续</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/ded915f" target="_blank" rel="noopener">
+            <span class="cidx">[01]</span>
+            <span class="ktag k-tool">TOOL</span>
+            <span class="csubj">Track BeeHive localization assets</span>
+            <div class="cmeta">ded915f · 2026-05-15 · 46,398 行 · 8 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/31f8446" target="_blank" rel="noopener">
+            <span class="cidx">[02]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">Add BeeHive localization workflow station</span>
+            <div class="cmeta">31f8446 · 2026-05-15 · 18,704 行 · 138 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/4997a31" target="_blank" rel="noopener">
+            <span class="cidx">[03]</span>
+            <span class="ktag k-tool">TOOL</span>
+            <span class="csubj">Add issue-tracker tool station and prototype</span>
+            <div class="cmeta">4997a31 · 2026-04-23 · 14,101 行 · 117 个文件</div>
+          </a>
+        </li></ol></div>
+    </article>
+    <article class="card" id="card-pingfan">
+      <header class="chead">
+        <img class="cavatar" src="avatars/av_pingfan.png" alt="" onerror="this.style.display='none'">
+        <div class="chead-l">
+          <div class="lbl">基建 · INFRA　·　[03/06]</div>
+          <h3>Pingfan</h3>
+          <div class="sub">&nbsp;</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">A-</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">8 个 skill 全在做 agent 自身能力（meta-skills）。</p>
+      <div class="cmetrics">
+        <div><div class="big">04</div><div class="lbl">提交</div></div>
+        <div><div class="big">08</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">00</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">04</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">67.9</div><div class="lbl">SKILL 质量均分</div></div>
+      </div>
+      
+      <div class="ctags-row"><span class="tag">基建</span><span class="tag">高规范</span><span class="tag">META</span></div>
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>agent-browser 进 Top 5（21/25）</li><li><span class='hi-mark'>+</span>结构/复用维度普遍 4-5 分，文档规范最严格</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>find-skills / skill-vetter / codex-oauth 文档引用为 0</li><li><span class='ga-mark'>−</span>做的是 agent 自用，业务侧价值难显化</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/99ca667" target="_blank" rel="noopener">
+            <span class="cidx">[01]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">Add ops brain skills</span>
+            <div class="cmeta">99ca667 · 2026-05-12 · 9,690 行 · 54 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/544aeeb" target="_blank" rel="noopener">
+            <span class="cidx">[02]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">Add PM orchestrator workspace and planning templates</span>
+            <div class="cmeta">544aeeb · 2026-04-21 · 3,242 行 · 38 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/57f76dd" target="_blank" rel="noopener">
+            <span class="cidx">[03]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">Add Ops brain GNG deck and publishing skill rules</span>
+            <div class="cmeta">57f76dd · 2026-04-23 · 1,142 行 · 4 个文件</div>
+          </a>
+        </li></ol></div>
+    </article>
+    <article class="card" id="card-chenchen">
+      <header class="chead">
+        <img class="cavatar" src="avatars/av_chenchen.png" alt="" onerror="this.style.display='none'">
+        <div class="chead-l">
+          <div class="lbl">PM · OWNER　·　[04/06]</div>
+          <h3>Chenchen Zhang</h3>
+          <div class="sub">张鱼哥</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">A-</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">定方向、立框架，亲手把 event_analysis 从 10/25 提到 23/25。</p>
+      <div class="cmetrics">
+        <div><div class="big">13</div><div class="lbl">提交</div></div>
+        <div><div class="big">04</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">10</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">06</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">72.8</div><div class="lbl">SKILL 质量均分</div></div>
+      </div>
+      
+      <div class="ctags-row"><span class="tag">PM</span><span class="tag">设计者</span><span class="tag">验收方</span></div>
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>AGENTS.md / 多 Agent 设计 / FGD 报告等框架性输出</li><li><span class='hi-mark'>+</span>演示了按维度对症提分的方法论可复用</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>活跃天数 5 天，主要在前期与最近一次冲刺</li><li><span class='ga-mark'>−</span>初版 event_analysis 缺脚本/模板（后已修复）</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/bc99ed6" target="_blank" rel="noopener">
+            <span class="cidx">[01]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">Improve event planner gantt output</span>
+            <div class="cmeta">bc99ed6 · 2026-05-14 · 7,291 行 · 7 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/213aa5f" target="_blank" rel="noopener">
+            <span class="cidx">[02]</span>
+            <span class="ktag k-know">KNOWLEDGE</span>
+            <span class="csubj">Archive GNG May 2026 FGD report</span>
+            <div class="cmeta">213aa5f · 2026-05-13 · 5,019 行 · 13 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/da7ba04" target="_blank" rel="noopener">
+            <span class="cidx">[03]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">feat(skill): add project-contribution-report + 2026-05-15 report artifact</span>
+            <div class="cmeta">da7ba04 · 2026-05-15 · 2,702 行 · 6 个文件</div>
+          </a>
+        </li></ol></div>
+    </article>
+    <article class="card" id="card-peicheng">
+      <header class="chead">
+        <img class="cavatar" src="avatars/av_peicheng.png" alt="" onerror="this.style.display='none'">
+        <div class="chead-l">
+          <div class="lbl">集成 · INTEGRATOR　·　[05/06]</div>
+          <h3>Peicheng Zheng</h3>
+          <div class="sub">&nbsp;</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">B</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">净增 51.8 万行的真相：91% 是 Confluence wiki 一键搬家。</p>
+      <div class="cmetrics">
+        <div><div class="big">20</div><div class="lbl">提交</div></div>
+        <div><div class="big">02</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">11</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">09</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">69.6</div><div class="lbl">SKILL 质量均分</div></div>
+      </div>
+      
+      <div class="ctags-row"><span class="tag">集成</span><span class="tag">归档</span><span class="tag">WIKI 同步</span></div>
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>Confluence wiki 自动同步脚本（PowerShell 三件套）</li><li><span class='hi-mark'>+</span>sensor-tower / version-release 是有效原创 skill</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>代码量看似最高但折算后排倒数</li><li><span class='ga-mark'>−</span>原创 skill 仅 2 个</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/3248a77" target="_blank" rel="noopener">
+            <span class="cidx">[01]</span>
+            <span class="ktag k-know">KNOWLEDGE</span>
+            <span class="csubj">add planning wiki sync automation</span>
+            <div class="cmeta">3248a77 · 2026-05-13 · 507,418 行 · 3570 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/6a36657" target="_blank" rel="noopener">
+            <span class="cidx">[02]</span>
+            <span class="ktag k-skill">SKILL</span>
+            <span class="csubj">add sensor-tower-workflow skill</span>
+            <div class="cmeta">6a36657 · 2026-04-21 · 6,796 行 · 53 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/a2a7b4c" target="_blank" rel="noopener">
+            <span class="cidx">[03]</span>
+            <span class="ktag k-know">KNOWLEDGE</span>
+            <span class="csubj">update ops priority html and add report spec</span>
+            <div class="cmeta">a2a7b4c · 2026-05-14 · 1,587 行 · 2 个文件</div>
+          </a>
+        </li></ol></div>
+    </article>
+    <article class="card" id="card-yaokuang">
+      <header class="chead">
+        <img class="cavatar" src="avatars/av_yaokuang.png" alt="" onerror="this.style.display='none'">
+        <div class="chead-l">
+          <div class="lbl">短促 · DRIVE-BY　·　[06/06]</div>
+          <h3>Zhang Yaokuang</h3>
+          <div class="sub">&nbsp;</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">C+</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">2 天内交付 9 个 knowledge 文件后离场。</p>
+      <div class="cmetrics">
+        <div><div class="big">02</div><div class="lbl">提交</div></div>
+        <div><div class="big">00</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">10</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">02</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">—</div><div class="lbl">SKILL 质量均分</div></div>
+      </div>
+      
+      <div class="ctags-row"><span class="tag">内容</span><span class="tag">短促</span></div>
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>Malaysia marketing docs + selling point extractor playbook</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>未触及 skill 体系</li><li><span class='ga-mark'>−</span>未持续参与</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/d08fb19" target="_blank" rel="noopener">
+            <span class="cidx">[01]</span>
+            <span class="ktag k-know">KNOWLEDGE</span>
+            <span class="csubj">docs(knowledge): import Malaysia marketing docs and brand references</span>
+            <div class="cmeta">d08fb19 · 2026-04-20 · 821 行 · 10 个文件</div>
+          </a>
+        </li>
+        <li>
+          <a class="crow" href="https://github.com/charlesliu66/fastpublish/commit/89ce2e6" target="_blank" rel="noopener">
+            <span class="cidx">[02]</span>
+            <span class="ktag k-know">KNOWLEDGE</span>
+            <span class="csubj">docs: add selling point extractor playbook</span>
+            <div class="cmeta">89ce2e6 · 2026-04-24 · 309 行 · 1 个文件</div>
+          </a>
+        </li></ol></div>
+    </article></div>
+</section>
+
+<!-- RAW DATA -->
+<section class="sec">
+  <div class="sec-head"><h2>原始数据</h2><div class="lbl">[ 03 ] 每列按最大值归一化</div></div>
+  <table>
+    <thead><tr>
+      <th style="width:36px"></th><th>贡献者</th><th>提交</th><th>净增行</th><th>主笔技能</th><th>知识文档</th><th>活跃天数</th><th>SKILL 质量均分</th>
+    </tr></thead>
+    <tbody>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="nm">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:70px"></span><span>028</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:8px"></span><span>40,538</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>20</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>37</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>12</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>74.0</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="nm">HUANG YU</td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>044</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:22px"></span><span>107,192</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:38px"></span><span>07</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:83px"></span><span>28</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:100px"></span><span>11</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:95px"></span><span>64.2</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="nm">PINGFAN</td>
+      <td><div class="bc"><span class="bar" style="width:10px"></span><span>004</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:3px"></span><span>14,660</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:44px"></span><span>08</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:2px"></span><span>00</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:36px"></span><span>04</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:100px"></span><span>67.9</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="nm">CHENCHEN ZHANG</td>
+      <td><div class="bc"><span class="bar" style="width:32px"></span><span>013</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:4px"></span><span>19,890</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:22px"></span><span>04</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:29px"></span><span>10</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:55px"></span><span>06</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:108px"></span><span>72.8</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="nm">PEICHENG ZHENG</td>
+      <td><div class="bc"><span class="bar" style="width:50px"></span><span>020</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>518,209</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:11px"></span><span>02</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:32px"></span><span>11</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:82px"></span><span>09</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:103px"></span><span>69.6</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-off"></span></td>
+      <td class="nm">ZHANG YAOKUANG</td>
+      <td><div class="bc"><span class="bar" style="width:5px"></span><span>002</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:2px"></span><span>1,126</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:2px"></span><span>00</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:29px"></span><span>10</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:18px"></span><span>02</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:2px"></span><span>—</span></div></td>
+    </tr></tbody>
+  </table>
+</section>
+
+<!-- TOP SKILLS -->
+<section class="sec">
+  <div class="sec-head"><h2>核心技能 Top 10</h2><div class="lbl">[ 04 ] 按质量分排序 · 点击跳 GITHUB</div></div>
+  <table>
+    <thead><tr><th style="width:36px"></th><th style="width:56px">#</th><th>技能名称</th><th>主笔</th><th>亮点</th><th>分数</th></tr></thead>
+    <tbody>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[01]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/agents/ops/event_analysis" target="_blank" rel="noopener">event_analysis</a></td>
+      <td class="auth">CHENCHEN ZHANG</td>
+      <td class="kw-cell"><span class="kw kw-good">可执行</span><span class="kw kw-good">强结构</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:92px"></span><span>92/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[02]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/specific-analysis" target="_blank" rel="noopener">specific-analysis</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-good">高引用</span><span class="kw kw-good">可执行</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:88px"></span><span>88/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[03]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/weekly-report" target="_blank" rel="noopener">weekly-report</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-good">高引用</span><span class="kw kw-good">可执行</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:88px"></span><span>88/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[04]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/data-monitor" target="_blank" rel="noopener">data-monitor</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-good">高引用</span><span class="kw kw-good">可执行</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:88px"></span><span>88/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[05]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/daily-readout" target="_blank" rel="noopener">daily-readout</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-good">高引用</span><span class="kw kw-good">可执行</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:84px"></span><span>84/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[06]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/data-shared" target="_blank" rel="noopener">data-shared</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-good">高引用</span><span class="kw kw-good">强结构</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:84px"></span><span>84/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[07]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/agents/Ops brain/skills/agent-browser" target="_blank" rel="noopener">agent-browser</a></td>
+      <td class="auth">PINGFAN</td>
+      <td class="kw-cell"><span class="kw kw-good">高引用</span><span class="kw kw-good">强结构</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:84px"></span><span>84/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[08]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/gng-data-storytelling" target="_blank" rel="noopener">gng-data-storytelling</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-good">高引用</span><span class="kw kw-good">强结构</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:80px"></span><span>80/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[09]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/gng-report-architect" target="_blank" rel="noopener">gng-report-architect</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-good">高引用</span><span class="kw kw-good">强结构</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:80px"></span><span>80/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[10]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/slide-maker" target="_blank" rel="noopener">slide-maker</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-good">可执行</span><span class="kw kw-good">强结构</span><span class="kw kw-good">高复用</span></td>
+      <td><div class="bc"><span class="bar" style="width:80px"></span><span>80/100</span></div></td>
+    </tr></tbody>
+  </table>
+</section>
+
+<!-- LOW QUALITY -->
+<section class="sec">
+  <div class="sec-head"><h2>低质量技能 Top 10</h2><div class="lbl">[ 05 ] • 待跟进项 · 点击跳 GITHUB</div></div>
+  <table>
+    <thead><tr><th style="width:36px"></th><th style="width:56px">#</th><th>技能名称</th><th>主笔</th><th>问题</th><th>分数</th></tr></thead>
+    <tbody>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[01]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/beehive-lqa-auditor" target="_blank" rel="noopener">beehive-lqa-auditor</a></td>
+      <td class="auth">HUANG YU</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span><span class="kw kw-bad">低复用</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:52px"></span><span>52/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[02]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/skill-evolution" target="_blank" rel="noopener">skill-evolution</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span><span class="kw kw-bad">低复用</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:52px"></span><span>52/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[03]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/beehive-deploy-verify" target="_blank" rel="noopener">beehive-deploy-verify</a></td>
+      <td class="auth">HUANG YU</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span><span class="kw kw-bad">低复用</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:52px"></span><span>52/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[04]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/beehive-run-operator" target="_blank" rel="noopener">beehive-run-operator</a></td>
+      <td class="auth">HUANG YU</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span><span class="kw kw-bad">低复用</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:56px"></span><span>56/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[05]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/beehive-proofreading-learning" target="_blank" rel="noopener">beehive-proofreading-learning</a></td>
+      <td class="auth">HUANG YU</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span><span class="kw kw-bad">低复用</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:56px"></span><span>56/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[06]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/agents/Ops brain/skills/codex-oauth" target="_blank" rel="noopener">codex-oauth</a></td>
+      <td class="auth">PINGFAN</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span><span class="kw kw-bad">低复用</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:56px"></span><span>56/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[07]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/agents/Ops brain/skills/skill-vetter" target="_blank" rel="noopener">skill-vetter</a></td>
+      <td class="auth">PINGFAN</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span><span class="kw kw-bad">低复用</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:56px"></span><span>56/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[08]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/gng-daily-report-html" target="_blank" rel="noopener">gng-daily-report-html</a></td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:60px"></span><span>60/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[09]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/project-contribution-report" target="_blank" rel="noopener">project-contribution-report</a></td>
+      <td class="auth">CHENCHEN ZHANG</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span><span class="kw kw-bad">结构弱</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:60px"></span><span>60/100</span></div></td>
+    </tr>
+    <tr class="skill-row">
+      <td><span class="sd sd-red"></span></td>
+      <td class="rank">[10]</td>
+      <td class="nm"><a class="skill-link" href="https://github.com/charlesliu66/fastpublish/tree/master/skills/kuangbro-nextsteps-team" target="_blank" rel="noopener">kuangbro-nextsteps-team</a></td>
+      <td class="auth">HUANG YU</td>
+      <td class="kw-cell"><span class="kw kw-bad">无脚本</span></td>
+      <td><div class="bc"><span class="bar bar-red" style="width:60px"></span><span>60/100</span></div></td>
+    </tr></tbody>
+  </table>
+</section>
+
+
+
+<!-- CAVEAT + METHOD removed by user request -->
+
+<footer>
+  <div>● FASTPUBLISH · 仓库画像</div>
+  <div>VER <span class="ver-red">8.0</span> · 2026-05-15 · ANALYZE.PY + BUILD_HTML_V8.PY</div>
+</footer>
+
+</div>
+<script>
+function runUpdate(){
+  const btn = document.getElementById('updBtn');
+  const txt = document.getElementById('updTxt');
+  const fill = btn.querySelector('.upd-fill');
+  if (btn.disabled) return;
+  btn.disabled = true; btn.classList.remove('ok','fail'); btn.classList.add('run');
+  txt.textContent = 'STARTING...'; fill.style.width = '0%';
+  fetch('/fastpublish/refresh', {method:'POST'})
+    .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(j.error || 'error')))
+    .then(({job_id}) => {
+      const es = new EventSource('/fastpublish/refresh/' + job_id);
+      let totalSteps = 5;
+      es.onmessage = (e) => {
+        const ev = JSON.parse(e.data);
+        if (ev.type === 'step') {
+          totalSteps = ev.total;
+          const pct = Math.round(((ev.i + (ev.status === 'ok' ? 1 : 0.4)) / ev.total) * 100);
+          fill.style.width = pct + '%';
+          if (ev.status === 'running') txt.textContent = '[' + (ev.i+1) + '/' + ev.total + '] ' + (ev.label || ev.key).toUpperCase();
+          if (ev.status === 'fail') { btn.classList.remove('run'); btn.classList.add('fail'); txt.textContent = 'FAILED: ' + ev.key; es.close(); }
+        } else if (ev.type === 'done') {
+          es.close();
+          if (ev.ok) {
+            fill.style.width = '100%';
+            btn.classList.remove('run'); btn.classList.add('ok');
+            txt.textContent = 'UPDATED · RELOADING';
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            btn.classList.remove('run'); btn.classList.add('fail');
+            txt.textContent = 'FAILED' + (ev.err ? ': ' + ev.err.slice(0,30) : '');
+            setTimeout(resetBtn, 4000);
+          }
+        }
+      };
+      es.onerror = () => { es.close(); btn.classList.remove('run'); btn.classList.add('fail'); txt.textContent = 'STREAM ERROR'; setTimeout(resetBtn, 4000); };
+    })
+    .catch(err => {
+      btn.classList.remove('run'); btn.classList.add('fail');
+      txt.textContent = (typeof err === 'string' ? err : 'REQUEST FAILED').toUpperCase().slice(0,30);
+      setTimeout(resetBtn, 4000);
+    });
+  function resetBtn(){ btn.disabled = false; btn.classList.remove('fail','ok'); txt.textContent = 'UPDATE REPORT'; fill.style.width = '0%'; }
+}
+</script>
+<script>
+// === Trigger entrance animations after first paint ===
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => document.body.classList.add('loaded'));
+});
+
+// === Top scroll-progress bar ===
+(function(){
+  const bar = document.getElementById('scroll-prog');
+  const top = document.getElementById('go-top');
+  if (top){
+    top.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+  }
+  if (!bar) return;
+  function update(){
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    bar.style.width = pct + '%';
+    if (top){ top.classList.toggle('show', h.scrollTop > 800); }
+  }
+  update();
+  window.addEventListener('scroll', update, {passive: true});
+  window.addEventListener('resize', update);
+})();
+
+// === Scroll-in reveal (IntersectionObserver) ===
+(function(){
+  if (!('IntersectionObserver' in window)) return;
+  // Tag elements
+  document.querySelectorAll('section.sec, section.seg-section, .hmwrap').forEach(el => el.classList.add('reveal'));
+  document.querySelectorAll('.skill-row, .crow, tbody tr').forEach(el => el.classList.add('stagger-row'));
+
+  // Typewriter stagger: row by row, left to right ("啦啦啦啦")
+  const cells = document.querySelectorAll('.hm-cell');
+  cells.forEach(c => {
+    const x = parseFloat(c.getAttribute('x') || '0');
+    const y = parseFloat(c.getAttribute('y') || '0');
+    // row index from y (~22px stride), col from x (~14px stride, label offset 160)
+    const row = Math.round((y - 30) / 22);
+    const col = Math.round((x - 160) / 14);
+    const delay = row * 380 + col * 22;  // 380ms per row "clack", 22ms per cell
+    c.style.transitionDelay = delay + 'ms';
+  });
+
+  // Stagger distbars by row index inside .seg-section
+  document.querySelectorAll('.seg-section .distrow').forEach((row, i) => {
+    const bar = row.querySelector('.distbar');
+    if (bar) bar.style.transitionDelay = (i * 90) + 'ms';
+    const num = row.querySelector('.distnum');
+    if (num) num.style.transitionDelay = (600 + i * 90) + 'ms';
+  });
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting){
+        e.target.classList.add('in-view');
+        // Stagger child rows once container hits
+        if (e.target.classList.contains('reveal')){
+          const rows = e.target.querySelectorAll('.stagger-row');
+          rows.forEach((r,i) => { r.style.transitionDelay = Math.min(i*30, 480) + 'ms'; });
+        }
+        io.unobserve(e.target);
+      }
+    });
+  }, {rootMargin: '0px 0px -10% 0px', threshold: 0.12});
+
+  document.querySelectorAll('.reveal, .stagger-row').forEach(el => io.observe(el));
+})();
+</script>
+
+<script>
+// ===== Heatmap interactive tooltip + x-axis date cursor =====
+(function(){
+  const wrap = document.querySelector('.hmwrap');
+  if (!wrap) return;
+  const tip = document.getElementById('hm-tip');
+  const cur = document.getElementById('hm-cursor');
+  const curLbl = document.getElementById('hm-cursor-lbl');
+  const cells = wrap.querySelectorAll('.hm-cell');
+  function fmtDate(s){
+    const [y,m,d] = s.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    const wk = ['周日','周一','周二','周三','周四','周五','周六'][dt.getDay()];
+    return s + ' · ' + wk;
+  }
+  cells.forEach(cell => {
+    cell.addEventListener('mouseenter', e => {
+      const d = cell.getAttribute('data-date');
+      const name = cell.getAttribute('data-name');
+      const commits = cell.getAttribute('data-commits');
+      const churn = parseInt(cell.getAttribute('data-churn'),10).toLocaleString();
+      const tops = cell.getAttribute('data-tops');
+      let topsHtml = '';
+      if (tops) {
+        topsHtml = '<div class="tip-top">' + tops.split('|').slice(0,3).map(t => {
+          const sp = t.indexOf(' ');
+          if (sp<0) return '';
+          return '<div><span class="ts">'+t.slice(0,sp)+'</span>'+t.slice(sp+1)+'</div>';
+        }).join('') + '</div>';
+      }
+      tip.innerHTML = '<div class="tip-h">'+name+'</div>'+
+        '<div>'+fmtDate(d)+'</div>'+
+        '<div class="tip-m">'+commits+' commits · '+churn+' 行</div>'+
+        topsHtml;
+      tip.style.display = 'block';
+    });
+    cell.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+  wrap.addEventListener('mousemove', e => {
+    const rect = wrap.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    // Position tooltip (position:fixed) using viewport coords, clamp to viewport
+    if (tip.style.display === 'block') {
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let tx = e.clientX + 14, ty = e.clientY + 14;
+      if (tx + tw > window.innerWidth - 8)  tx = e.clientX - tw - 14;
+      if (ty + th > window.innerHeight - 8) ty = e.clientY - th - 14;
+      tip.style.left = Math.max(8, tx) + 'px';
+      tip.style.top  = Math.max(8, ty) + 'px';
+    }
+    // Find date from cell under cursor (if any) for x-axis cursor label
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (el && el.classList && el.classList.contains('hm-cell')) {
+      const d = el.getAttribute('data-date');
+      const cellRect = el.getBoundingClientRect();
+      cur.style.left = (cellRect.left - rect.left + cellRect.width/2) + 'px';
+      cur.style.display = 'block';
+      curLbl.textContent = fmtDate(d);
+      curLbl.style.left = (cellRect.left - rect.left + cellRect.width/2 - 50) + 'px';
+      curLbl.style.bottom = '-26px';
+      curLbl.style.display = 'block';
+    } else {
+      cur.style.display = 'none';
+      curLbl.style.display = 'none';
+    }
+  });
+  wrap.addEventListener('mouseleave', () => { tip.style.display='none'; cur.style.display='none'; curLbl.style.display='none'; });
+})();
+
+// ===== Update button hover: show 'last update X min ago' =====
+(function(){
+  const btn = document.getElementById('updBtn');
+  if (!btn) return;
+  const stampEl = document.querySelector('.hero-stamp');
+  let stamp = null;
+  if (stampEl) {
+    const m = stampEl.textContent.match(/(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})/);
+    if (m) stamp = new Date(m[1] + 'T' + m[2] + ':00+08:00');
+  }
+  function update(){
+    if (!stamp) { btn.setAttribute('data-since', 'NEVER UPDATED'); return; }
+    const min = Math.floor((Date.now() - stamp.getTime())/60000);
+    let txt;
+    if (min < 1)   txt = '刚刚更新';
+    else if (min < 60)  txt = '上次更新 ' + min + ' 分钟前';
+    else if (min < 24*60) txt = '上次更新 ' + Math.floor(min/60) + ' 小时前';
+    else txt = '上次更新 ' + Math.floor(min/(60*24)) + ' 天前';
+    btn.setAttribute('data-since', txt);
+  }
+  update();
+  setInterval(update, 30000);
+})();
+</script>
+</body></html>

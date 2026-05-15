@@ -1,0 +1,16 @@
+[Unit]
+Description=fastpublish refresh server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /var/www/fastpublish-src/refresh_server.py
+Restart=always
+RestartSec=3
+User=ubuntu
+Environment=PORT=8081
+StandardOutput=append:/var/log/fastpublish-refresh.log
+StandardError=append:/var/log/fastpublish-refresh.log
+
+[Install]
+WantedBy=multi-user.target
