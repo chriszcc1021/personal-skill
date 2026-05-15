@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>FASTPUBLISH · REPO ANALYSIS</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+<link rel="stylesheet" href="https://fonts.loli.net/css2?family=Doto:wght@400;700;800;900&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{
+    --bg:#000000; --surface:#0A0A0A; --raised:#111111;
+    --border:#1F1F1F; --border-v:#2A2A2A;
+    --t-disabled:#555; --t-secondary:#888; --t-primary:#E8E8E8; --t-display:#FFFFFF;
+    --accent:#D71921; --success:#4A9E5C; --warning:#D4A843;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--t-primary);font-family:'Space Grotesk','DM Sans',system-ui,sans-serif;font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  /* Dot pattern texture top-right */
+  body{background-image:
+    radial-gradient(circle at center, rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255,255,255,0.015) 0%, transparent 280px);
+    background-size:18px 18px, 100% 100%;
+    background-position:right -200px top -200px, 0 0;
+    background-repeat:no-repeat, no-repeat;
+    min-height:100vh;
+  }
+
+  /* ===== Topbar (dashboard) ===== */
+  .topbar{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 32px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase}
+  .tb-l{display:flex;align-items:center;gap:10px;color:var(--t-display)}
+  .tb-l .brand-dot{width:8px;height:8px;background:var(--accent);display:inline-block;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .tb-c{color:var(--t-secondary);display:flex;gap:32px}
+  .tb-c a{color:var(--t-secondary);text-decoration:none}
+  .tb-c a.active{color:var(--t-display)}
+  .tb-r{justify-self:end;display:flex;align-items:center;gap:14px;color:var(--t-secondary)}
+  .tb-live{background:var(--accent);color:#fff;padding:3px 7px;font-weight:700;letter-spacing:0.14em}
+
+  /* ===== Layout ===== */
+  .wrap{max-width:1240px;margin:0 auto;padding:64px 32px 96px}
+
+  /* ===== Labels ===== */
+  .lbl{font-family:'Space Mono',monospace;font-size:12px;font-weight:400;letter-spacing:0.12em;text-transform:uppercase;color:var(--t-secondary);line-height:1.4}
+
+  /* ===== HERO — asymmetric, 8:4 ===== */
+  .hero{display:grid;grid-template-columns:2fr 1fr;gap:64px;padding:48px 0 80px;align-items:end;border-bottom:1px solid var(--border)}
+  .hero-l .lbl-top{margin-bottom:24px;color:var(--t-disabled);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .hero-stamp{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 10px;background:var(--raised);border:1px solid var(--border-v);border-radius:0;font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:0.12em;color:var(--t-primary);text-transform:uppercase}
+  .hero-stamp-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 var(--accent);animation:hsPulse 2s infinite}
+  @keyframes hsPulse{0%{box-shadow:0 0 0 0 rgba(215,25,33,0.7)}70%{box-shadow:0 0 0 6px rgba(215,25,33,0)}100%{box-shadow:0 0 0 0 rgba(215,25,33,0)}}
+  .hero-num{font-family:'Doto',monospace;font-weight:800;font-size:240px;line-height:0.85;letter-spacing:-0.04em;color:var(--t-display);margin-bottom:8px;display:flex;align-items:flex-end;gap:20px}
+  .hero-num .unit{font-family:'Space Mono',monospace;font-size:11px;font-weight:400;letter-spacing:0.12em;color:var(--t-secondary);text-transform:uppercase;padding-bottom:24px;align-self:center;line-height:1.5}
+  .hero-sub{font-family:'Space Grotesk','PingFang SC','Noto Sans CJK SC',sans-serif;font-size:19px;color:var(--t-primary);max-width:600px;line-height:1.6;margin-top:32px}
+  .hero-sub b{color:var(--t-display);font-weight:500}
+
+  .hero-r{display:flex;flex-direction:column;gap:28px;padding-bottom:12px;border-left:1px solid var(--border);padding-left:36px}
+  .mstat .num{font-family:'Space Mono',monospace;font-size:40px;font-weight:400;color:var(--t-display);line-height:1;letter-spacing:-0.02em}
+  .mstat .num small{font-family:'Space Mono',monospace;font-size:16px;color:var(--t-secondary);margin-left:4px}
+  .mstat .lbl{margin-top:8px;font-size:11.5px}
+  .mstat.alert .num{color:var(--accent)}
+  .mstat.alert .lbl{color:var(--accent)}
+
+  /* ===== Skill 主笔分布 section ===== */
+  .seg-section{margin-top:80px;padding-top:56px;border-top:1px solid var(--border)}
+  .seg-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px}
+  .seg-head h2{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:28px;font-weight:500;color:var(--t-display);letter-spacing:-0.015em}
+  .seg-head .lbl{color:var(--t-disabled);font-size:11px}
+  .distbars{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+  .distrow{display:grid;grid-template-columns:220px 1fr 70px;gap:24px;align-items:center}
+  .distname{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:17px;color:var(--t-display);text-align:right;line-height:1.2}
+  .distname b{font-weight:500}
+  .distextra{font-family:'Space Mono',monospace;font-size:11px;color:var(--t-disabled);letter-spacing:0.04em;display:block;margin-top:3px}
+  .disttrack{height:42px;background:var(--raised);position:relative;border-left:1px solid var(--border-v)}
+  .distbar{height:100%;background:var(--t-display);display:flex;align-items:center;padding:0 16px;min-width:130px}
+  .distnum{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#000;letter-spacing:0.02em}
+  .distpct{font-family:'Space Mono',monospace;font-size:22px;font-weight:400;color:var(--t-display);letter-spacing:-0.01em;text-align:right}
+  .distfoot{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:11.5px;color:var(--t-disabled);letter-spacing:0.04em;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+
+  /* ===== Section header ===== */
+  .sec{margin-top:96px}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:32px;padding-bottom:14px;border-bottom:1px solid var(--t-display)}
+  .sec-head h2{font-family:'Space Grotesk','PingFang SC','Noto Sans CJK SC',sans-serif;font-size:28px;font-weight:500;letter-spacing:-0.015em;color:var(--t-display)}
+  .sec-head .lbl{color:var(--t-secondary)}
+
+  /* ===== Heatmap ===== */
+  .hmwrap{background:var(--surface);border:1px solid var(--border);padding:32px;overflow-x:auto}
+
+  /* ===== Cards ===== */
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+  .card{background:var(--surface);border:1px solid var(--border);padding:28px 32px;display:flex;flex-direction:column}
+  .card.span2{grid-column:1 / -1}
+  .chead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:18px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+  .chead h3{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:36px;font-weight:500;letter-spacing:-0.02em;color:var(--t-display);margin-top:10px;line-height:1.05}
+  .chead .sub{font-family:'Space Mono',monospace;font-size:10px;color:var(--t-disabled);margin-top:6px;letter-spacing:0.06em;text-transform:uppercase}
+  .cgrade{text-align:right;flex-shrink:0}
+  .ghuge{font-family:'Doto',monospace;font-size:72px;font-weight:800;line-height:0.85;color:var(--t-display);letter-spacing:-0.04em;margin-bottom:8px}
+  .verdict{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:17px;color:var(--t-primary);line-height:1.6;margin-bottom:24px}
+
+  .cmetrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:18px 0 24px;border-bottom:1px solid var(--border);margin-bottom:24px}
+  .cmetrics .big{font-family:'Space Mono',monospace;font-size:28px;font-weight:400;color:var(--t-display);letter-spacing:-0.01em;line-height:1}
+  .cmetrics .lbl{margin-top:8px;font-size:11px}
+
+  .warn-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(215,25,33,0.08);border-left:2px solid var(--accent);margin-bottom:24px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--t-primary)}
+  .dot-red{width:8px;height:8px;background:var(--accent);display:inline-block;border-radius:50%;animation:pulse 1.5s ease-in-out infinite}
+  .warn-txt b{color:var(--accent);font-weight:700}
+
+  .ccols{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px}
+  .col .lbl{margin-bottom:12px}
+  .col ul{list-style:none;padding:0}
+  .col ul li{padding:10px 0;font-size:15px;line-height:1.55;color:var(--t-primary);border-top:1px solid var(--border);position:relative;padding-left:22px}
+  .col ul li:first-child{border-top:none}
+  .hi-mark,.ga-mark{font-family:'Space Mono',monospace;position:absolute;left:0;top:8px;font-weight:700;color:var(--t-secondary);font-size:14px}
+
+  .commits{background:var(--raised);padding:18px 20px;margin-bottom:20px;border:1px solid var(--border)}
+  .commits > .lbl{margin-bottom:12px}
+  .commits ol{list-style:none;padding:0}
+  .commits ol li{padding:10px 0;border-top:1px solid var(--border-v)}
+  .commits ol li:first-child{border-top:none;padding-top:4px}
+  .cidx{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--t-disabled);letter-spacing:0.06em;margin-right:10px}
+  .csubj{font-family:'Space Grotesk','PingFang SC',sans-serif;font-size:15px;color:var(--t-display);font-weight:500}
+  .cmeta{font-family:'Space Mono',monospace;font-size:11.5px;color:var(--t-secondary);letter-spacing:0.06em;text-transform:uppercase;margin-top:4px;margin-left:36px}
+
+  .cfoot{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;padding-top:18px;border-top:1px solid var(--border)}
+  .tag{font-family:'Space Mono',monospace;font-size:11px;font-weight:400;letter-spacing:0.08em;text-transform:uppercase;color:var(--t-secondary);padding:5px 12px;border:1px solid var(--border-v)}
+
+  /* ===== Tables ===== */
+  table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border)}
+  th{font-family:'Space Mono',monospace;text-align:left;font-weight:700;color:var(--t-display);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:18px 20px;border-bottom:1px solid var(--t-display)}
+  td{padding:18px 20px;border-bottom:1px solid var(--border);font-size:15px;color:var(--t-primary);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td.nm{font-family:'Space Grotesk','PingFang SC',sans-serif;font-weight:500;color:var(--t-display);letter-spacing:0.02em;font-size:15px}
+  td.auth{font-family:'Space Mono',monospace;font-size:12px;color:var(--t-secondary);letter-spacing:0.06em;text-transform:uppercase}
+  td.num{text-align:right;font-family:'Space Mono',monospace;font-size:14px}
+  td.rank{font-family:'Space Mono',monospace;color:var(--t-disabled);font-size:12px;letter-spacing:0.06em;width:56px}
+  td.total{font-family:'Space Mono',monospace;font-weight:700;color:var(--t-display);font-size:15px}
+
+  .sd{display:inline-block;width:10px;height:10px;border-radius:50%}
+  .sd-on{background:var(--t-display)}
+  .sd-mid{background:var(--t-secondary)}
+  .sd-low{background:var(--t-disabled)}
+  .sd-off{background:transparent;border:1px solid var(--t-disabled)}
+  .sd-red{background:var(--accent)}
+
+  .bc{display:flex;align-items:center;gap:12px}
+  .bc .bar{height:5px;background:var(--t-display);min-width:2px;display:inline-block}
+  .bc span{font-family:'Space Mono',monospace;font-size:13px;color:var(--t-primary);letter-spacing:0.04em}
+
+  /* ===== Caveat (bottom, dashboard-style) ===== */
+  .caveat{background:var(--surface);border:1px solid var(--border);padding:24px 32px;margin-top:48px}
+  .caveat .lbl{margin-bottom:16px;color:var(--t-secondary)}
+  .caveat ol{list-style:none;counter-reset:ca;padding:0}
+  .caveat ol li{counter-increment:ca;padding:14px 0 14px 56px;position:relative;font-size:15.5px;line-height:1.65;color:var(--t-primary);border-top:1px solid var(--border)}
+  .caveat ol li:first-child{border-top:none}
+  .caveat ol li:before{content:"[" counter(ca,decimal-leading-zero) "]";position:absolute;left:0;top:11px;font-family:'Space Mono',monospace;font-size:10px;font-weight:400;color:var(--t-disabled);letter-spacing:0.08em}
+  .caveat ol li b{color:var(--t-display);font-weight:500}
+
+  /* ===== Findings ===== */
+  .findings{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--surface);border:1px solid var(--border)}
+  .finding{padding:36px 28px;border-right:1px solid var(--border);position:relative}
+  .finding:last-child{border-right:none}
+  .finding .fn{font-family:'Doto',monospace;font-size:64px;font-weight:800;color:var(--t-disabled);line-height:0.9;margin-bottom:18px;letter-spacing:-0.04em}
+  .finding h3{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:500;line-height:1.3;color:var(--t-display);margin-bottom:14px;letter-spacing:-0.005em}
+  .finding p{font-size:13px;line-height:1.65;color:var(--t-secondary)}
+  .finding p b{color:var(--t-primary);font-weight:500}
+  .finding.win{background:var(--raised)}
+  .finding.win .fn{color:var(--accent)}
+  .finding.win .arrow{display:inline-block;color:var(--accent);font-weight:700;font-family:'Space Mono',monospace}
+
+  .followup{background:var(--surface);border:1px solid var(--border);padding:20px 28px;margin-top:0;border-top:none;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:0.04em;color:var(--t-primary);display:flex;flex-wrap:wrap;gap:32px}
+  .followup .lbl{color:var(--t-secondary);letter-spacing:0.1em}
+  .followup .fu-item{display:flex;align-items:center;gap:10px}
+  .followup .fu-num{font-family:'Doto',monospace;font-size:20px;font-weight:700;color:var(--t-display);letter-spacing:-0.02em}
+
+  /* ===== Method ===== */
+  .method{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--surface);border:1px solid var(--border)}
+  .method > div{padding:20px 26px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .method > div:nth-child(3n){border-right:none}
+  .method > div:nth-last-child(-n+3){border-bottom:none}
+  .method .lbl{margin-bottom:8px}
+  .method p{font-size:14.5px;line-height:1.6;color:var(--t-primary)}
+
+  footer{margin-top:96px;padding-top:32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline;font-family:'Space Mono',monospace;font-size:12px;color:var(--t-disabled);letter-spacing:0.1em;text-transform:uppercase}
+  footer .ver-red{color:var(--accent)}
+
+  @media (max-width:900px){
+    .wrap{padding:32px 16px}
+    .hero{grid-template-columns:1fr;gap:32px}
+    .hero-num{font-size:144px}
+    .hero-r{border-left:none;padding-left:0;border-top:1px solid var(--border);padding-top:24px}
+    .cards{grid-template-columns:1fr}
+    .card.span2{grid-column:auto}
+    .cmetrics{grid-template-columns:repeat(3,1fr)}
+    .findings,.method{grid-template-columns:1fr}
+    .finding,.method > div{border-right:none;border-bottom:1px solid var(--border)}
+    .ccols{grid-template-columns:1fr}
+    .topbar{padding:12px 16px;grid-template-columns:1fr auto;font-size:9px}
+    .tb-c{display:none}
+  }
+</style></head><body>
+
+<!-- DASHBOARD TOP BAR -->
+<div class="topbar">
+  <div class="tb-l"><span class="brand-dot"></span><span>FASTPUBLISH</span><span style="color:var(--t-disabled);margin-left:8px">/ 仓库画像</span></div>
+  <div class="tb-c"><a class="active">[ 分析 ]</a><a>SKILLS</a><a>贡献者</a><a>历史</a></div>
+  <div class="tb-r"><span class="tb-live">LIVE</span><span>2026.05.15</span><span style="color:var(--t-disabled)">·</span><span>00:08 GMT+8</span></div>
+</div>
+
+<div class="wrap">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-l">
+    <div class="lbl lbl-top">[ 内部 ] FASTPUBLISH 仓库画像 // 30 天 // 6 位贡献者 <span class="hero-stamp"><span class="hero-stamp-dot"></span>UPDATED 2026-05-15 11:56 GMT+8</span></div>
+    <div class="hero-num">113<span class="unit">提交总数</span></div>
+    <div class="hero-sub">基于 git 全历史的贡献者画像。<b>看 commit 数会得出错误结论</b>，看净增行数也会，必须把产出类型拆开看。</div>
+  </div>
+  <div class="hero-r">
+    <div class="mstat"><div class="num">29<small>/29</small></div><div class="lbl">参与评分 SKILLS</div></div>
+    <div class="mstat"><div class="num">06</div><div class="lbl">贡献者数</div></div>
+    <div class="mstat"><div class="num">30D</div><div class="lbl">采样窗口</div></div>
+    <div class="mstat alert"><div class="num">04</div><div class="lbl">● 零引用 SKILLS</div></div>
+  </div>
+</section>
+
+<!-- SEGMENTED BAR: skill authorship distribution -->
+<section class="seg-section">
+  <div class="seg-head">
+    <h2>Skill 主笔分布</h2>
+    <div class="lbl">[ 横向条 = 该贡献者主笔的 skill 数占比 ]</div>
+  </div>
+  <div class="distbars">
+    <div class="distrow">
+      <div class="distname"><b>Charles Liu</b><span class="distextra">wei.liu</span></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:100%;opacity:1.00">
+          <span class="distnum">15 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">52%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Pingfan</b></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:53%;opacity:0.87">
+          <span class="distnum">8 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">28%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Chenchen Zhang</b><span class="distextra">张鱼哥</span></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:20%;opacity:0.74">
+          <span class="distnum">3 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">10%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Peicheng Zheng</b></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:13%;opacity:0.61">
+          <span class="distnum">2 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">7%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Huang Yu</b><span class="distextra">DeeDee</span></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:6%;opacity:0.48">
+          <span class="distnum">1 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">3%</div>
+    </div>
+    <div class="distrow">
+      <div class="distname"><b>Zhang Yaokuang</b></div>
+      <div class="disttrack">
+        <div class="distbar" style="width:0%;opacity:0.35">
+          <span class="distnum">0 个 skill</span>
+        </div>
+      </div>
+      <div class="distpct">0%</div>
+    </div></div><div class="distfoot"><span>主笔 skill 数 ÷ 全员主笔总数 29 = 占比</span><span>29 个 skill 中 29 个有明确主笔</span></div>
+</section>
+
+<!-- HEATMAP -->
+<section class="sec">
+  <div class="sec-head"><h2>时间序列</h2><div class="lbl">[ 01 ] 每日 churn / 30 天</div></div>
+  <div class="hmwrap"><svg width="460" height="188" viewBox="0 0 460 188" xmlns="http://www.w3.org/2000/svg" font-family="Space Mono, monospace"><text x="160" y="14" font-size="9" fill="#666" letter-spacing="0.5">04-13</text><text x="230" y="14" font-size="9" fill="#666" letter-spacing="0.5">04-21</text><text x="300" y="14" font-size="9" fill="#666" letter-spacing="0.5">04-28</text><text x="370" y="14" font-size="9" fill="#666" letter-spacing="0.5">05-10</text><text x="150" y="39.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">CHARLES LIU</text><rect x="160" y="26" width="12" height="18" fill="rgba(255,255,255,0.60)"><title>2026-04-13: 1 commits, 2,685 churn</title></rect><rect x="174" y="26" width="12" height="18" fill="rgba(255,255,255,0.63)"><title>2026-04-14: 4 commits, 4,175 churn</title></rect><rect x="188" y="26" width="12" height="18" fill="rgba(255,255,255,0.56)"><title>2026-04-15: 2 commits, 1,645 churn</title></rect><rect x="202" y="26" width="12" height="18" fill="rgba(255,255,255,0.60)"><title>2026-04-17: 3 commits, 2,595 churn</title></rect><rect x="216" y="26" width="12" height="18" fill="rgba(255,255,255,0.56)"><title>2026-04-20: 3 commits, 1,641 churn</title></rect><rect x="230" y="26" width="12" height="18" fill="rgba(255,255,255,0.60)"><title>2026-04-21: 2 commits, 2,576 churn</title></rect><rect x="244" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="258" y="26" width="12" height="18" fill="rgba(255,255,255,0.70)"><title>2026-04-23: 2 commits, 9,521 churn</title></rect><rect x="272" y="26" width="12" height="18" fill="rgba(255,255,255,0.53)"><title>2026-04-24: 1 commits, 1,026 churn</title></rect><rect x="286" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="300" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="26" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="26" width="12" height="18" fill="rgba(255,255,255,0.59)"><title>2026-05-09: 1 commits, 2,394 churn</title></rect><rect x="370" y="26" width="12" height="18" fill="rgba(255,255,255,0.56)"><title>2026-05-10: 1 commits, 1,527 churn</title></rect><rect x="384" y="26" width="12" height="18" fill="rgba(255,255,255,0.60)"><title>2026-05-11: 1 commits, 2,696 churn</title></rect><rect x="398" y="26" width="12" height="18" fill="rgba(255,255,255,0.65)"><title>2026-05-12: 3 commits, 5,213 churn</title></rect><rect x="412" y="26" width="12" height="18" fill="rgba(255,255,255,0.68)"><title>2026-05-13: 5 commits, 7,604 churn</title></rect><rect x="426" y="26" width="12" height="18" fill="rgba(255,255,255,0.59)"><title>2026-05-14: 3 commits, 2,242 churn</title></rect><text x="150" y="61.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">PINGFAN</text><rect x="160" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="174" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="188" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="202" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="216" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="230" y="48" width="12" height="18" fill="rgba(255,255,255,0.62)"><title>2026-04-21: 1 commits, 3,242 churn</title></rect><rect x="244" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="258" y="48" width="12" height="18" fill="rgba(255,255,255,0.59)"><title>2026-04-23: 2 commits, 2,284 churn</title></rect><rect x="272" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="48" width="12" height="18" fill="rgba(255,255,255,0.49)"><title>2026-04-27: 1 commits, 648 churn</title></rect><rect x="300" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="370" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="384" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="398" y="48" width="12" height="18" fill="rgba(255,255,255,0.70)"><title>2026-05-12: 1 commits, 9,690 churn</title></rect><rect x="412" y="48" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="426" y="48" width="12" height="18" fill="rgba(255,255,255,0.51)"><title>2026-05-14: 1 commits, 780 churn</title></rect><text x="150" y="83.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">CHENCHEN ZHANG</text><rect x="160" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="174" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="188" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="202" y="70" width="12" height="18" fill="rgba(255,255,255,0.48)"><title>2026-04-17: 1 commits, 553 churn</title></rect><rect x="216" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="230" y="70" width="12" height="18" fill="rgba(255,255,255,0.53)"><title>2026-04-21: 4 commits, 1,043 churn</title></rect><rect x="244" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="258" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="272" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="300" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="370" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="384" y="70" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="398" y="70" width="12" height="18" fill="rgba(255,255,255,0.62)"><title>2026-05-12: 3 commits, 3,677 churn</title></rect><rect x="412" y="70" width="12" height="18" fill="rgba(255,255,255,0.67)"><title>2026-05-13: 2 commits, 6,401 churn</title></rect><rect x="426" y="70" width="12" height="18" fill="rgba(255,255,255,0.68)"><title>2026-05-14: 2 commits, 8,048 churn</title></rect><text x="150" y="105.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">PEICHENG ZHENG</text><rect x="160" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="174" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="188" y="92" width="12" height="18" fill="rgba(255,255,255,0.18)"><title>2026-04-15: 2 commits, 10 churn</title></rect><rect x="202" y="92" width="12" height="18" fill="rgba(255,255,255,0.18)"><title>2026-04-17: 2 commits, 7 churn</title></rect><rect x="216" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="230" y="92" width="12" height="18" fill="rgba(255,255,255,0.67)"><title>2026-04-21: 2 commits, 6,797 churn</title></rect><rect x="244" y="92" width="12" height="18" fill="rgba(255,255,255,0.18)"><title>2026-04-22: 1 commits, 10 churn</title></rect><rect x="258" y="92" width="12" height="18" fill="rgba(255,255,255,0.33)"><title>2026-04-23: 1 commits, 72 churn</title></rect><rect x="272" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="92" width="12" height="18" fill="rgba(255,255,255,0.55)"><title>2026-04-27: 4 commits, 1,430 churn</title></rect><rect x="300" y="92" width="12" height="18" fill="rgba(255,255,255,0.18)"><title>2026-04-28: 1 commits, 6 churn</title></rect><rect x="314" y="92" width="12" height="18" fill="rgba(255,255,255,0.36)"><title>2026-04-30: 1 commits, 115 churn</title></rect><rect x="328" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="370" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="384" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="398" y="92" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="412" y="92" width="12" height="18" fill="rgba(255,255,255,1.00)"><title>2026-05-13: 4 commits, 507,869 churn</title></rect><rect x="426" y="92" width="12" height="18" fill="rgba(255,255,255,0.61)"><title>2026-05-14: 4 commits, 2,947 churn</title></rect><text x="150" y="127.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">HUANG YU</text><rect x="160" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="174" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="188" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="202" y="114" width="12" height="18" fill="rgba(255,255,255,0.54)"><title>2026-04-17: 2 commits, 1,198 churn</title></rect><rect x="216" y="114" width="12" height="18" fill="rgba(255,255,255,0.46)"><title>2026-04-20: 3 commits, 408 churn</title></rect><rect x="230" y="114" width="12" height="18" fill="rgba(255,255,255,0.62)"><title>2026-04-21: 1 commits, 3,323 churn</title></rect><rect x="244" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="258" y="114" width="12" height="18" fill="rgba(255,255,255,0.74)"><title>2026-04-23: 2 commits, 16,826 churn</title></rect><rect x="272" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="286" y="114" width="12" height="18" fill="rgba(255,255,255,0.58)"><title>2026-04-27: 2 commits, 2,124 churn</title></rect><rect x="300" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="114" width="12" height="18" fill="rgba(255,255,255,0.65)"><title>2026-05-07: 2 commits, 5,306 churn</title></rect><rect x="342" y="114" width="12" height="18" fill="rgba(255,255,255,0.61)"><title>2026-05-08: 3 commits, 3,002 churn</title></rect><rect x="356" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="370" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="384" y="114" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="398" y="114" width="12" height="18" fill="rgba(255,255,255,0.63)"><title>2026-05-12: 1 commits, 4,037 churn</title></rect><rect x="412" y="114" width="12" height="18" fill="rgba(255,255,255,0.68)"><title>2026-05-13: 14 commits, 7,531 churn</title></rect><rect x="426" y="114" width="12" height="18" fill="rgba(255,255,255,0.60)"><title>2026-05-14: 8 commits, 2,530 churn</title></rect><text x="150" y="149.0" font-size="10" text-anchor="end" fill="#E8E8E8" font-weight="400" letter-spacing="0.5">ZHANG YAOKUANG</text><rect x="160" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="174" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="188" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="202" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="216" y="136" width="12" height="18" fill="rgba(255,255,255,0.51)"><title>2026-04-20: 1 commits, 821 churn</title></rect><rect x="230" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="244" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="258" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="272" y="136" width="12" height="18" fill="rgba(255,255,255,0.44)"><title>2026-04-24: 1 commits, 309 churn</title></rect><rect x="286" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="300" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="314" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="328" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="342" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="356" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="370" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="384" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="398" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="412" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><rect x="426" y="136" width="12" height="18" fill="none" stroke="#222" stroke-width="1"/><text x="160" y="176" font-size="9" fill="#666" letter-spacing="0.8">[ DENSITY = LOG(CHURN) ]</text></svg></div>
+</section>
+
+<!-- CARDS -->
+<section class="sec">
+  <div class="sec-head"><h2>贡献者画像</h2><div class="lbl">[ 02 ] 画像 · 评级 · 代表 commit</div></div>
+  <div class="cards">
+    <article class="card span2">
+      <header class="chead">
+        <div>
+          <div class="lbl">架构 · ARCHITECT　·　[01/06]</div>
+          <h3>Charles Liu</h3>
+          <div class="sub">wei.liu</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">A</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">skill 体系的单点支柱。Top 10 里 7 个都是他主笔。</p>
+      <div class="cmetrics">
+        <div><div class="big">32</div><div class="lbl">提交</div></div>
+        <div><div class="big">15</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">50</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">14</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">18.3</div><div class="lbl">平均分</div></div>
+      </div>
+      <div class="warn-row"><span class="dot-red"></span><span class="warn-txt">BUS FACTOR <b>= 1</b> · 单点保有风险</span></div>
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>15 个 skill 主笔，data-monitor / weekly-report / specific-analysis 三件套 22/25</li><li><span class='hi-mark'>+</span>50 个 knowledge 文件，跨度 14 天最长</li><li><span class='hi-mark'>+</span>三件套已被周报/告警/归因三条业务线串起来</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>skill-evolution 结构完整但零引用，疑似实验未上</li><li><span class='ga-mark'>−</span>bus factor = 1，他停手项目立刻减速</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <span class="cidx">[01]</span>
+          <span class="csubj">feat: scaffold data skills architecture and report pipeline</span>
+          <div class="cmeta">f7a9b9e · 2026-04-23 · 7,341 行 · 48 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[02]</span>
+          <span class="csubj">Unify PM orchestration and add query protocols</span>
+          <div class="cmeta">5d121d7 · 2026-05-13 · 3,347 行 · 36 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[03]</span>
+          <span class="csubj">Add GNG MCP weekly report workflow</span>
+          <div class="cmeta">3d85c10 · 2026-05-12 · 3,259 行 · 14 个文件</div>
+        </li></ol></div>
+      <footer class="cfoot"><span class="tag">架构</span><span class="tag">全栈主笔</span><span class="tag">高引用</span></footer>
+    </article>
+    <article class="card">
+      <header class="chead">
+        <div>
+          <div class="lbl">基建 · INFRA　·　[02/06]</div>
+          <h3>Pingfan</h3>
+          <div class="sub">&nbsp;</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">B+</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">8 个 skill 全在做 agent 自身能力（meta-skills）。</p>
+      <div class="cmetrics">
+        <div><div class="big">06</div><div class="lbl">提交</div></div>
+        <div><div class="big">08</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">00</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">05</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">16.0</div><div class="lbl">平均分</div></div>
+      </div>
+      
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>agent-browser 进 Top 5（21/25）</li><li><span class='hi-mark'>+</span>结构/复用维度普遍 4-5 分，文档规范最严格</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>find-skills / skill-vetter / codex-oauth 文档引用为 0</li><li><span class='ga-mark'>−</span>做的是 agent 自用，业务侧价值难显化</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <span class="cidx">[01]</span>
+          <span class="csubj">Add ops brain skills</span>
+          <div class="cmeta">99ca667 · 2026-05-12 · 9,690 行 · 54 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[02]</span>
+          <span class="csubj">Add PM orchestrator workspace and planning templates</span>
+          <div class="cmeta">544aeeb · 2026-04-21 · 3,242 行 · 38 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[03]</span>
+          <span class="csubj">Add Ops brain GNG deck and publishing skill rules</span>
+          <div class="cmeta">57f76dd · 2026-04-23 · 1,142 行 · 4 个文件</div>
+        </li></ol></div>
+      <footer class="cfoot"><span class="tag">基建</span><span class="tag">高规范</span><span class="tag">META</span></footer>
+    </article>
+    <article class="card">
+      <header class="chead">
+        <div>
+          <div class="lbl">PM · OWNER　·　[03/06]</div>
+          <h3>Chenchen Zhang</h3>
+          <div class="sub">张鱼哥</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">B-</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">定方向、立框架，亲手把 event_analysis 从 10/25 提到 23/25。</p>
+      <div class="cmetrics">
+        <div><div class="big">12</div><div class="lbl">提交</div></div>
+        <div><div class="big">03</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">10</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">05</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">19.3</div><div class="lbl">平均分</div></div>
+      </div>
+      
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>AGENTS.md / 多 Agent 设计 / FGD 报告等框架性输出</li><li><span class='hi-mark'>+</span>演示了按维度对症提分的方法论可复用</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>活跃天数 5 天，主要在前期与最近一次冲刺</li><li><span class='ga-mark'>−</span>初版 event_analysis 缺脚本/模板（后已修复）</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <span class="cidx">[01]</span>
+          <span class="csubj">Improve event planner gantt output</span>
+          <div class="cmeta">bc99ed6 · 2026-05-14 · 7,291 行 · 7 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[02]</span>
+          <span class="csubj">Archive GNG May 2026 FGD report</span>
+          <div class="cmeta">213aa5f · 2026-05-13 · 5,019 行 · 13 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[03]</span>
+          <span class="csubj">Add research FGD report skill</span>
+          <div class="cmeta">a82d7c5 · 2026-05-12 · 2,274 行 · 10 个文件</div>
+        </li></ol></div>
+      <footer class="cfoot"><span class="tag">PM</span><span class="tag">设计者</span><span class="tag">验收方</span></footer>
+    </article>
+    <article class="card">
+      <header class="chead">
+        <div>
+          <div class="lbl">集成 · INTEGRATOR　·　[04/06]</div>
+          <h3>Peicheng Zheng</h3>
+          <div class="sub">&nbsp;</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">B</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">净增 51.8 万行的真相：91% 是 Confluence wiki 一键搬家。</p>
+      <div class="cmetrics">
+        <div><div class="big">22</div><div class="lbl">提交</div></div>
+        <div><div class="big">02</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">09</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">10</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">16.5</div><div class="lbl">平均分</div></div>
+      </div>
+      
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>Confluence wiki 自动同步脚本（PowerShell 三件套）</li><li><span class='hi-mark'>+</span>sensor-tower / version-release 是有效原创 skill</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>代码量看似最高但折算后排倒数</li><li><span class='ga-mark'>−</span>原创 skill 仅 2 个</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <span class="cidx">[01]</span>
+          <span class="csubj">add planning wiki sync automation</span>
+          <div class="cmeta">3248a77 · 2026-05-13 · 507,418 行 · 3570 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[02]</span>
+          <span class="csubj">add sensor-tower-workflow skill</span>
+          <div class="cmeta">6a36657 · 2026-04-21 · 6,796 行 · 53 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[03]</span>
+          <span class="csubj">update ops priority html and add report spec</span>
+          <div class="cmeta">a2a7b4c · 2026-05-14 · 1,587 行 · 2 个文件</div>
+        </li></ol></div>
+      <footer class="cfoot"><span class="tag">集成</span><span class="tag">归档</span><span class="tag">WIKI 同步</span></footer>
+    </article>
+    <article class="card">
+      <header class="chead">
+        <div>
+          <div class="lbl">内容 · CONTENT　·　[05/06]</div>
+          <h3>Huang Yu</h3>
+          <div class="sub">DeeDee</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">B+</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">把游戏内容知识库从零填到 26 个文件，commits 数最高。</p>
+      <div class="cmetrics">
+        <div><div class="big">38</div><div class="lbl">提交</div></div>
+        <div><div class="big">01</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">26</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">10</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">17.0</div><div class="lbl">平均分</div></div>
+      </div>
+      
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>26 个 knowledge/game 文件</li><li><span class='hi-mark'>+</span>issue-tracker tool station 原型也是他起的（14k 行）</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>工具化产出 = 1 个 skill；文档为主</li><li><span class='ga-mark'>−</span>10 天集中产出后未持续</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <span class="cidx">[01]</span>
+          <span class="csubj">Add issue-tracker tool station and prototype</span>
+          <div class="cmeta">4997a31 · 2026-04-23 · 14,101 行 · 117 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[02]</span>
+          <span class="csubj">Advance issue tracker ops workflow</span>
+          <div class="cmeta">e38aeac · 2026-05-12 · 4,037 行 · 40 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[03]</span>
+          <span class="csubj">docs(meeting-notes): 新增会议纪要目录规范并整理3场会议纪要</span>
+          <div class="cmeta">f93d813 · 2026-04-21 · 3,323 行 · 9 个文件</div>
+        </li></ol></div>
+      <footer class="cfoot"><span class="tag">策划知识</span><span class="tag">高产</span><span class="tag">文档型</span></footer>
+    </article>
+    <article class="card">
+      <header class="chead">
+        <div>
+          <div class="lbl">短促 · DRIVE-BY　·　[06/06]</div>
+          <h3>Zhang Yaokuang</h3>
+          <div class="sub">&nbsp;</div>
+        </div>
+        <div class="cgrade">
+          <div class="ghuge">C+</div>
+          <div class="lbl">评级</div>
+        </div>
+      </header>
+      <p class="verdict">2 天内交付 9 个 knowledge 文件后离场。</p>
+      <div class="cmetrics">
+        <div><div class="big">02</div><div class="lbl">提交</div></div>
+        <div><div class="big">00</div><div class="lbl">主笔 SKILLS</div></div>
+        <div><div class="big">09</div><div class="lbl">知识文档</div></div>
+        <div><div class="big">02</div><div class="lbl">活跃天数</div></div>
+        <div><div class="big">—</div><div class="lbl">平均分</div></div>
+      </div>
+      
+      <div class="ccols">
+        <div class="col">
+          <div class="lbl">亮点</div>
+          <ul><li><span class='hi-mark'>+</span>Malaysia marketing docs + selling point extractor playbook</li></ul>
+        </div>
+        <div class="col">
+          <div class="lbl">短板</div>
+          <ul><li><span class='ga-mark'>−</span>未触及 skill 体系</li><li><span class='ga-mark'>−</span>未持续参与</li></ul>
+        </div>
+      </div>
+      <div class="commits"><div class="lbl">代表性 COMMIT</div><ol>
+        <li>
+          <span class="cidx">[01]</span>
+          <span class="csubj">docs(knowledge): import Malaysia marketing docs and brand references</span>
+          <div class="cmeta">d08fb19 · 2026-04-20 · 821 行 · 10 个文件</div>
+        </li>
+        <li>
+          <span class="cidx">[02]</span>
+          <span class="csubj">docs: add selling point extractor playbook</span>
+          <div class="cmeta">89ce2e6 · 2026-04-24 · 309 行 · 1 个文件</div>
+        </li></ol></div>
+      <footer class="cfoot"><span class="tag">内容</span><span class="tag">短促</span></footer>
+    </article></div>
+</section>
+
+<!-- RAW DATA -->
+<section class="sec">
+  <div class="sec-head"><h2>原始数据</h2><div class="lbl">[ 03 ] 每列按最大值归一化</div></div>
+  <table>
+    <thead><tr>
+      <th style="width:36px"></th><th>贡献者</th><th>提交</th><th>净增行</th><th>主笔技能</th><th>知识文档</th><th>活跃天数</th><th>平均分</th>
+    </tr></thead>
+    <tbody>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="nm">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:92px"></span><span>032</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:8px"></span><span>42,180</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>15</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>50</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>14</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:104px"></span><span>18.3</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-mid"></span></td>
+      <td class="nm">PINGFAN</td>
+      <td><div class="bc"><span class="bar" style="width:17px"></span><span>006</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:3px"></span><span>16,582</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:58px"></span><span>08</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:2px"></span><span>00</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:39px"></span><span>05</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:91px"></span><span>16.0</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="nm">CHENCHEN ZHANG</td>
+      <td><div class="bc"><span class="bar" style="width:34px"></span><span>012</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:3px"></span><span>17,188</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:22px"></span><span>03</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:22px"></span><span>10</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:39px"></span><span>05</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>19.3</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-mid"></span></td>
+      <td class="nm">PEICHENG ZHENG</td>
+      <td><div class="bc"><span class="bar" style="width:63px"></span><span>022</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>518,209</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:14px"></span><span>02</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:19px"></span><span>09</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:78px"></span><span>10</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:94px"></span><span>16.5</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-mid"></span></td>
+      <td class="nm">HUANG YU</td>
+      <td><div class="bc"><span class="bar" style="width:110px"></span><span>038</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:8px"></span><span>41,351</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:7px"></span><span>01</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:57px"></span><span>26</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:78px"></span><span>10</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:96px"></span><span>17.0</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-off"></span></td>
+      <td class="nm">ZHANG YAOKUANG</td>
+      <td><div class="bc"><span class="bar" style="width:5px"></span><span>002</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:2px"></span><span>1,126</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:2px"></span><span>00</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:19px"></span><span>09</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:15px"></span><span>02</span></div></td>
+      <td><div class="bc"><span class="bar" style="width:2px"></span><span>—</span></div></td>
+    </tr></tbody>
+  </table>
+</section>
+
+<!-- TOP SKILLS -->
+<section class="sec">
+  <div class="sec-head"><h2>核心技能 Top 10</h2><div class="lbl">[ 04 ] 按质量分排序</div></div>
+  <table>
+    <thead><tr><th style="width:36px"></th><th style="width:56px">#</th><th>技能名称</th><th>主笔</th><th>分数</th></tr></thead>
+    <tbody>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[01]</td>
+      <td class="nm">event_analysis</td>
+      <td class="auth">CHENCHEN ZHANG</td>
+      <td><div class="bc"><span class="bar" style="width:92px"></span><span>23/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[02]</td>
+      <td class="nm">data-monitor</td>
+      <td class="auth">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:88px"></span><span>22/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[03]</td>
+      <td class="nm">weekly-report</td>
+      <td class="auth">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:88px"></span><span>22/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[04]</td>
+      <td class="nm">specific-analysis</td>
+      <td class="auth">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:88px"></span><span>22/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[05]</td>
+      <td class="nm">daily-readout</td>
+      <td class="auth">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:84px"></span><span>21/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[06]</td>
+      <td class="nm">agent-browser</td>
+      <td class="auth">PINGFAN</td>
+      <td><div class="bc"><span class="bar" style="width:84px"></span><span>21/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[07]</td>
+      <td class="nm">alert-monitor</td>
+      <td class="auth">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:80px"></span><span>20/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[08]</td>
+      <td class="nm">social-publisher</td>
+      <td class="auth">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:76px"></span><span>19/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[09]</td>
+      <td class="nm">slide-maker</td>
+      <td class="auth">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:76px"></span><span>19/25</span></div></td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-on"></span></td>
+      <td class="rank">[10]</td>
+      <td class="nm">gng-release-orchestrator</td>
+      <td class="auth">CHARLES LIU</td>
+      <td><div class="bc"><span class="bar" style="width:76px"></span><span>19/25</span></div></td>
+    </tr></tbody>
+  </table>
+</section>
+
+<!-- ZERO REF -->
+<section class="sec">
+  <div class="sec-head"><h2>零引用技能</h2><div class="lbl">[ 05 ] ● 待跟进项</div></div>
+  <table>
+    <thead><tr><th style="width:36px"></th><th>技能名称</th><th>主笔</th><th>结构</th><th>可执行</th><th>时效</th><th>总分</th></tr></thead>
+    <tbody>
+    <tr>
+      <td><span class="sd sd-red"></span></td>
+      <td class="nm">skill-evolution</td>
+      <td class="auth">CHARLES LIU</td>
+      <td class="num">3</td>
+      <td class="num">1</td>
+      <td class="num">5</td>
+      <td class="num total">12/25</td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-red"></span></td>
+      <td class="nm">skill-vetter</td>
+      <td class="auth">PINGFAN</td>
+      <td class="num">4</td>
+      <td class="num">1</td>
+      <td class="num">5</td>
+      <td class="num total">13/25</td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-red"></span></td>
+      <td class="nm">codex-oauth</td>
+      <td class="auth">PINGFAN</td>
+      <td class="num">4</td>
+      <td class="num">1</td>
+      <td class="num">5</td>
+      <td class="num total">13/25</td>
+    </tr>
+    <tr>
+      <td><span class="sd sd-red"></span></td>
+      <td class="nm">find-skills</td>
+      <td class="auth">PINGFAN</td>
+      <td class="num">4</td>
+      <td class="num">1</td>
+      <td class="num">5</td>
+      <td class="num total">14/25</td>
+    </tr></tbody>
+  </table>
+</section>
+
+
+
+<!-- CAVEAT (moved to bottom) -->
+<section class="sec">
+  <div class="sec-head"><h2>方法局限</h2><div class="lbl">[ 06 ] 阅读前请知悉</div></div>
+  <div class="caveat">
+    <div class="lbl">声明</div>
+    <ol>
+      <li><b>分数不是全部。</b>「结构 / 复用 / 可执行」是数文件和章节，「引用率」是 grep 文档，不等于实际调用价值。</li>
+      <li><b>commit 数 ≠ 价值。</b>文档型和重构型都算 1 次，必须结合代表性 commit 判断。</li>
+      <li><b>bus factor 判断是定性。</b>基于 Top10 占比，不是基于停手实验。</li>
+      <li><b>没有 PR / review 数据。</b>看不到代码审查、退回、协作密度。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- METHOD -->
+<section class="sec">
+  <div class="sec-head"><h2>方法说明</h2><div class="lbl">[ 07 ] 评分细则</div></div>
+  <div class="method">
+    <div><div class="lbl">身份合并</div><p>wei.liu / liuwei / charlesliu66 → Charles；pingfan / shadow → Pingfan。</p></div>
+    <div><div class="lbl">噪音排除</div><p>lock 文件、构建产物、二进制资源不计入行数。</p></div>
+    <div><div class="lbl">主笔判定</div><p>该 skill 目录下累计提交行数最多的人，而非首次创建者。</p></div>
+    <div><div class="lbl">质量五维</div><p>结构 / 复用 / 可执行 / 引用率 / 时效，每项 1-5，总 25。</p></div>
+    <div><div class="lbl">评级</div><p>综合五维 + 角色定位主观加权得出 A/B/C；不作绩效评估。</p></div>
+    <div><div class="lbl">可复现</div><p>analyze.py + build_html_v8.py · source: result.json</p></div>
+  </div>
+</section>
+
+<footer>
+  <div>● FASTPUBLISH · 仓库画像</div>
+  <div>VER <span class="ver-red">8.0</span> · 2026-05-15 · ANALYZE.PY + BUILD_HTML_V8.PY</div>
+</footer>
+
+</div>
+</body></html>

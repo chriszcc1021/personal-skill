@@ -7,7 +7,8 @@
 ```
 .
 ├── skills/                    # 可复用的 AgentSkills
-│   └── product-encyclopedia/  # 产品对比页生成 skill
+│   ├── product-encyclopedia/  # 产品对比页生成 skill
+│   └── project-contribution-report/  # 仓库贡献画像 skill
 └── examples/                  # 实战案例
     └── appliance-guide/       # 家电选购指南（含登山包）
 ```
@@ -31,6 +32,21 @@
 - 反 AI-slop 设计准则
 
 详见 [`skills/product-encyclopedia/SKILL.md`](skills/product-encyclopedia/SKILL.md)。
+
+### project-contribution-report
+仓库贡献画像报告（Nothing-Design 风格，贝叶斯加权评分）。
+
+**用途：**
+- 月度/季度团队回顾，"谁做了什么、做得怎么样" 的客观画像
+- 避免“commit 多 = 价值高”的错误结论
+- 跨同事产出对比（主笔 skills / knowledge / tooling / raw 4 桶拆开）
+
+**特点：**
+- 5 类加权评分 + 贝叶斯先验修正（prior_n=5, prior_avg=71）
+- OLED 黑底 + Doto 点阵字体，红色仅作 interrupt
+- 6 张人物卡，5 指标 + verdict 带量化亮点
+
+详见 [`skills/project-contribution-report/SKILL.md`](skills/project-contribution-report/SKILL.md)。
 
 ## 📚 Examples
 
