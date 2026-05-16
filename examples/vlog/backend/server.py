@@ -614,7 +614,7 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
                     break
                 err = (data or {}).get("error", last_err or "unknown")
                 if "429" in str(err) or "rate" in str(err).lower() or "quota" in str(err).lower():
-                    backoff = (5, 12, 25)[attempt]
+                    backoff = (15, 35, 60)[attempt]
                     log_fn(f"  Gemini #{vi} 429 限流 retry {attempt+1}/3 等 {backoff}s", 30)
                     time.sleep(backoff)
                     continue
@@ -622,7 +622,7 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
                 break
             if not data or "error" in data:
                 log_fn(f"Gemini fail #{vi}: {(data or {}).get('error', last_err or 'empty')[:90]}", 30)
-                time.sleep(2.5)  # space out even failures
+                time.sleep(6.0)  # space out even failures
                 continue
             bw = data.get("best_window", [])
             vdur = probe_dur(videos[vi])
@@ -658,7 +658,7 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
                 "subject_cx": scx,
                 "subject_cy": scy,
             }
-            time.sleep(2.5)  # 2.5s between calls to stay under RPM
+            time.sleep(6.0)  # 6s between calls (free tier RPM ~10/min for video)
         log_fn(f"Gemini 读懂 {len(highlights)}/{len(videos)} 个视频" + (f" | 地点={location_hint}" if location_hint else ""), 32)
         for vi, h in highlights.items():
             log_fn(f"  #{vi}: [{h['start_t']:.1f}-{h['end_t']:.1f}s s={h['score']}] {h['desc']}", 33)
@@ -1000,6 +1000,13 @@ async def run_job(jid: str):
 
     try:
         job["status"] = "running"
+        # Estimate ETA: ~30s base + ~50s/video (Gemini serial 6s gap + retries + render)
+        n_videos = sum(1 for aid in job.get("asset_ids", []) if (UPLOADS / "you" / f"{aid}.mov").exists() or (UPLOADS / "you" / f"{aid}.mp4").exists())
+        eta_sec = 30 + max(0, n_videos) * 50
+        eta_min = max(1, round(eta_sec / 60))
+        job["eta_sec"] = eta_sec
+        job["eta_min"] = eta_min
+        log(f"预计耗时 约 {eta_min} 分钟（{n_videos} 个视频）· 可闭页，后台会跑", 3)
         log("开始任务", 5)
 
         # 1. BGM pick

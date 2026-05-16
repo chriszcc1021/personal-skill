@@ -163,7 +163,9 @@
     <div class="progress">
       <div class="pct" id="pct">0%</div>
       <div class="progress-bar"><div id="bar" style="width:0%"></div></div>
+      <div id="eta" style="color:#aaa;font-size:13px;margin-top:8px"></div>
       <div class="log" id="log">等待开始…</div>
+      <div style="color:#444;font-size:11px;margin-top:12px;line-height:1.5">可以关页 / 切后台，任务会继续跑。回来打开历史可看到成片。</div>
     </div>
   </div>
 
@@ -420,6 +422,10 @@ document.getElementById('go').onclick=async()=>{
   if(!r.ok){toast(`失败: ${r.status}`);return;}
   const job=await r.json();
   state.jobId=job.id;localStorage.lastJob=job.id;
+  // Estimate ETA client-side based on video count
+  const nVid=ready.filter(a=>a.kind==='video').length;
+  const etaMin=Math.max(1,Math.round((30+nVid*50)/60));
+  toast(`任务已提交 · 预计 ${etaMin} 分钟后回来取片`);
   document.getElementById('progress-box').style.display='block';
   document.getElementById('go').style.display='none';
   poll();
@@ -433,6 +439,16 @@ async function poll(){
     document.getElementById('pct').textContent=j.progress+'%';
     document.getElementById('bar').style.width=j.progress+'%';
     document.getElementById('log').textContent=(j.logs||[]).slice(-1)[0]||'';
+    // Show estimated remaining time
+    if(j.eta_sec && j.status==='running'){
+      const started=j.created_at||(Date.now()/1000);
+      const elapsed=Math.max(0,Date.now()/1000-started);
+      const remain=Math.max(30,j.eta_sec-elapsed);
+      const mins=Math.round(remain/60);
+      document.getElementById('eta').textContent= mins<=1 ? '预计 ≤1 分钟完成' : `预计还有 约 ${mins} 分钟`;
+    } else {
+      document.getElementById('eta').textContent='';
+    }
     if(j.status==='done'){
       document.getElementById('progress-box').style.display='none';
       document.getElementById('result-box').style.display='block';
