@@ -1,5 +1,99 @@
 """vlog backend v0.4 — cinematic captions, 9:16, beat-synced, AI-picked, dedup, quota."""
 import os, uuid, json, subprocess, random, time, base64, shutil, math, re
+import urllib.request, urllib.parse
+from pathlib import Path
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+
+def gemini_analyze_video(video_path: Path, timeout: int = 90) -> dict:
+    """Upload video to Gemini Files API and ask for content analysis + highlight window."""
+    if not GEMINI_API_KEY:
+        return {}
+    try:
+        size = video_path.stat().st_size
+        mime = "video/quicktime" if video_path.suffix.lower() in (".mov",) else "video/mp4"
+        # Step 1: start resumable upload
+        req = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/upload/v1beta/files?key={GEMINI_API_KEY}",
+            method="POST",
+            headers={
+                "X-Goog-Upload-Protocol": "resumable",
+                "X-Goog-Upload-Command": "start",
+                "X-Goog-Upload-Header-Content-Length": str(size),
+                "X-Goog-Upload-Header-Content-Type": mime,
+                "Content-Type": "application/json",
+            },
+            data=json.dumps({"file": {"display_name": video_path.stem}}).encode(),
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            upload_url = resp.headers.get("X-Goog-Upload-URL")
+        if not upload_url:
+            return {}
+        # Step 2: upload bytes
+        with open(video_path, "rb") as f:
+            body = f.read()
+        req2 = urllib.request.Request(
+            upload_url, method="POST",
+            headers={
+                "X-Goog-Upload-Command": "upload, finalize",
+                "X-Goog-Upload-Offset": "0",
+                "Content-Length": str(size),
+            },
+            data=body,
+        )
+        with urllib.request.urlopen(req2, timeout=timeout) as resp:
+            j = json.loads(resp.read())
+        file_uri = j["file"]["uri"]
+        file_name = j["file"]["name"]
+        # Wait for ACTIVE state
+        for _ in range(20):
+            time.sleep(2)
+            req3 = urllib.request.Request(
+                f"https://generativelanguage.googleapis.com/v1beta/{file_name}?key={GEMINI_API_KEY}"
+            )
+            with urllib.request.urlopen(req3, timeout=20) as r:
+                state = json.loads(r.read()).get("state", "")
+            if state == "ACTIVE":
+                break
+        # Step 3: generate content
+        prompt = (
+            "看这段视频，返回 JSON:\n"
+            "{\"segments\":[{\"start\":秒,\"end\":秒,\"content\":\"拍什么(人/建筑/动作)\",\"highlight\":bool}],\"best_window\":[start,end],\"score\":0-3,\"summary\":\"一句话总结这段拍什么\"}\n"
+            "best_window 是这段视频最精髓的 2-4 秒【动作】区间 (zoom、人动作、镜头推进、主体出现)。\n"
+            "score 是整体亮点评分：3=绝佳精髓, 2=不错, 1=一般, 0=无亮点。\n"
+            "只返 JSON。"
+        )
+        req4 = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}",
+            method="POST",
+            headers={"Content-Type": "application/json"},
+            data=json.dumps({
+                "contents": [{"parts": [
+                    {"fileData": {"mimeType": mime, "fileUri": file_uri}},
+                    {"text": prompt},
+                ]}],
+                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2000},
+            }).encode(),
+        )
+        with urllib.request.urlopen(req4, timeout=timeout) as resp:
+            jr = json.loads(resp.read())
+        text = jr["candidates"][0]["content"]["parts"][0]["text"]
+        # Strip markdown fences
+        text = re.sub(r"^```(?:json)?\s*", "", text.strip())
+        text = re.sub(r"\s*```$", "", text)
+        data = json.loads(text)
+        # Clean up: delete file
+        try:
+            req5 = urllib.request.Request(
+                f"https://generativelanguage.googleapis.com/v1beta/{file_name}?key={GEMINI_API_KEY}",
+                method="DELETE",
+            )
+            urllib.request.urlopen(req5, timeout=10).read()
+        except: pass
+        return data
+    except Exception as e:
+        return {"error": str(e)}
+
+
 from pathlib import Path
 from typing import Optional, List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
@@ -416,47 +510,44 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
     log_fn(f"去重后 {len(samples)} 帧 (-{before - len(samples)} 重复)", 28)
     samples = samples[:30]
 
-    # ===== STAGE 1: Highlight detection per video via contact sheets =====
-    # Each contact sheet shows 8 frames of a video in 4x2 grid (left-to-right, top-to-bottom)
-    # AI identifies WHICH cell range is the highlight (zoom, action, gesture, etc.)
-    highlights = {}  # video_idx -> {start_t, end_t, score, desc}
-    if sheet_paths:
-        sheet_list_str = "\n".join(
-            f"贴图 #{si}: 视频 {Path(v).stem[:8]}, 总时长 {dur:.1f}s, 8 帧从左上到右下在 0%/12.5%/25%/37.5%/50%/62.5%/75%/87.5% 时间点抽取"
-            for si, (vi, v, dur) in enumerate(sheet_meta)
-        )
-        stage1_prompt = f"""你是 vlog 剪辑师。我给你 {len(sheet_paths)} 张贴图，每张是一个视频的 8 帧抽取拼接（4x2 网格）。
-
-{sheet_list_str}
-
-任务：看每张贴图的动作进展（从左到右、从上到下），找出每个视频的【精髓时间段】——
-- zoom、镜头推进/拉远、人物动作、主体出现、表情变化、全景揭示都是精髓
-- 静止/重复/模糊/平平无奇的不算
-
-返回 JSON，为每张贴图给出起止时间和评分：
-{{"highlights":[{{"sheet":0,"start_t":1.5,"end_t":4.5,"score":3,"desc":"人拿票后 zoom 到雕刻"}}, ...]}}
-
-score: 3=绝佳精髓, 2=不错, 1=一般, 0=无亮点
-start_t/end_t 是该视频中的秒数，范围 0 ~ 总时长。间隔 1-4 秒。
-只返 JSON，无任何额外字符。"""
-        try:
-            resp1 = call_claude_vision(stage1_prompt, sheet_paths, max_tokens=1500)
-            log_fn(f"Stage1 raw: {resp1[:120]}", 30)
-            m = re.search(r'\{.*"highlights".*\}', resp1, re.DOTALL)
-            j1 = json.loads(m.group(0) if m else resp1.strip().lstrip('```json').rstrip('```'))
-            for h in j1.get("highlights", []):
-                si = int(h["sheet"])
-                if 0 <= si < len(sheet_meta):
-                    vi, vpath, vdur = sheet_meta[si]
-                    highlights[vi] = {
-                        "start_t": max(0, float(h.get("start_t", 0))),
-                        "end_t": min(vdur, float(h.get("end_t", vdur))),
-                        "score": int(h.get("score", 1)),
-                        "desc": str(h.get("desc", ""))[:60],
-                    }
-            log_fn(f"Stage1 识别精髓: {len(highlights)} 个视频", 32)
-        except Exception as e:
-            log_fn(f"Stage1 解析失败 (采用 motion peak fallback): {e}", 32)
+    # ===== STAGE 1: Gemini reads each video natively and identifies highlights =====
+    # Gemini 2.5 Flash supports video input - real content understanding, not guessing.
+    highlights = {}  # video_idx -> {start_t, end_t, score, desc, summary}
+    if GEMINI_API_KEY:
+        from concurrent.futures import ThreadPoolExecutor
+        def _analyze(vi_v):
+            vi, v = vi_v
+            return vi, gemini_analyze_video(v, timeout=90)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures = [pool.submit(_analyze, (vi, v)) for vi, v in enumerate(videos)]
+            for fut in futures:
+                try:
+                    vi, data = fut.result(timeout=180)
+                except Exception as e:
+                    log_fn(f"Gemini 超时 #{vi}: {e}", 30)
+                    continue
+                if not data or "error" in data:
+                    log_fn(f"Gemini fail #{vi}: {data.get('error','no data')[:80] if data else 'empty'}", 30)
+                    continue
+                bw = data.get("best_window", [])
+                vdur = probe_dur(videos[vi])
+                if isinstance(bw, list) and len(bw) >= 2:
+                    s_t = max(0, float(bw[0]))
+                    e_t = min(vdur, float(bw[1]))
+                else:
+                    s_t, e_t = 0, min(vdur, 3.0)
+                highlights[vi] = {
+                    "start_t": s_t,
+                    "end_t": e_t,
+                    "score": int(data.get("score", 1)),
+                    "desc": str(data.get("summary", ""))[:80],
+                    "summary": str(data.get("summary", ""))[:80],
+                }
+        log_fn(f"Gemini 读懂 {len(highlights)}/{len(videos)} 个视频", 32)
+        for vi, h in highlights.items():
+            log_fn(f"  #{vi}: [{h['start_t']:.1f}-{h['end_t']:.1f}s s={h['score']}] {h['desc']}", 33)
+    else:
+        log_fn("GEMINI_API_KEY 未设 (fallback to motion peak)", 32)
 
     # ===== STAGE 2: Order picks across videos with weights =====
     # Build sample list emphasizing highlight frames
@@ -598,25 +689,27 @@ weights:
         picks_data.append(picks_data[len(picks_data) % max(1, len(picks_data))])
     picks_data = picks_data[:n_target]
 
-    # Snap pick timestamps to nearest highlight center or motion peak.
-    # If the frame is in a highlight window, snap to highlight midpoint (the action).
-    # Else snap to nearest motion peak.
+    # Snap pick timestamps to Gemini-identified highlight center; override weight by score.
     snapped_count = 0
     result = []
+    used_videos = set()
     for (p, w) in picks_data:
         s = samples[p]
         ts = s["ts"]
+        new_w = w
         if s["type"] == "video":
             vi = s.get("video_idx", -1)
             h = highlights.get(vi)
             new_ts = None
-            if h and h["score"] >= 2:
-                # snap to highlight center for high-score highlights
+            if h:
                 hl_mid = (h["start_t"] + h["end_t"]) / 2
-                if h["start_t"] <= ts <= h["end_t"] or abs(hl_mid - ts) < 3.0:
-                    new_ts = hl_mid
-            if new_ts is None:
-                # fall back to motion peak
+                # Always snap to highlight midpoint for Gemini-analyzed videos
+                new_ts = hl_mid
+                # Override weight from Gemini score: 3->2.0, 2->1.5, 1->1.0, 0->0.5
+                score = h["score"]
+                new_w = {3: 2.0, 2: 1.5, 1: 1.0, 0: 0.5}.get(score, 1.0)
+            else:
+                # No Gemini analysis - fall back to motion peak
                 peaks = motion_by_video.get(str(s["src"]), [])
                 best = None
                 best_d = 1.5
@@ -630,9 +723,9 @@ weights:
             if new_ts is not None and abs(new_ts - ts) > 0.1:
                 ts = new_ts
                 snapped_count += 1
-        result.append((s["src"], s["type"], ts, s["dur"], w))
+        result.append((s["src"], s["type"], ts, s["dur"], new_w))
     if snapped_count:
-        log_fn(f"对齐精髓/动作峰值: {snapped_count}/{len(picks_data)} 个 clip", 48)
+        log_fn(f"对齐精髓中心: {snapped_count}/{len(picks_data)} 个 clip", 48)
     return result
 
 
