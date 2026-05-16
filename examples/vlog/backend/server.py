@@ -1,39 +1,37 @@
-"""vlog backend MVP — FastAPI
-功能:
-- POST /api/upload       上传单个素材文件
-- POST /api/refs/upload  上传参考 vlog 视频 (学习风格)
-- POST /api/jobs         提交剪辑任务 {style, prompt, asset_ids[]}
-- GET  /api/jobs/{id}    查询任务状态
-- GET  /api/jobs/{id}/result  下载成片
+"""vlog backend v0.3 — Travel-only, beat-synced, AI scene picking.
+
+Pipeline:
+- Pick BGM
+- librosa beat detect → beat timestamps
+- AI picks N best clips from candidates (sub-scenes via PySceneDetect or time samples)
+- Cut clips strictly at beat boundaries: intro 2-beat / verse 1-beat / chorus 0.5-beat
 """
-import os, uuid, json, subprocess, random, time, base64, shutil
+import os, uuid, json, subprocess, random, time, base64, shutil, math
 from pathlib import Path
 from typing import Optional, List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-import aiofiles
-import asyncio
-import urllib.request, urllib.error
+import aiofiles, asyncio
+import urllib.request
 
 GATEWAY_URL = os.environ.get("VLOG_GATEWAY_URL", "https://new-api.openclaw.ingarena.net")
 GATEWAY_KEY = os.environ.get("VLOG_GATEWAY_KEY", "")
-MODEL_VISION = "claude-sonnet-4-5-20250929"  # vision-capable, cheap
+MODEL_VISION = "claude-sonnet-4-5-20250929"
 
 ROOT = Path("/var/vlog-data")
-UPLOADS = ROOT / "uploads"   # 用户素材
-REFS = ROOT / "refs"          # 参考 vlog
-OUTPUTS = ROOT / "outputs"    # 成片
-BGM = ROOT / "bgm"            # BGM 库
-JOBS = ROOT / "jobs"          # 任务状态
+UPLOADS = ROOT / "uploads"
+REFS = ROOT / "refs"
+OUTPUTS = ROOT / "outputs"
+BGM = ROOT / "bgm"
+JOBS = ROOT / "jobs"
 for p in (UPLOADS, REFS, OUTPUTS, BGM, JOBS):
     p.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="vlog-mvp")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-USER_ID = "you"  # 单用户预埋,后续按 token 替换
+USER_ID = "you"
 
 
 def user_dir(base: Path) -> Path:
@@ -43,41 +41,58 @@ def user_dir(base: Path) -> Path:
 
 
 @app.get("/api/health")
-async def health():
-    return {"ok": True, "ts": int(time.time())}
+async def health(): return {"ok": True, "ts": int(time.time())}
 
 
 @app.post("/api/upload")
 async def upload(file: UploadFile = File(...)):
-    """上传单个素材 (照片 / 视频)"""
     aid = uuid.uuid4().hex[:12]
     ext = Path(file.filename).suffix.lower() or ".bin"
     dest = user_dir(UPLOADS) / f"{aid}{ext}"
     async with aiofiles.open(dest, "wb") as f:
         while chunk := await file.read(1 << 20):
             await f.write(chunk)
-    size = dest.stat().st_size
     kind = "video" if ext in (".mp4", ".mov", ".m4v", ".webm") else "image"
-    return {"id": aid, "kind": kind, "size": size, "filename": file.filename}
+    # Generate thumbnail for preview
+    thumb = user_dir(UPLOADS) / f"{aid}_thumb.jpg"
+    try:
+        if kind == "video":
+            subprocess.run(["ffmpeg", "-y", "-ss", "0.5", "-i", str(dest), "-vframes", "1",
+                "-vf", "scale=240:-1", str(thumb)], check=True, capture_output=True, timeout=30)
+        else:
+            subprocess.run(["ffmpeg", "-y", "-i", str(dest), "-vf", "scale=240:-1",
+                str(thumb)], check=True, capture_output=True, timeout=30)
+    except Exception:
+        pass
+    return {"id": aid, "kind": kind, "size": dest.stat().st_size, "filename": file.filename,
+            "thumb_url": f"/api/asset/{aid}/thumb" if thumb.exists() else None}
+
+
+@app.get("/api/asset/{aid}/thumb")
+async def asset_thumb(aid: str):
+    f = user_dir(UPLOADS) / f"{aid}_thumb.jpg"
+    if not f.exists(): raise HTTPException(404)
+    return FileResponse(f, media_type="image/jpeg")
 
 
 @app.post("/api/refs/upload")
 async def upload_ref(file: UploadFile = File(...), name: Optional[str] = Form(None)):
-    """上传参考 vlog,稍后会被分析提取 style profile"""
     rid = uuid.uuid4().hex[:12]
     ext = Path(file.filename).suffix.lower() or ".mp4"
     dest = user_dir(REFS) / f"{rid}{ext}"
     async with aiofiles.open(dest, "wb") as f:
         while chunk := await file.read(1 << 20):
             await f.write(chunk)
-    meta = {
-        "id": rid,
-        "name": name or file.filename,
-        "path": str(dest),
-        "uploaded_at": int(time.time()),
-        "analyzed": False,
-    }
+    meta = {"id": rid, "name": name or file.filename, "path": str(dest),
+            "uploaded_at": int(time.time())}
     (user_dir(REFS) / f"{rid}.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+    # Auto-extract its BGM as a candidate
+    try:
+        bgm_out = BGM / f"ref-{rid}.mp3"
+        subprocess.run(["ffmpeg", "-y", "-i", str(dest), "-vn", "-acodec", "libmp3lame",
+                       "-b:a", "192k", str(bgm_out)], check=True, capture_output=True, timeout=60)
+    except Exception:
+        pass
     return meta
 
 
@@ -85,175 +100,207 @@ async def upload_ref(file: UploadFile = File(...), name: Optional[str] = Form(No
 async def list_refs():
     out = []
     for jf in sorted(user_dir(REFS).glob("*.json")):
-        try:
-            out.append(json.loads(jf.read_text()))
-        except Exception:
-            pass
+        try: out.append(json.loads(jf.read_text()))
+        except: pass
     return out
 
 
 @app.post("/api/jobs")
-async def create_job(
-    style: str = Form(...),  # daily / travel
-    prompt: str = Form(""),
-    asset_ids: str = Form(""),  # 逗号分隔
-    ref_id: Optional[str] = Form(None),
-):
-    if style not in ("daily", "travel"):
-        raise HTTPException(400, "style must be daily or travel")
+async def create_job(prompt: str = Form(""), asset_ids: str = Form(""),
+                     ref_id: Optional[str] = Form(None)):
     jid = uuid.uuid4().hex[:12]
     aids = [a.strip() for a in asset_ids.split(",") if a.strip()]
-    job = {
-        "id": jid,
-        "status": "queued",
-        "style": style,
-        "prompt": prompt,
-        "asset_ids": aids,
-        "ref_id": ref_id,
-        "created_at": int(time.time()),
-        "progress": 0,
-        "logs": [],
-    }
+    job = {"id": jid, "status": "queued", "prompt": prompt, "asset_ids": aids,
+           "ref_id": ref_id, "created_at": int(time.time()), "progress": 0, "logs": []}
     (JOBS / f"{jid}.json").write_text(json.dumps(job, ensure_ascii=False, indent=2))
-    # fire background task
     asyncio.create_task(run_job(jid))
     return job
 
 
+def probe_dur(path: Path) -> float:
+    try:
+        return float(subprocess.check_output([
+            "ffprobe", "-v", "error", "-show_entries", "format=duration",
+            "-of", "csv=p=0", str(path)], text=True).strip())
+    except: return 0.0
+
+
 def extract_thumb(video: Path, t: float, out: Path) -> bool:
     try:
-        subprocess.run([
-            "ffmpeg", "-y", "-ss", f"{t:.2f}", "-i", str(video), "-vframes", "1",
-            "-vf", "scale=480:-1", str(out),
-        ], check=True, capture_output=True)
+        subprocess.run(["ffmpeg", "-y", "-ss", f"{t:.2f}", "-i", str(video),
+            "-vframes", "1", "-vf", "scale=480:-1", str(out)],
+            check=True, capture_output=True, timeout=30)
         return True
-    except subprocess.CalledProcessError:
-        return False
+    except: return False
 
 
-def call_claude_vision(prompt: str, image_paths: List[Path], max_tokens: int = 1200) -> str:
-    """Send images + prompt to Claude via Garena gateway (OpenAI-compatible /v1/chat/completions)."""
-    if not GATEWAY_KEY:
-        return ""
+def call_claude_vision(prompt: str, image_paths: List[Path], max_tokens: int = 2000) -> str:
+    if not GATEWAY_KEY: return ""
     content = [{"type": "text", "text": prompt}]
     for p in image_paths:
         try:
             b64 = base64.b64encode(p.read_bytes()).decode()
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
-            })
-        except Exception:
-            continue
-    body = json.dumps({
-        "model": MODEL_VISION,
+            content.append({"type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
+        except: continue
+    body = json.dumps({"model": MODEL_VISION,
         "messages": [{"role": "user", "content": content}],
-        "max_tokens": max_tokens,
-        "temperature": 0.3,
-    }).encode()
-    req = urllib.request.Request(
-        f"{GATEWAY_URL}/v1/chat/completions",
+        "max_tokens": max_tokens, "temperature": 0.3}).encode()
+    req = urllib.request.Request(f"{GATEWAY_URL}/v1/chat/completions",
         data=body, method="POST",
-        headers={"Authorization": f"Bearer {GATEWAY_KEY}", "Content-Type": "application/json"},
-    )
+        headers={"Authorization": f"Bearer {GATEWAY_KEY}", "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
-            j = json.loads(r.read())
-            return j["choices"][0]["message"]["content"]
+            return json.loads(r.read())["choices"][0]["message"]["content"]
     except Exception as e:
-        print(f"Claude vision error: {e}")
+        print(f"vision err: {e}")
         return ""
 
 
-STYLE_CONFIG = {
-    "daily": {"clip_dur": 3.5, "img_dur": 1.8, "hint": "温和日常节奏,镜头切换轻快,挑能体现生活感的瞬间"},
-    "travel": {"clip_dur": 5.5, "img_dur": 2.5, "hint": "电影感慢节奏,挑大景/移动镜头/标志性建筑,优先广角"},
-}
+def detect_beats(bgm_path: Path) -> tuple:
+    """Returns (tempo, beat_times[], total_duration)"""
+    try:
+        import librosa
+        y, sr = librosa.load(str(bgm_path), sr=22050, mono=True)
+        tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
+        beat_times = librosa.frames_to_time(beat_frames, sr=sr).tolist()
+        dur = float(librosa.get_duration(y=y, sr=sr))
+        t = float(tempo) if hasattr(tempo, '__float__') else float(tempo[0]) if len(tempo) else 120.0
+        return t, beat_times, dur
+    except Exception as e:
+        print(f"beat err: {e}")
+        return 120.0, [], 60.0
 
 
-def ai_pick_and_arrange(videos, images, style, prompt, log_fn):
-    """对每个视频均匀抽 3 帧 + 每张图 1 帧 -> 喂 Claude -> 返回排好序的 plan:
-    [{"src": path, "type": "video", "start": 0.0, "dur": 4.0}, ...]
-    """
-    cfg = STYLE_CONFIG[style]
-    samples = []  # list of (src_path, type, ts_in_src, thumb_path)
+def build_beat_schedule(beat_times, total_dur):
+    """Build cut schedule: intro slow 2-beat × 2, main 1-beat × N, chorus 0.5-beat × 8, outro 2-beat × 2.
+    Returns list of (start_t, dur_seconds)."""
+    if len(beat_times) < 8:
+        # fallback fixed rhythm
+        n = max(8, int(total_dur / 1.2))
+        return [(i * 1.2, 1.2) for i in range(n) if (i+1)*1.2 < total_dur]
+
+    schedule = []
+    bt = beat_times
+    n_beats = len(bt)
+    # Section split: intro 0-15%, main 15-50%, chorus 50-85%, outro 85-100%
+    intro_end = int(n_beats * 0.15)
+    main_end = int(n_beats * 0.50)
+    chorus_end = int(n_beats * 0.85)
+
+    i = 0
+    # Intro: 2-beat clips
+    while i < intro_end - 1:
+        start = bt[i]
+        nxt = bt[min(i+2, n_beats-1)]
+        schedule.append((start, nxt - start))
+        i += 2
+    # Main: 1-beat clips
+    while i < main_end - 1:
+        start = bt[i]
+        nxt = bt[min(i+1, n_beats-1)]
+        schedule.append((start, nxt - start))
+        i += 1
+    # Chorus: half-beat (every other beat we slice into 2)
+    while i < chorus_end - 1:
+        a = bt[i]
+        b = bt[min(i+1, n_beats-1)]
+        mid = (a + b) / 2
+        schedule.append((a, mid - a))
+        schedule.append((mid, b - mid))
+        i += 1
+    # Outro: 2-beat
+    while i < n_beats - 1:
+        start = bt[i]
+        nxt = bt[min(i+2, n_beats-1)]
+        schedule.append((start, nxt - start))
+        i += 2
+
+    # Filter too short / too long
+    schedule = [(t, d) for (t, d) in schedule if 0.25 <= d <= 4.0 and t < total_dur]
+    return schedule[:80]  # cap
+
+
+def ai_pick_clips(videos, images, prompt, n_target, log_fn):
+    """Sample frames from all videos+images, send to Claude, return ordered list of
+    (src_path, type, frame_time) with len >= n_target (oversample)"""
+    samples = []  # {src, type, ts, thumb, dur}
     thumb_dir = OUTPUTS / "_thumbs"
     thumb_dir.mkdir(exist_ok=True)
-
     for v in videos:
         dur = probe_dur(v)
-        for k, frac in enumerate([0.2, 0.5, 0.8]):
-            ts = dur * frac
+        # Sample more densely (every 2s up to 8 samples per video)
+        n_samples = min(8, max(2, int(dur / 2)))
+        for k in range(n_samples):
+            ts = dur * (k + 0.5) / n_samples
             tp = thumb_dir / f"{uuid.uuid4().hex[:8]}.jpg"
             if extract_thumb(v, ts, tp):
-                samples.append({"src": v, "type": "video", "ts": ts, "thumb": tp, "src_dur": dur})
+                samples.append({"src": v, "type": "video", "ts": ts, "thumb": tp, "dur": dur})
     for img in images:
-        # use the image itself as thumb (after rescale)
         tp = thumb_dir / f"{uuid.uuid4().hex[:8]}.jpg"
         try:
             subprocess.run(["ffmpeg", "-y", "-i", str(img), "-vf", "scale=480:-1", str(tp)],
-                          check=True, capture_output=True)
-            samples.append({"src": img, "type": "image", "ts": 0, "thumb": tp, "src_dur": 0})
-        except Exception:
-            pass
+                check=True, capture_output=True, timeout=30)
+            samples.append({"src": img, "type": "image", "ts": 0, "thumb": tp, "dur": 0})
+        except: pass
 
     if not samples:
         return []
-    log_fn(f"抽取 {len(samples)} 个候选帧,送 AI 挑选", 30)
+    log_fn(f"抽取 {len(samples)} 帧候选,送 AI 排片", 30)
 
-    # 限制到最多 20 张避免 token 爆炸
-    samples = samples[:20]
-    numbered = [(i, s) for i, s in enumerate(samples)]
-    user_prompt = f"""你是 AI vlog 剪辑师。我有 {len(samples)} 个候选帧,按顺序编号 0-{len(samples)-1}。
+    # Cap to 25 for token budget
+    samples = samples[:25]
 
-风格: {style} ({cfg['hint']})
-用户描述: {prompt or '(无)'}
+    user_prompt = f"""你是旅行 vlog 剪辑师。我有 {len(samples)} 个候选帧,编号 0-{len(samples)-1}。
 
-任务: 挑 6-12 个最值得用的帧,按叙事顺序排列。优先考虑:
-1. 画面有内容(不模糊、不黑屏、不重复)
-2. 镜头有差异(远景+特写+人物穿插)
-3. 符合 {style} 风格
+风格: 旅行 vlog,快节奏卡点剪辑(类似抖音/Instagram Reels)。
+用户描述: {prompt or "(无)"}
 
-只返回 JSON,不要任何其他文字。格式:
-{{"picks": [0, 5, 2, 8, ...], "reason": "一句中文解释为什么这么排"}}"""
+任务: 挑 {n_target} 个最值得用的帧,按"叙事节奏"排列:
+1. 开头 2-3 个: 地标/全景/天空(建立场景)
+2. 中段大量混切: 人物动作/街景/招牌/特写/细节
+3. 结尾 2-3 个: 标志性建筑/夕阳/慢镜头(收尾)
+
+要求:
+- 镜头多样性: 远景/特写/动态/静态混合
+- 避免重复镜头
+- 优先有内容的(人物、招牌、动作)
+- 拒绝模糊/黑屏/重复
+
+只返回 JSON,无其他文字:
+{{"picks": [0,5,2,8,...], "reason": "一句中文解释"}}
+
+如果可用帧不够 {n_target} 个,picks 可以包含重复编号(后续会从原片不同位置切)。"""
 
     images_for_api = [s["thumb"] for s in samples]
-    resp = call_claude_vision(user_prompt, images_for_api)
-    log_fn(f"AI 回复: {resp[:80]}", 40)
+    resp = call_claude_vision(user_prompt, images_for_api, max_tokens=1500)
+    log_fn(f"AI 回复: {resp[:80]}...", 40)
 
-    # parse
-    picks = list(range(min(8, len(samples))))  # fallback
+    picks = list(range(min(n_target, len(samples))))
     try:
         s = resp.strip()
         if s.startswith("```"):
             s = s.split("```")[1]
             if s.startswith("json"): s = s[4:]
         j = json.loads(s)
-        if "picks" in j and isinstance(j["picks"], list):
+        if isinstance(j.get("picks"), list):
             picks = [int(x) for x in j["picks"] if 0 <= int(x) < len(samples)]
-            log_fn(f"AI 选: {j.get('reason', '')[:60]}", 45)
+            log_fn(f"AI 排片: {j.get('reason', '')[:60]}", 45)
     except Exception as e:
-        log_fn(f"AI 解析失败,用兜底: {e}", 45)
+        log_fn(f"解析失败兜底: {e}", 45)
 
-    plan = []
-    for idx in picks:
-        s = samples[idx]
-        if s["type"] == "video":
-            start = max(0, s["ts"] - cfg["clip_dur"] / 2)
-            plan.append({"src": s["src"], "type": "video",
-                        "start": start, "dur": cfg["clip_dur"]})
-        else:
-            plan.append({"src": s["src"], "type": "image",
-                        "start": 0, "dur": cfg["img_dur"]})
-    return plan
+    # Ensure enough picks
+    while len(picks) < n_target:
+        picks.append(picks[len(picks) % max(1, len(picks))])
+    return [(samples[p]["src"], samples[p]["type"], samples[p]["ts"], samples[p]["dur"])
+            for p in picks[:n_target]]
 
 
 async def run_job(jid: str):
-    """AI 驱动: 抽帧 -> Claude 挑/排 -> ffmpeg 拼接."""
     jf = JOBS / f"{jid}.json"
     job = json.loads(jf.read_text())
 
-    def log(msg: str, progress: int):
+    def log(msg, progress):
         job["logs"].append(f"[{time.strftime('%H:%M:%S')}] {msg}")
         job["progress"] = progress
         jf.write_text(json.dumps(job, ensure_ascii=False, indent=2))
@@ -262,136 +309,130 @@ async def run_job(jid: str):
         job["status"] = "running"
         log("开始任务", 5)
 
+        # 1. Pick BGM (prefer ref-extracted, else random)
+        ref_bgm = None
+        if job.get("ref_id"):
+            cand = BGM / f"ref-{job['ref_id']}.mp3"
+            if cand.exists(): ref_bgm = cand
+        if not ref_bgm:
+            bgm_pool = list(BGM.glob("travel-*.mp3")) + list(BGM.glob("*.mp3"))
+            bgm_pool = [b for b in bgm_pool if probe_dur(b) > 10]
+            if not bgm_pool:
+                raise RuntimeError("No BGM available")
+            ref_bgm = random.choice(bgm_pool)
+        log(f"BGM: {ref_bgm.name}", 10)
+
+        # 2. Beat detection
+        loop = asyncio.get_event_loop()
+        tempo, beats, bgm_dur = await loop.run_in_executor(None, detect_beats, ref_bgm)
+        log(f"节拍: BPM={tempo:.1f}, {len(beats)} beats, {bgm_dur:.1f}s", 15)
+
+        # 3. Schedule (target ~20-30s video)
+        target_dur = min(bgm_dur, 30.0)
+        schedule = build_beat_schedule(beats, target_dur)
+        # Trim schedule so total fits target
+        total = 0; trimmed = []
+        for st, d in schedule:
+            if total + d > target_dur: break
+            trimmed.append((st, d)); total += d
+        schedule = trimmed
+        log(f"节拍卡点 {len(schedule)} 段,总长 {total:.1f}s", 20)
+
+        # 4. Collect assets
         assets_dir = user_dir(UPLOADS)
         candidates = []
         for aid in job["asset_ids"]:
             for f in assets_dir.glob(f"{aid}.*"):
-                candidates.append(f)
-        if not candidates:
-            raise RuntimeError("No assets found")
-        videos = [c for c in candidates if c.suffix.lower() in (".mp4", ".mov", ".m4v", ".webm")]
+                if "_thumb" not in f.name: candidates.append(f)
+        videos = [c for c in candidates if c.suffix.lower() in (".mp4",".mov",".m4v",".webm")]
         images = [c for c in candidates if c not in videos]
-        log(f"找到 {len(videos)} 视频 {len(images)} 图", 15)
+        if not candidates:
+            raise RuntimeError("No assets")
+        log(f"{len(videos)} 视频 {len(images)} 图", 25)
 
-        # AI 挑片段 + 排序
-        loop = asyncio.get_event_loop()
-        plan = await loop.run_in_executor(None, ai_pick_and_arrange,
-                                          videos, images, job["style"], job["prompt"], log)
-        if not plan:
-            raise RuntimeError("AI 没挑出可用片段")
-        log(f"AI 排好 {len(plan)} 段", 60)
+        # 5. AI picks
+        n_target = len(schedule)
+        picks = await loop.run_in_executor(None, ai_pick_clips,
+                                           videos, images, job["prompt"], n_target, log)
+        if not picks:
+            raise RuntimeError("AI 未挑出片段")
 
+        # 6. Render each clip aligned to beat duration
         clip_dir = OUTPUTS / jid
         clip_dir.mkdir(parents=True, exist_ok=True)
         clips = []
-        for i, p in enumerate(plan):
+        for i, ((st_beat, dur_beat), (src, typ, ts, src_dur)) in enumerate(zip(schedule, picks)):
             out = clip_dir / f"c{i:03d}.mp4"
-            if p["type"] == "video":
-                cmd = [
-                    "ffmpeg", "-y", "-ss", f"{p['start']:.2f}", "-i", str(p["src"]), "-t", f"{p['dur']:.2f}",
-                    "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,setsar=1",
-                    "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-                    "-an", str(out),
-                ]
+            # video output dimensions: 9:16 portrait OR 16:9 landscape -- choose 16:9 (matches HK ref)
+            scale_vf = "scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,setsar=1"
+            if typ == "video":
+                start_t = max(0, min(src_dur - dur_beat - 0.05, ts - dur_beat/2))
+                start_t = max(0, start_t)
+                cmd = ["ffmpeg", "-y", "-ss", f"{start_t:.3f}", "-i", str(src),
+                    "-t", f"{dur_beat:.3f}",
+                    "-vf", scale_vf + ",eq=saturation=1.15:gamma_r=1.05",  # slight warm/saturated
+                    "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
+                    "-an", str(out)]
             else:
-                cmd = [
-                    "ffmpeg", "-y", "-loop", "1", "-i", str(p["src"]), "-t", f"{p['dur']:.2f}",
-                    "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,setsar=1,zoompan=z='min(zoom+0.001,1.1)':d=60:s=1280x720",
-                    "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-                    "-an", "-pix_fmt", "yuv420p", str(out),
-                ]
+                # Image: Ken Burns zoom over the beat duration
+                frames = max(2, int(dur_beat * 30))
+                cmd = ["ffmpeg", "-y", "-loop", "1", "-i", str(src), "-t", f"{dur_beat:.3f}",
+                    "-vf", scale_vf + f",zoompan=z='min(zoom+0.0015,1.15)':d={frames}:s=1280x720,eq=saturation=1.15:gamma_r=1.05",
+                    "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
+                    "-an", "-pix_fmt", "yuv420p", str(out)]
             subprocess.run(cmd, check=True, capture_output=True)
             clips.append(out)
-        log(f"切完 {len(clips)} 段", 80)
+        log(f"渲染 {len(clips)} 段", 80)
 
+        # 7. Concat
         concat_list = clip_dir / "concat.txt"
         concat_list.write_text("\n".join(f"file '{c.resolve()}'" for c in clips))
         merged = clip_dir / "merged.mp4"
-        subprocess.run([
-            "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list),
-            "-c", "copy", str(merged),
-        ], check=True, capture_output=True)
-        log("拼接完成", 90)
+        subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list),
+            "-c", "copy", str(merged)], check=True, capture_output=True)
+        log("拼接完成", 88)
 
-        bgm_files = list(BGM.glob("*.mp3")) + list(BGM.glob("*.wav"))
+        # 8. Add BGM (trim to video length, fade out)
         final = OUTPUTS / f"{jid}.mp4"
-        if bgm_files:
-            bgm_file = random.choice(bgm_files)
-            subprocess.run([
-                "ffmpeg", "-y", "-i", str(merged), "-i", str(bgm_file),
-                "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
-                "-map", "0:v", "-map", "1:a", "-shortest", "-af", "volume=0.6",
-                str(final),
-            ], check=True, capture_output=True)
-            log(f"加 BGM: {bgm_file.name}", 98)
-        else:
-            shutil.move(str(merged), str(final))
-            log("无 BGM,纯画面", 98)
+        video_len = probe_dur(merged)
+        subprocess.run(["ffmpeg", "-y", "-i", str(merged), "-i", str(ref_bgm),
+            "-c:v", "copy", "-c:a", "aac", "-b:a", "160k",
+            "-map", "0:v", "-map", "1:a", "-t", f"{video_len:.2f}",
+            "-af", f"afade=t=out:st={max(0, video_len-1.5):.2f}:d=1.5,volume=0.8",
+            str(final)], check=True, capture_output=True)
+        log(f"加 BGM ({ref_bgm.name})", 96)
 
-        # 清理
-        for f in clip_dir.glob("*.mp4"):
-            f.unlink()
-        for f in clip_dir.glob("*.txt"):
-            f.unlink()
+        # Cleanup
+        for f in clip_dir.glob("*"): f.unlink()
         try: clip_dir.rmdir()
         except: pass
 
-        job["status"] = "done"
-        job["output"] = str(final)
-        job["duration"] = probe_dur(final)
+        job["status"] = "done"; job["output"] = str(final); job["duration"] = probe_dur(final)
         log("完成", 100)
     except subprocess.CalledProcessError as e:
         job["status"] = "error"
-        job["error"] = f"ffmpeg failed: {e.stderr.decode()[-500:]}"
-        log(f"ERROR: {job['error']}", job["progress"])
+        job["error"] = f"ffmpeg: {e.stderr.decode()[-400:]}"
+        log(f"❌ {job['error'][:200]}", job["progress"])
     except Exception as e:
         job["status"] = "error"
         job["error"] = str(e)
-        log(f"ERROR: {e}", job["progress"])
+        log(f"❌ {e}", job["progress"])
     finally:
         jf.write_text(json.dumps(job, ensure_ascii=False, indent=2))
-
-
-def probe_dur(path: Path) -> float:
-    try:
-        out = subprocess.check_output([
-            "ffprobe", "-v", "error", "-show_entries", "format=duration",
-            "-of", "csv=p=0", str(path),
-        ], text=True).strip()
-        return float(out)
-    except Exception:
-        return 0.0
 
 
 @app.get("/api/jobs/{jid}")
 async def get_job(jid: str):
     jf = JOBS / f"{jid}.json"
-    if not jf.exists():
-        raise HTTPException(404, "job not found")
+    if not jf.exists(): raise HTTPException(404)
     return json.loads(jf.read_text())
 
 
 @app.get("/api/jobs/{jid}/result")
 async def job_result(jid: str):
     f = OUTPUTS / f"{jid}.mp4"
-    if not f.exists():
-        raise HTTPException(404, "result not ready")
+    if not f.exists(): raise HTTPException(404, "result not ready")
     return FileResponse(f, media_type="video/mp4", filename=f"vlog_{jid}.mp4")
-
-
-@app.get("/api/bgm")
-async def list_bgm():
-    out = []
-    for f in sorted(BGM.glob("*.*")):
-        if f.suffix.lower() in (".mp3", ".wav", ".m4a"):
-            out.append({"name": f.name, "size": f.stat().st_size})
-    return out
-
-
-# 静态前端
-FRONTEND = Path(__file__).parent.parent / "frontend"
-if FRONTEND.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND), html=True), name="frontend")
 
 
 if __name__ == "__main__":

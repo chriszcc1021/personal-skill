@@ -9,90 +9,69 @@
 <meta name="theme-color" content="#0A0A0A">
 <link rel="apple-touch-icon" href="/vlog/icon-180.png">
 <link rel="manifest" href="/vlog/manifest.json">
-<title>Vlog · AI 自动剪辑</title>
+<title>Vlog · AI 旅行剪辑</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { background:#0A0A0A; color:#fff; font-family:'Inter', system-ui, sans-serif; min-height:100vh; overscroll-behavior:none; }
-  body { padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-  .mono { font-family:'JetBrains Mono', monospace; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:#0A0A0A;color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh;overscroll-behavior:none}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .container{max-width:600px;margin:0 auto;padding:20px 16px 80px}
+  header{text-align:center;padding:24px 0 32px}
+  header h1{font-size:32px;font-weight:700;letter-spacing:-0.02em}
+  header p{color:#888;font-size:13px;margin-top:6px}
 
-  .container { max-width:600px; margin:0 auto; padding:20px 16px 80px; }
-  header { text-align:center; padding:24px 0 32px; }
-  header h1 { font-size:32px; font-weight:700; letter-spacing:-0.02em; }
-  header p { color:#888; font-size:13px; margin-top:6px; }
+  .section{background:#141414;border:1px solid #222;border-radius:16px;padding:20px;margin-bottom:16px}
+  .section h2{font-size:13px;color:#999;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;font-weight:500}
 
-  .section { background:#141414; border:1px solid #222; border-radius:16px; padding:20px; margin-bottom:16px; }
-  .section h2 { font-size:13px; color:#999; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px; font-weight:500; }
+  .drop{border:2px dashed #333;border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+  .drop:active{background:#1a1a1a;border-color:#555}
+  .drop .icon{font-size:36px;margin-bottom:8px}
+  .drop p{color:#888;font-size:14px}
+  .drop input{display:none}
 
-  .drop {
-    border:2px dashed #333; border-radius:12px; padding:32px 20px; text-align:center;
-    cursor:pointer; transition:.2s;
-  }
-  .drop:active { background:#1a1a1a; border-color:#555; }
-  .drop .icon { font-size:36px; margin-bottom:8px; }
-  .drop p { color:#888; font-size:14px; }
-  .drop input { display:none; }
+  .asset-list{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .asset{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#666}
+  .asset img{width:100%;height:100%;object-fit:cover}
+  .asset .badge{position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px;font-size:10px;z-index:2}
+  .asset .del{position:absolute;top:4px;right:4px;width:20px;height:20px;background:rgba(0,0,0,0.8);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;z-index:2}
+  .asset.uploading::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,0.05) 0 10px,transparent 10px 20px);animation:slide 1s linear infinite;z-index:1}
+  @keyframes slide{0%{background-position:0 0}100%{background-position:28px 0}}
+  .asset .pct{position:absolute;bottom:4px;left:4px;right:4px;background:rgba(0,0,0,0.8);padding:2px 6px;border-radius:4px;font-size:10px;text-align:center;z-index:2}
 
-  .asset-list { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px; }
-  .asset { position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; background:#1a1a1a;
-    display:flex; align-items:center; justify-content:center; font-size:11px; color:#666; }
-  .asset .badge { position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); padding:2px 6px;
-    border-radius:4px; font-size:10px; }
-  .asset .del { position:absolute; top:4px; right:4px; width:18px; height:18px; background:rgba(0,0,0,0.7);
-    border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; }
+  textarea{width:100%;background:#0A0A0A;border:1px solid #222;border-radius:10px;padding:12px 14px;color:#fff;font-size:14px;font-family:inherit;resize:none;min-height:60px}
+  textarea:focus{outline:none;border-color:#444}
 
-  .style-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .style { padding:18px 14px; border:1px solid #222; border-radius:12px; cursor:pointer; transition:.2s; }
-  .style.active { border-color:#fff; background:#1a1a1a; }
-  .style .name { font-size:15px; font-weight:600; }
-  .style .desc { color:#777; font-size:12px; margin-top:4px; }
+  .ref-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .ref{padding:6px 10px;background:#1a1a1a;border-radius:6px;font-size:12px;color:#aaa;border:1px solid #222;cursor:pointer}
+  .ref.active{border-color:#fff;color:#fff}
 
-  textarea {
-    width:100%; background:#0A0A0A; border:1px solid #222; border-radius:10px;
-    padding:12px 14px; color:#fff; font-size:14px; font-family:inherit;
-    resize:none; min-height:60px;
-  }
-  textarea:focus { outline:none; border-color:#444; }
+  .btn{width:100%;padding:16px;border-radius:12px;border:0;background:#fff;color:#000;font-size:15px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+  .btn:active{transform:scale(0.98)}
+  .btn:disabled{background:#222;color:#666;cursor:not-allowed}
 
-  .ref-list { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-  .ref { padding:6px 10px; background:#1a1a1a; border-radius:6px; font-size:12px; color:#aaa;
-    border:1px solid #222; cursor:pointer; }
-  .ref.active { border-color:#fff; color:#fff; }
+  .progress{padding:24px;text-align:center}
+  .progress-bar{width:100%;height:6px;background:#222;border-radius:3px;overflow:hidden;margin:16px 0}
+  .progress-bar>div{height:100%;background:linear-gradient(90deg,#fff,#aaa);transition:width 0.3s}
+  .progress .pct{font-size:32px;font-weight:700}
+  .progress .log{color:#777;font-size:12px;margin-top:8px;min-height:18px;font-family:'JetBrains Mono',monospace}
 
-  .btn {
-    width:100%; padding:16px; border-radius:12px; border:0; background:#fff; color:#000;
-    font-size:15px; font-weight:600; cursor:pointer; transition:.2s;
-    font-family:inherit;
-  }
-  .btn:active { transform:scale(0.98); }
-  .btn:disabled { background:#222; color:#666; cursor:not-allowed; }
+  video{width:100%;border-radius:12px}
+  .result{text-align:center}
+  .result h3{font-size:18px;margin-bottom:14px}
+  .result-btns{margin-top:14px;display:flex;gap:8px}
 
-  .progress { padding:24px; text-align:center; }
-  .progress-bar { width:100%; height:6px; background:#222; border-radius:3px; overflow:hidden; margin:16px 0; }
-  .progress-bar > div { height:100%; background:linear-gradient(90deg, #fff, #aaa); transition:width 0.3s; }
-  .progress .pct { font-size:32px; font-weight:700; }
-  .progress .log { color:#777; font-size:12px; margin-top:8px; min-height:18px; }
-
-  video { width:100%; border-radius:12px; }
-  .result { text-align:center; }
-  .result h3 { font-size:18px; margin-bottom:14px; }
-
-  .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#fff;
-    color:#000; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:500; z-index:1000;
-    opacity:0; transition:.3s; pointer-events:none; }
-  .toast.show { opacity:1; }
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:1000;opacity:0;transition:.3s;pointer-events:none}
+  .toast.show{opacity:1}
 </style>
 </head>
 <body>
-
 <div class="container">
   <header>
     <h1>🎬 Vlog AI</h1>
-    <p>丢素材 · 选风格 · 出片</p>
+    <p>旅行风 · 卡点剪辑 · AI 自动出片</p>
   </header>
 
-  <!-- 1. 上传素材 -->
   <div class="section">
     <h2>① 素材</h2>
     <label class="drop">
@@ -103,57 +82,38 @@
     <div class="asset-list" id="assets"></div>
   </div>
 
-  <!-- 2. 风格 -->
   <div class="section">
-    <h2>② 风格</h2>
-    <div class="style-grid">
-      <div class="style active" data-style="daily">
-        <div class="name">日常 vlog</div>
-        <div class="desc">温和节奏，柔和过渡</div>
-      </div>
-      <div class="style" data-style="travel">
-        <div class="name">旅行电影感</div>
-        <div class="desc">慢节奏，宽屏感</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. 描述 -->
-  <div class="section">
-    <h2>③ 一句话描述（可选）</h2>
+    <h2>② 一句话描述（可选）</h2>
     <textarea id="prompt" placeholder="例：周末在公园遛狗的悠闲下午"></textarea>
   </div>
 
-  <!-- 4. 参考 vlog -->
   <div class="section">
-    <h2>④ 参考 vlog（可选）</h2>
-    <p style="font-size:12px; color:#666; margin-bottom:10px;">上传你喜欢的 vlog，AI 学它的剪法</p>
-    <label class="drop" style="padding:16px;">
-      <p style="font-size:13px;">📥 添加参考视频</p>
+    <h2>③ 参考 vlog（可选）</h2>
+    <p style="font-size:12px;color:#666;margin-bottom:10px">上传你喜欢的 vlog，AI 学它的剪法 + 抽 BGM</p>
+    <label class="drop" style="padding:16px">
+      <p style="font-size:13px">📥 添加参考视频</p>
       <input type="file" id="ref-file" accept="video/*">
     </label>
     <div class="ref-list" id="refs"></div>
   </div>
 
-  <!-- 5. 生成按钮 -->
   <button class="btn" id="go" disabled>开始剪片</button>
 
-  <!-- 进度 / 结果 -->
-  <div class="section" id="progress-box" style="display:none;">
+  <div class="section" id="progress-box" style="display:none">
     <div class="progress">
       <div class="pct" id="pct">0%</div>
-      <div class="progress-bar"><div id="bar" style="width:0%;"></div></div>
+      <div class="progress-bar"><div id="bar" style="width:0%"></div></div>
       <div class="log" id="log">等待开始...</div>
     </div>
   </div>
 
-  <div class="section" id="result-box" style="display:none;">
+  <div class="section" id="result-box" style="display:none">
     <div class="result">
       <h3>✨ 剪好了</h3>
       <video id="result-video" controls playsinline></video>
-      <div style="margin-top:14px; display:flex; gap:8px;">
-        <button class="btn" id="download" style="background:#fff;">下载</button>
-        <button class="btn" id="restart" style="background:#1a1a1a; color:#fff; border:1px solid #333;">再剪一个</button>
+      <div class="result-btns">
+        <button class="btn" id="download">下载</button>
+        <button class="btn" id="restart" style="background:#1a1a1a;color:#fff;border:1px solid #333">再剪一个</button>
       </div>
     </div>
   </div>
@@ -163,129 +123,179 @@
 
 <script>
 const API = '/vlog-api';
-const state = {
-  assets: [],   // {id, kind, filename}
-  style: 'daily',
-  refs: [],     // {id, name}
-  refId: null,
-  jobId: null,
-};
+const state = { assets: [], refs: [], refId: null, jobId: null };
 
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
-}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
 
-function renderAssets() {
-  const el = document.getElementById('assets');
-  el.innerHTML = state.assets.map(a => `
-    <div class="asset">
-      <span class="badge">${a.kind === 'video' ? '🎬' : '🖼️'}</span>
-      <span class="del" data-id="${a.id}">×</span>
-      <span>${a.id.slice(0,6)}</span>
-    </div>
-  `).join('');
-  el.querySelectorAll('.del').forEach(d => d.onclick = () => {
-    state.assets = state.assets.filter(a => a.id !== d.dataset.id);
-    renderAssets(); updateBtn();
+function renderAssets(){
+  const el=document.getElementById('assets');
+  el.innerHTML=state.assets.map(a=>{
+    const cls=a.uploading?'asset uploading':'asset';
+    const thumb=a.thumbDataUrl?`<img src="${a.thumbDataUrl}">`:(a.thumb_url?`<img src="${API}${a.thumb_url}">`:'<span>📁</span>');
+    const pct=a.uploading?`<div class="pct">${a.progress||0}%</div>`:'';
+    const del=a.uploading?'':`<div class="del" data-tmp="${a.tmpId}">×</div>`;
+    return `<div class="${cls}"><span class="badge">${a.kind==='video'?'🎬':'🖼️'}</span>${del}${thumb}${pct}</div>`;
+  }).join('');
+  el.querySelectorAll('.del').forEach(d=>d.onclick=()=>{
+    state.assets=state.assets.filter(a=>a.tmpId!==d.dataset.tmp);
+    renderAssets();updateBtn();
   });
 }
 
-async function uploadOne(file) {
-  const fd = new FormData(); fd.append('file', file);
-  const r = await fetch(`${API}/upload`, { method:'POST', body:fd });
-  if (!r.ok) throw new Error('upload fail');
-  return r.json();
+// Generate thumbnail in browser (instant)
+function genThumb(file, kind){
+  return new Promise(res=>{
+    if(kind==='image'){
+      const r=new FileReader();
+      r.onload=e=>res(e.target.result);
+      r.onerror=()=>res(null);
+      r.readAsDataURL(file);
+    }else{
+      const v=document.createElement('video');
+      v.muted=true;v.playsInline=true;v.preload='metadata';
+      const u=URL.createObjectURL(file);
+      v.src=u;
+      v.onloadeddata=()=>{
+        v.currentTime=Math.min(1,v.duration/2);
+      };
+      v.onseeked=()=>{
+        const c=document.createElement('canvas');
+        c.width=240;c.height=240*(v.videoHeight/v.videoWidth);
+        c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+        URL.revokeObjectURL(u);
+        try{res(c.toDataURL('image/jpeg',0.7));}catch{res(null);}
+      };
+      v.onerror=()=>{URL.revokeObjectURL(u);res(null);}
+      // safety timeout
+      setTimeout(()=>res(null),5000);
+    }
+  });
 }
 
-document.getElementById('files').onchange = async (e) => {
-  for (const f of e.target.files) {
-    try {
-      const a = await uploadOne(f);
-      state.assets.push(a);
-      renderAssets();
-      toast(`已加 ${a.kind === 'video' ? '视频' : '图片'}`);
-    } catch(err) { toast('上传失败'); }
+async function uploadOne(file, asset){
+  const fd=new FormData();fd.append('file',file);
+  return new Promise((res,rej)=>{
+    const x=new XMLHttpRequest();
+    x.open('POST',`${API}/upload`);
+    x.upload.onprogress=e=>{
+      if(e.lengthComputable){
+        asset.progress=Math.round(e.loaded/e.total*100);
+        renderAssets();
+      }
+    };
+    x.onload=()=>{
+      if(x.status>=200&&x.status<300){
+        try{res(JSON.parse(x.responseText));}catch(e){rej(e);}
+      }else rej(new Error('HTTP '+x.status));
+    };
+    x.onerror=()=>rej(new Error('Network'));
+    x.send(fd);
+  });
+}
+
+document.getElementById('files').onchange=async (e)=>{
+  const files=Array.from(e.target.files);
+  // Add placeholder cards immediately
+  const placeholders=files.map(f=>{
+    const kind=f.type.startsWith('video')?'video':'image';
+    return{tmpId:Math.random().toString(36).slice(2,10),kind,size:f.size,filename:f.name,uploading:true,progress:0};
+  });
+  state.assets.push(...placeholders);
+  renderAssets();
+
+  // Generate local thumbs in parallel
+  const thumbPromises=files.map((f,i)=>genThumb(f,placeholders[i].kind).then(d=>{
+    if(d){placeholders[i].thumbDataUrl=d;renderAssets();}
+  }));
+  // Upload in parallel (concurrency 3)
+  const UP_CONC=3;
+  let i=0;
+  async function next(){
+    while(i<files.length){
+      const idx=i++;
+      try{
+        const result=await uploadOne(files[idx],placeholders[idx]);
+        Object.assign(placeholders[idx],result,{uploading:false,progress:100});
+        renderAssets();
+      }catch(err){
+        placeholders[idx].uploading=false;
+        placeholders[idx].error=true;
+        toast(`上传失败: ${files[idx].name}`);
+        renderAssets();
+      }
+    }
   }
+  const workers=Array(Math.min(UP_CONC,files.length)).fill(0).map(()=>next());
+  await Promise.all(workers);
+  await Promise.all(thumbPromises);
   updateBtn();
+  e.target.value='';
 };
 
-document.querySelectorAll('.style').forEach(s => s.onclick = () => {
-  document.querySelectorAll('.style').forEach(x => x.classList.remove('active'));
-  s.classList.add('active');
-  state.style = s.dataset.style;
-});
-
-document.getElementById('ref-file').onchange = async (e) => {
-  const f = e.target.files[0]; if (!f) return;
+document.getElementById('ref-file').onchange=async(e)=>{
+  const f=e.target.files[0];if(!f)return;
   toast('上传参考视频...');
-  const fd = new FormData(); fd.append('file', f); fd.append('name', f.name);
-  const r = await fetch(`${API}/refs/upload`, { method:'POST', body:fd });
-  const ref = await r.json();
-  state.refs.push(ref); renderRefs();
-  toast('参考视频已添加');
+  const fd=new FormData();fd.append('file',f);fd.append('name',f.name);
+  const r=await fetch(`${API}/refs/upload`,{method:'POST',body:fd});
+  const ref=await r.json();
+  state.refs.push(ref);state.refId=ref.id;renderRefs();
+  toast('参考视频已加');
+  e.target.value='';
 };
 
-function renderRefs() {
-  document.getElementById('refs').innerHTML = state.refs.map(r => `
-    <div class="ref ${state.refId === r.id ? 'active' : ''}" data-id="${r.id}">${r.name.slice(0, 20)}</div>
-  `).join('');
-  document.querySelectorAll('.ref').forEach(el => el.onclick = () => {
-    state.refId = state.refId === el.dataset.id ? null : el.dataset.id;
-    renderRefs();
+function renderRefs(){
+  document.getElementById('refs').innerHTML=state.refs.map(r=>
+    `<div class="ref ${state.refId===r.id?'active':''}" data-id="${r.id}">${(r.name||'').slice(0,20)}</div>`
+  ).join('');
+  document.querySelectorAll('.ref').forEach(el=>el.onclick=()=>{
+    state.refId=state.refId===el.dataset.id?null:el.dataset.id;renderRefs();
   });
 }
 
-function updateBtn() {
-  document.getElementById('go').disabled = state.assets.length < 2;
+function updateBtn(){
+  const ready=state.assets.filter(a=>!a.uploading&&!a.error);
+  document.getElementById('go').disabled=ready.length<2;
 }
 
-document.getElementById('go').onclick = async () => {
-  const fd = new FormData();
-  fd.append('style', state.style);
-  fd.append('prompt', document.getElementById('prompt').value);
-  fd.append('asset_ids', state.assets.map(a => a.id).join(','));
-  if (state.refId) fd.append('ref_id', state.refId);
-  const r = await fetch(`${API}/jobs`, { method:'POST', body:fd });
-  const job = await r.json();
-  state.jobId = job.id;
-  document.getElementById('progress-box').style.display = 'block';
-  document.getElementById('go').style.display = 'none';
+document.getElementById('go').onclick=async()=>{
+  const ready=state.assets.filter(a=>!a.uploading&&!a.error&&a.id);
+  const fd=new FormData();
+  fd.append('prompt',document.getElementById('prompt').value);
+  fd.append('asset_ids',ready.map(a=>a.id).join(','));
+  if(state.refId)fd.append('ref_id',state.refId);
+  const r=await fetch(`${API}/jobs`,{method:'POST',body:fd});
+  const job=await r.json();
+  state.jobId=job.id;
+  document.getElementById('progress-box').style.display='block';
+  document.getElementById('go').style.display='none';
   poll();
 };
 
-async function poll() {
-  if (!state.jobId) return;
-  const r = await fetch(`${API}/jobs/${state.jobId}`);
-  const j = await r.json();
-  document.getElementById('pct').textContent = j.progress + '%';
-  document.getElementById('bar').style.width = j.progress + '%';
-  const lastLog = (j.logs || []).slice(-1)[0] || '';
-  document.getElementById('log').textContent = lastLog;
-  if (j.status === 'done') {
-    document.getElementById('progress-box').style.display = 'none';
-    document.getElementById('result-box').style.display = 'block';
-    const v = document.getElementById('result-video');
-    v.src = `${API}/jobs/${state.jobId}/result`;
+async function poll(){
+  if(!state.jobId)return;
+  const r=await fetch(`${API}/jobs/${state.jobId}`);
+  const j=await r.json();
+  document.getElementById('pct').textContent=j.progress+'%';
+  document.getElementById('bar').style.width=j.progress+'%';
+  const lastLog=(j.logs||[]).slice(-1)[0]||'';
+  document.getElementById('log').textContent=lastLog;
+  if(j.status==='done'){
+    document.getElementById('progress-box').style.display='none';
+    document.getElementById('result-box').style.display='block';
+    document.getElementById('result-video').src=`${API}/jobs/${state.jobId}/result`;
     return;
   }
-  if (j.status === 'error') {
-    document.getElementById('log').textContent = '❌ ' + (j.error || '失败');
+  if(j.status==='error'){
+    document.getElementById('log').textContent='❌ '+(j.error||'失败');
     return;
   }
-  setTimeout(poll, 1500);
+  setTimeout(poll,1500);
 }
 
-document.getElementById('download').onclick = () => {
-  window.location.href = `${API}/jobs/${state.jobId}/result`;
-};
-document.getElementById('restart').onclick = () => location.reload();
+document.getElementById('download').onclick=()=>window.location.href=`${API}/jobs/${state.jobId}/result`;
+document.getElementById('restart').onclick=()=>location.reload();
 
-// PWA service worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/vlog/sw.js').catch(()=>{});
-}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/vlog/sw.js').catch(()=>{});}
 </script>
 </body>
 </html>
