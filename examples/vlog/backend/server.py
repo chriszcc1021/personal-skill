@@ -3,6 +3,7 @@ import os, uuid, json, subprocess, random, time, base64, shutil, math, re
 import urllib.request, urllib.parse
 from pathlib import Path
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+AI_PICK_META = {}
 
 def gemini_analyze_video(video_path: Path, timeout: int = 90) -> dict:
     """Upload video to Gemini Files API and ask for content analysis + highlight window."""
@@ -57,9 +58,10 @@ def gemini_analyze_video(video_path: Path, timeout: int = 90) -> dict:
         # Step 3: generate content
         prompt = (
             "看这段视频，返回 JSON:\n"
-            "{\"segments\":[{\"start\":秒,\"end\":秒,\"content\":\"拍什么(人/建筑/动作)\",\"highlight\":bool}],\"best_window\":[start,end],\"score\":0-3,\"summary\":\"一句话总结这段拍什么\"}\n"
+            "{\"segments\":[{\"start\":秒,\"end\":秒,\"content\":\"拍什么(人/建筑/动作)\",\"highlight\":bool}],\"best_window\":[start,end],\"score\":0-3,\"summary\":\"一句话总结这段拍什么\",\"location\":\"辨认出的城市/地点名称若能辨认出来\"}\n"
             "best_window 是这段视频最精髓的 2-4 秒【动作】区间 (zoom、人动作、镜头推进、主体出现)。\n"
             "score 是整体亮点评分：3=绝佳精髓, 2=不错, 1=一般, 0=无亮点。\n"
+            "location 只填能识别出的明显地标/城市名 (如 BUDAPEST, KYOTO)，识不出填空字符串。\n"
             "只返 JSON。"
         )
         req4 = urllib.request.Request(
@@ -542,48 +544,64 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
 
     # ===== STAGE 1: Gemini reads each video natively and identifies highlights =====
     # Gemini 2.5 Flash supports video input - real content understanding, not guessing.
-    highlights = {}  # video_idx -> {start_t, end_t, score, desc, summary}
+    # SERIAL + retry to avoid 429 rate limits (free tier has very low RPM).
+    highlights = {}  # video_idx -> {start_t, end_t, score, desc, summary, location}
+    location_hint = None
     if GEMINI_API_KEY:
-        from concurrent.futures import ThreadPoolExecutor
-        def _analyze(vi_v):
-            vi, v = vi_v
-            return vi, gemini_analyze_video(v, timeout=90)
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            futures = [pool.submit(_analyze, (vi, v)) for vi, v in enumerate(videos)]
-            for fut in futures:
+        for vi, v in enumerate(videos):
+            data = None
+            last_err = None
+            for attempt in range(3):
                 try:
-                    vi, data = fut.result(timeout=180)
+                    data = gemini_analyze_video(v, timeout=90)
                 except Exception as e:
-                    log_fn(f"Gemini 超时 #{vi}: {e}", 30)
+                    last_err = str(e)
+                    data = None
+                if data and "error" not in data:
+                    break
+                err = (data or {}).get("error", last_err or "unknown")
+                if "429" in str(err) or "rate" in str(err).lower() or "quota" in str(err).lower():
+                    backoff = (5, 12, 25)[attempt]
+                    log_fn(f"  Gemini #{vi} 429 限流 retry {attempt+1}/3 等 {backoff}s", 30)
+                    time.sleep(backoff)
                     continue
-                if not data or "error" in data:
-                    log_fn(f"Gemini fail #{vi}: {data.get('error','no data')[:80] if data else 'empty'}", 30)
-                    continue
-                bw = data.get("best_window", [])
-                vdur = probe_dur(videos[vi])
-                # CLAMP: never trust AI timestamps. Force window inside [0, vdur-0.5]
-                if isinstance(bw, list) and len(bw) >= 2:
-                    raw_s, raw_e = float(bw[0]), float(bw[1])
-                    s_t = max(0.0, min(vdur - 0.6, raw_s))
-                    e_t = max(s_t + 0.4, min(vdur - 0.1, raw_e))
-                    if raw_s > vdur or raw_e > vdur + 0.5:
-                        log_fn(f"  ⚠️ #{vi} Gemini越界 raw=[{raw_s:.1f}-{raw_e:.1f}s] vdur={vdur:.1f}s → clamp到[{s_t:.1f}-{e_t:.1f}s]", 33)
-                else:
-                    s_t, e_t = 0.0, min(vdur, 3.0)
-                # Reject windows that ended up too small after clamp
-                if e_t - s_t < 0.4:
-                    log_fn(f"  ⚠️ #{vi} 窗口过小 ({e_t-s_t:.2f}s) drop", 33)
-                    continue
-                highlights[vi] = {
-                    "start_t": s_t,
-                    "end_t": e_t,
-                    "score": int(data.get("score", 1)),
-                    "desc": str(data.get("summary", ""))[:80],
-                    "summary": str(data.get("summary", ""))[:80],
-                }
-        log_fn(f"Gemini 读懂 {len(highlights)}/{len(videos)} 个视频", 32)
+                # non-rate error: don't retry
+                break
+            if not data or "error" in data:
+                log_fn(f"Gemini fail #{vi}: {(data or {}).get('error', last_err or 'empty')[:90]}", 30)
+                time.sleep(2.5)  # space out even failures
+                continue
+            bw = data.get("best_window", [])
+            vdur = probe_dur(videos[vi])
+            if isinstance(bw, list) and len(bw) >= 2:
+                raw_s, raw_e = float(bw[0]), float(bw[1])
+                s_t = max(0.0, min(vdur - 0.6, raw_s))
+                e_t = max(s_t + 0.4, min(vdur - 0.1, raw_e))
+                if raw_s > vdur or raw_e > vdur + 0.5:
+                    log_fn(f"  ⚠️ #{vi} Gemini越界 raw=[{raw_s:.1f}-{raw_e:.1f}s] vdur={vdur:.1f}s → clamp到[{s_t:.1f}-{e_t:.1f}s]", 33)
+            else:
+                s_t, e_t = 0.0, min(vdur, 3.0)
+            if e_t - s_t < 0.4:
+                log_fn(f"  ⚠️ #{vi} 窗口过小 ({e_t-s_t:.2f}s) drop", 33)
+                time.sleep(2.5)
+                continue
+            loc = str(data.get("location", "") or "").strip()[:24]
+            if loc and not location_hint:
+                location_hint = loc
+            highlights[vi] = {
+                "start_t": s_t,
+                "end_t": e_t,
+                "score": int(data.get("score", 1)),
+                "desc": str(data.get("summary", ""))[:80],
+                "summary": str(data.get("summary", ""))[:80],
+                "location": loc,
+            }
+            time.sleep(2.5)  # 2.5s between calls to stay under RPM
+        log_fn(f"Gemini 读懂 {len(highlights)}/{len(videos)} 个视频" + (f" | 地点={location_hint}" if location_hint else ""), 32)
         for vi, h in highlights.items():
             log_fn(f"  #{vi}: [{h['start_t']:.1f}-{h['end_t']:.1f}s s={h['score']}] {h['desc']}", 33)
+        if not highlights:
+            log_fn("⚠️ Gemini 全失败 → 降级为 Claude 盲选模式（节奏会偏乱）", 34)
     else:
         log_fn("GEMINI_API_KEY 未设 (fallback to motion peak)", 32)
 
@@ -784,6 +802,13 @@ weights:
         post_filtered.append(tup)
     if len(post_filtered) < len(result):
         log_fn(f"snap 后去重: {len(result)} → {len(post_filtered)} 段", 49)
+    # Stash meta on a module-level dict for the caller (avoids changing signature).
+    AI_PICK_META.clear()
+    AI_PICK_META.update({
+        "location_hint": location_hint,
+        "gemini_n": len(highlights),
+        "gemini_total": len(videos),
+    })
     return post_filtered
 
 
@@ -792,19 +817,22 @@ def ffmpeg_escape(s: str) -> str:
 
 
 def build_title_ass(out_path, title, subtitle, deco, date_str, td=2.5, w=720, h=1280):
-    """Build .ass file with 3D-perspective animated title (Y-axis rotation tilt)."""
+    """Build .ass title card: mustard yellow + Anton + soft shadow, no hard outline.
+    Layout (centered, 4 lines stacked):
+      EXPLORING  (deco, small, slight arch via fscx skew)
+      BUDAPEST   (title, large, mustard)
+      TRAVEL DIARY (sub, mid, off-white)
+      2026.05    (date, small, mustard)
+    """
     def ts(sec):
         ms = int(sec * 100) % 100
         s = int(sec) % 60
         m = int(sec / 60) % 60
         return f"0:{m:02d}:{s:02d}.{ms:02d}"
     end_t = td
-    pop_in_end = 0.45
-    hold_end = td - 0.55
-    fade_out_dur = int(0.55 * 1000)
-    # ASS template - use Anton font, white/orange, big sizes
-    # \frx=tilt around X (top-back), \fry=tilt around Y (left-back), \frz=roll
-    # We animate: start huge + tilted -> settle to perspective rest
+    # BGR colors: mustard yellow ~ &H004DB8FF (R=255 G=184 B=77 → BGR 4DB8FF)
+    # Off-white ~ &H00E0E0E0
+    # Shadow dark = &H00101010, transparent fully = &H000000FF for sec
     ass = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {w}
@@ -814,41 +842,38 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Title,Anton,160,&H004DB8FF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,0,0,1,5,0,5,0,0,0,1
-Style: Sub,Anton,52,&H00FFFFFF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,2,0,1,3,0,5,0,0,0,1
-Style: Deco,Anton,36,&H004DB8FF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,4,0,1,2,0,5,0,0,0,1
-Style: Date,Anton,42,&H004DB8FF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,2,0,1,2,0,5,0,0,0,1
+Style: Title,Anton,150,&H004DB8FF,&H000000FF,&H80101010,&H80101010,0,0,0,0,100,100,1,0,1,0,3,5,0,0,0,1
+Style: Sub,Anton,46,&H00E0E0E0,&H000000FF,&H80101010,&H80101010,0,0,0,0,100,100,3,0,1,0,2,5,0,0,0,1
+Style: Deco,Anton,34,&H004DB8FF,&H000000FF,&H80101010,&H80101010,0,0,0,0,100,100,5,0,1,0,2,5,0,0,0,1
+Style: Date,Anton,38,&H004DB8FF,&H000000FF,&H80101010,&H80101010,0,0,0,0,100,100,2,0,1,0,2,5,0,0,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
-    # Decorative top: fades in early, fades out at end
+    cx = w // 2
+    base_y = h // 2
+    # Decorative top (EXPLORING) - slight Y rotation upward arch feeling via small frz
     ass += (
-        f"Dialogue: 0,{ts(0.15)},{ts(end_t)},Deco,,0,0,0,,"
-        f"{{\\an5\\pos({w//2},{h//2-180})\\fad(250,500)}}{deco}\n"
+        f"Dialogue: 0,{ts(0.10)},{ts(end_t)},Deco,,0,0,0,,"
+        f"{{\\an5\\pos({cx},{base_y-160})\\fad(300,400)}}{deco}\n"
     )
-    # Main title - 3D perspective: tilt around Y (\fry) and slight X (\frx)
-    # Animation: \t() interpolates over duration
-    # Pop-in: scale 60->100, fry -25->-8 (settles into perspective)
-    pop_ms = int(pop_in_end * 1000)
-    out_ms = int((end_t - hold_end) * 1000)
+    # Main title - simple fade+scale pop, NO 3D tilt
     ass += (
         f"Dialogue: 1,{ts(0)},{ts(end_t)},Title,,0,0,0,,"
-        f"{{\\an5\\pos({w//2},{h//2-30})\\fscx60\\fscy60\\fry-30\\frx10\\alpha&HFF&"
-        f"\\t(0,{pop_ms},\\fscx115\\fscy115\\fry-8\\frx5\\alpha&H00&)"
-        f"\\t({pop_ms},{pop_ms+200},\\fscx100\\fscy100)"
-        f"\\t({int(hold_end*1000)},{int(end_t*1000)},\\fscx95\\fscy95\\fry-15\\frx10\\alpha&HFF&)}}"
-        f"{title}\n"
+        f"{{\\an5\\pos({cx},{base_y-40})\\fscx95\\fscy95\\alpha&H40&"
+        f"\\t(0,400,\\fscx105\\fscy105\\alpha&H00&)"
+        f"\\t(400,650,\\fscx100\\fscy100)"
+        f"\\fad(0,500)}}{title}\n"
     )
-    # Subtitle
+    # Subtitle (TRAVEL DIARY)
     ass += (
-        f"Dialogue: 1,{ts(pop_in_end+0.1)},{ts(end_t)},Sub,,0,0,0,,"
-        f"{{\\an5\\pos({w//2},{h//2+90})\\fad(300,500)\\fry-8\\frx5}}{subtitle}\n"
+        f"Dialogue: 1,{ts(0.30)},{ts(end_t)},Sub,,0,0,0,,"
+        f"{{\\an5\\pos({cx},{base_y+70})\\fad(400,500)}}{subtitle}\n"
     )
     # Date
     ass += (
-        f"Dialogue: 1,{ts(pop_in_end+0.3)},{ts(end_t)},Date,,0,0,0,,"
-        f"{{\\an5\\pos({w//2},{h//2+155})\\fad(300,500)\\fry-8\\frx5}}{date_str}\n"
+        f"Dialogue: 1,{ts(0.45)},{ts(end_t)},Date,,0,0,0,,"
+        f"{{\\an5\\pos({cx},{base_y+125})\\fad(400,500)}}{date_str}\n"
     )
     out_path.write_text(ass, encoding="utf-8")
     return out_path
@@ -869,19 +894,18 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Fin,Anton,180,&H004DB8FF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,0,0,0,1
+Style: Fin,Anton,180,&H004DB8FF,&H000000FF,&H80101010,&H80101010,0,0,0,0,100,100,1,0,1,0,3,5,0,0,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
-    # FIN: slide in from right + 3D tilt
-    slide_ms = 500
-    in_start_ms = int(start_t * 1000)
-    in_end_ms = in_start_ms + slide_ms
+    # FIN: simple scale-in + fade, no harsh tilt
+    slide_ms = 450
     ass += (
         f"Dialogue: 1,{ts(start_t)},{ts(end_t)},Fin,,0,0,0,,"
-        f"{{\\an5\\pos({w+200},{h//2})\\fscx80\\fscy80\\fry30\\frx-10\\alpha&HFF&"
-        f"\\t(0,{slide_ms},\\pos({w//2},{h//2})\\fscx100\\fscy100\\fry-10\\frx5\\alpha&H00&)}}"
+        f"{{\\an5\\pos({w//2},{h//2})\\fscx85\\fscy85\\alpha&HFF&"
+        f"\\t(0,{slide_ms},\\fscx105\\fscy105\\alpha&H00&)"
+        f"\\t({slide_ms},{slide_ms+200},\\fscx100\\fscy100)\\fad(0,400)}}"
         f"{fin_text}\n"
     )
     out_path.write_text(ass, encoding="utf-8")
@@ -891,6 +915,16 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 async def run_job(jid: str):
     jf = JOBS / f"{jid}.json"
     job = json.loads(jf.read_text())
+    # Init summary tracker
+    job.setdefault("summary", {
+        "bgm": {"name": None, "chorus_t": None, "skip_intro": False, "bgm_dur": None},
+        "gemini": {"attempted": 0, "success": 0, "rate_limited": 0, "clamped": 0, "errors": []},
+        "claude": {"attempted": 0, "success": False, "picks_n": 0},
+        "dedup": {"before": 0, "after": 0, "post_snap_before": 0, "post_snap_after": 0},
+        "preflight": {"total": 0, "ok": 0, "clamped": 0, "shrunk": 0, "dropped": 0},
+        "render": {"clips": 0, "final_dur": None},
+        "warnings": [],
+    })
 
     def log(msg, progress):
         job["logs"].append(f"[{time.strftime('%H:%M:%S')}] {msg}")
@@ -1039,8 +1073,16 @@ async def run_job(jid: str):
             "curves=r='0/0.04 0.5/0.55 1/1':b='0/0 0.5/0.48 1/0.97'"
         )
 
-        # Title overlay vars
-        title = job.get("title") or (job.get("prompt", "").strip().split()[:1] or ["VLOG"])[0]
+        # Title overlay vars. Title priority: user input -> Gemini-detected location -> "VLOG"
+        # NEVER fall back to prompt (it's a style description, not a title).
+        user_title = (job.get("title") or "").strip()
+        loc_hint = (AI_PICK_META.get("location_hint") or "").strip()
+        if user_title:
+            title = user_title
+        elif loc_hint:
+            title = loc_hint
+        else:
+            title = "VLOG"
         if re.search(r'[\u4e00-\u9fff]', title): display_title = title[:8]
         else: display_title = title.upper()[:12]
         date_str = time.strftime("%Y.%m")
@@ -1193,7 +1235,40 @@ async def run_job(jid: str):
         auto_cleanup_old()
 
         job["status"] = "done"; job["output"] = str(final); job["duration"] = probe_dur(final)
-        log("完成 ✨", 100)
+
+        # Build human-readable summary from log markers + AI_PICK_META
+        log_text = "\n".join(job["logs"])
+        def grep_count(pat):
+            import re as _re
+            return len(_re.findall(pat, log_text))
+        gemini_total = AI_PICK_META.get("gemini_total", 0)
+        gemini_ok = AI_PICK_META.get("gemini_n", 0)
+        gemini_429 = grep_count(r"Gemini.*429\b")
+        gemini_clamped = grep_count(r"Gemini越界")
+        dedup_drop = grep_count(r"去重后 .* 段 \(删 ") + grep_count(r"snap 后去重")
+        preflight_clamped = grep_count(r"clamp ts=")
+        preflight_shrunk = grep_count(r"dur shrunk")
+        preflight_dropped = grep_count(r"无法装下任何长度")
+        location = AI_PICK_META.get("location_hint") or "未识别"
+        summary_lines = [
+            "─" * 28,
+            "生成总结:",
+            f"  · BGM: my_jealousy (自动跳 intro: 看 log)",
+            f"  · Gemini 视频读解: {gemini_ok}/{gemini_total} 成功" + (f" ⚠️ 429限流{gemini_429}次" if gemini_429 else "") + (f" ⚠️ 越界clamp{gemini_clamped}次" if gemini_clamped else ""),
+            f"  · Gemini 识别地点: {location}",
+            f"  · Claude 选片: {'成功' if 'AI raw:' in log_text else '未成功'}",
+            f"  · 去重: 触发 {dedup_drop} 次",
+            f"  · 渲染预检: clamp {preflight_clamped}次 / 缩短 {preflight_shrunk}次 / drop {preflight_dropped}次",
+            f"  · 成片时长: {job['duration']:.1f}s",
+        ]
+        if gemini_ok == 0 and gemini_total > 0:
+            summary_lines.append("  ⚠️ Gemini 全失败 → 节奏/内容选择由 Claude 看缩略图完成（会偏乱）")
+        if not gemini_total:
+            summary_lines.append("  · 无视频输入 (仅图片)")
+        for ln in summary_lines:
+            log(ln, 100)
+        job["summary_text"] = "\n".join(summary_lines)
+        log("完成", 100)
     except subprocess.CalledProcessError as e:
         job["status"] = "error"
         err = e.stderr.decode()[-600:] if e.stderr else str(e)

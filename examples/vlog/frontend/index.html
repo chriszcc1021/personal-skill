@@ -175,6 +175,8 @@
         <button class="btn" id="download">下载</button>
         <button class="btn secondary" id="restart">再剪一个</button>
       </div>
+      <pre id="summary-text" style="margin-top:14px;padding:12px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;white-space:pre-wrap;word-break:break-all;line-height:1.55;max-height:240px;overflow:auto"></pre>
+      <details style="margin-top:8px"><summary style="cursor:pointer;font-size:11px;color:#555;padding:4px 0">详细日志</summary><pre id="full-log" style="margin-top:8px;padding:10px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#555;white-space:pre-wrap;word-break:break-all;line-height:1.5;max-height:300px;overflow:auto"></pre></details>
     </div>
   </div>
 </div>
@@ -422,6 +424,8 @@ async function poll(){
       document.getElementById('progress-box').style.display='none';
       document.getElementById('result-box').style.display='block';
       document.getElementById('result-video').src=`${API}/jobs/${state.jobId}/result`;
+      document.getElementById('summary-text').textContent=j.summary_text||'(无总结)';
+      document.getElementById('full-log').textContent=(j.logs||[]).join('\n');
       loadQuota();return;
     }
     if(j.status==='error'){
