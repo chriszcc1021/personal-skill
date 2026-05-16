@@ -498,8 +498,8 @@ async def run_job(jid: str):
         if not candidates: raise RuntimeError("No assets")
 
         # 4. AI picks WITH weights
-        # Target ~14-22 clips depending on tempo
-        n_target = max(10, min(22, int(total_beat / 0.6)))
+        # Fewer, longer clips so重头戏 can really breathe (1-2s each)
+        n_target = max(7, min(10, int(total_beat / 1.2)))
         picks = await loop.run_in_executor(None, ai_pick_clips,
                                            videos, images, job["prompt"], n_target, log)
         if not picks: raise RuntimeError("AI 未挑出片段")
@@ -512,7 +512,7 @@ async def run_job(jid: str):
         clip_durs = []
         for w in weights:
             d = (w / w_sum) * total_beat
-            d = max(0.35, min(2.2, d))  # bounds
+            d = max(0.7, min(2.8, d))  # bounds
             clip_durs.append(d)
         # Renormalize to fit target
         cur_sum = sum(clip_durs)
