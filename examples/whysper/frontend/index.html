@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#000000"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Whysper"/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
+<title>Whysper</title>
+<style>
+:root{
+  --bg:#000;
+  --fg:#fff;
+  --dim:#666;
+  --dim2:#333;
+  --red:#D6151E;
+  --grid:#1a1a1a;
+  --font:'Courier New','SFMono-Regular',Menlo,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:var(--font);overflow-x:hidden}
+body{padding-bottom:80px;letter-spacing:0.02em}
+button{font-family:inherit;background:transparent;color:inherit;border:none;cursor:pointer;font-size:inherit}
+
+/* top bar */
+.top{
+  position:sticky;top:0;background:var(--bg);z-index:50;
+  padding:env(safe-area-inset-top,12px) 16px 12px;
+  border-bottom:1px solid var(--dim2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:28px;height:28px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:2px}
+.brand-icon i{background:var(--fg);border-radius:1px}
+.brand-icon i.off{background:transparent}
+.brand-name{font-size:14px;letter-spacing:0.3em;font-weight:600;text-transform:uppercase}
+.stats{font-size:11px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase}
+
+/* tabs */
+.tabs{display:flex;border-bottom:1px solid var(--dim2);background:var(--bg);position:sticky;top:56px;z-index:49}
+.tab{flex:1;padding:14px;text-align:center;font-size:11px;letter-spacing:0.25em;color:var(--dim);text-transform:uppercase;border-bottom:2px solid transparent}
+.tab.active{color:var(--fg);border-bottom-color:var(--red)}
+
+/* views */
+.view{display:none;padding:16px}
+.view.active{display:block}
+
+/* record view */
+#view-rec.active{display:flex;flex-direction:column;align-items:center;padding-top:24px;min-height:calc(100vh - 200px)}
+.rec-status{font-size:11px;color:var(--dim);letter-spacing:0.3em;text-transform:uppercase;margin-bottom:24px;height:14px}
+.rec-status.live{color:var(--red)}
+.rec-btn{
+  width:200px;height:200px;border-radius:50%;
+  background:var(--bg);border:1px solid var(--dim2);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;transition:transform 0.1s,border-color 0.2s;
+  user-select:none;-webkit-user-select:none;
+}
+.rec-btn:active{transform:scale(0.96)}
+.rec-btn.recording{border-color:var(--red);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,21,30,0.4)}50%{box-shadow:0 0 0 20px rgba(214,21,30,0)}}
+.rec-dot-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:80px;height:80px}
+.rec-dot-grid b{background:var(--fg);border-radius:50%;opacity:0.3;transition:opacity 0.2s}
+.rec-btn.recording .rec-dot-grid b{opacity:1;background:var(--red)}
+.rec-label{margin-top:24px;font-size:12px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
+.rec-time{margin-top:8px;font-size:24px;color:var(--fg);letter-spacing:0.1em;font-variant-numeric:tabular-nums;min-height:32px}
+.rec-live{margin-top:16px;padding:12px;border:1px solid var(--dim2);min-height:60px;max-width:90%;width:340px;font-size:13px;color:#ccc;line-height:1.5;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
+.rec-live:empty::before{content:'松开停止 · 文字会出现在这里';color:var(--dim);font-size:11px;letter-spacing:0.2em;text-transform:uppercase}
+.rec-actions{display:flex;gap:12px;margin-top:20px}
+.rec-actions button{padding:10px 18px;border:1px solid var(--dim2);font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
+.rec-actions button.primary{border-color:var(--fg)}
+.rec-actions button.danger{border-color:var(--red);color:var(--red)}
+.img-preview{margin-top:12px;width:120px;height:120px;border:1px solid var(--dim2);object-fit:cover}
+
+/* list view */
+.day-head{margin:24px 0 12px;padding:0 4px;display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
+.day-head:first-child{margin-top:0}
+.day-head .line{flex:1;height:1px;background:var(--dim2)}
+.entry{border:1px solid var(--dim2);padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.15s}
+.entry:active{border-color:var(--fg)}
+.entry-meta{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px}
+.entry-title{font-size:14px;color:var(--fg);font-family:-apple-system,system-ui,sans-serif;font-weight:600;margin-bottom:6px;letter-spacing:0;line-height:1.4}
+.entry-text{font-size:13px;color:#bbb;line-height:1.6;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.entry-tags{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:10px;padding:2px 6px;border:1px solid var(--dim2);color:var(--dim);letter-spacing:0.1em}
+.entry-img{margin-top:10px;max-width:100%;max-height:200px;border:1px solid var(--dim2)}
+.empty{text-align:center;color:var(--dim);padding:60px 20px;font-size:12px;letter-spacing:0.3em;text-transform:uppercase}
+
+/* calendar view */
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.cal-title{font-size:14px;letter-spacing:0.3em;text-transform:uppercase}
+.cal-nav{display:flex;gap:8px}
+.cal-nav button{padding:6px 12px;border:1px solid var(--dim2);font-size:11px;letter-spacing:0.2em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-week{font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.1em;padding:4px 0;text-transform:uppercase}
+.cal-cell{aspect-ratio:1;border:1px solid var(--dim2);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-size:11px;color:var(--dim);cursor:pointer}
+.cal-cell.empty{border-color:transparent;cursor:default}
+.cal-cell .num{font-size:11px;color:#888}
+.cal-cell.lv1 .num,.cal-cell.lv2 .num,.cal-cell.lv3 .num{color:#fff}
+.cal-cell .dots{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:1px;width:14px;height:14px;margin-top:2px}
+.cal-cell .dots b{background:var(--dim);border-radius:50%;opacity:0.25}
+.cal-cell.lv1 .dots b{opacity:0.55;background:var(--fg)}
+.cal-cell.lv2 .dots b{opacity:0.85;background:var(--fg)}
+.cal-cell.lv3 .dots b{opacity:1;background:var(--red)}
+.cal-cell.today{border-color:var(--red)}
+.cal-cell.selected{background:var(--grid)}
+.cal-legend{margin-top:20px;display:flex;gap:14px;justify-content:center;font-size:10px;color:var(--dim);letter-spacing:0.15em;text-transform:uppercase}
+.cal-legend span{display:flex;align-items:center;gap:5px}
+.cal-legend i{display:inline-block;width:10px;height:10px;border-radius:50%}
+.cal-day-list{margin-top:24px}
+.cal-day-title{font-size:11px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--dim2);margin-bottom:12px}
+
+/* ask view */
+.ask-box{display:flex;gap:8px;margin-bottom:16px}
+.ask-box input{flex:1;padding:12px;background:transparent;color:var(--fg);border:1px solid var(--dim2);font-family:-apple-system,system-ui,sans-serif;font-size:14px;letter-spacing:0}
+.ask-box button{padding:12px 14px;border:1px solid var(--dim2);font-size:13px;min-width:46px}
+.ask-box button:last-child{border-color:var(--fg);font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
+.ask-result{white-space:pre-wrap;font-family:-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.6;color:#ccc;letter-spacing:0;padding:14px;border:1px solid var(--dim2);min-height:80px}
+.ask-result:empty::before{content:'问个问题，比如：上周关于 vlog 的想法';color:var(--dim);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font)}
+.organize-btn{display:block;margin:20px auto 0;padding:14px 28px;border:1px solid var(--red);color:var(--red);font-size:11px;letter-spacing:0.3em;text-transform:uppercase}
+.tag-cloud{margin-top:24px;display:flex;flex-wrap:wrap;gap:6px}
+.tag-cloud .tag{cursor:pointer;color:var(--fg);border-color:var(--fg)}
+
+/* bottom nav */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:#000;border-top:1px solid var(--dim2);display:flex;z-index:60;padding-bottom:env(safe-area-inset-bottom,0)}
+.bnav button{flex:1;padding:14px 6px;font-size:9px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:6px}
+.bnav button.active{color:var(--fg)}
+.bnav .ic{width:18px;height:18px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:1px}
+.bnav .ic b{background:currentColor;opacity:0.4;border-radius:50%}
+.bnav button.active .ic b{opacity:1}
+
+/* detail modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:100;display:none;flex-direction:column;padding:env(safe-area-inset-top,16px) 16px 16px}
+.modal.show{display:flex}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--dim2)}
+.modal-close{font-size:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--dim2)}
+.modal-body{flex:1;overflow-y:auto;padding:16px 0;font-family:-apple-system,system-ui,sans-serif}
+.modal-body .meta{font-size:11px;color:var(--dim);letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font);margin-bottom:12px}
+.modal-body h2{font-size:18px;margin:8px 0 16px;letter-spacing:0}
+.modal-body p{font-size:15px;line-height:1.7;color:#ddd;white-space:pre-wrap;margin:0 0 16px;letter-spacing:0}
+.modal-body audio{width:100%;margin:12px 0;filter:invert(0.85) hue-rotate(180deg)}
+.modal-body img.full{max-width:100%;border:1px solid var(--dim2);margin-top:12px}
+.modal-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--dim2)}
+.modal-actions button{flex:1;padding:12px;border:1px solid var(--dim2);font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
+.modal-actions button.danger{border-color:var(--red);color:var(--red)}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border:1px solid var(--dim2);font-size:12px;letter-spacing:0.1em;z-index:200;opacity:0;transition:opacity 0.3s;font-family:-apple-system,system-ui,sans-serif}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand">
+    <div class="brand-icon" id="brandIcon"></div>
+    <div class="brand-name">Whysper</div>
+  </div>
+  <div class="stats" id="statsBar">— · —</div>
+</div>
+
+<!-- views -->
+<section class="view active" id="view-rec">
+  <div class="rec-status" id="recStatus">按住下方按钮开始</div>
+  <div class="rec-btn" id="recBtn">
+    <div class="rec-dot-grid" id="recDotGrid"></div>
+  </div>
+  <div class="rec-time" id="recTime"></div>
+  <div class="rec-label">长按 / 按住录音</div>
+  <div class="rec-live" id="recLive"></div>
+  <img class="img-preview" id="imgPreview" style="display:none"/>
+  <div class="rec-actions">
+    <button onclick="document.getElementById('imgInput').click()">＋ 图片</button>
+    <button id="saveBtn" class="primary" style="display:none" onclick="saveEntry()">保存</button>
+    <button id="cancelBtn" class="danger" style="display:none" onclick="cancelEntry()">丢弃</button>
+  </div>
+  <input type="file" id="imgInput" accept="image/*" capture="environment" style="display:none" onchange="onImg(event)"/>
+</section>
+
+<section class="view" id="view-list">
+  <div class="ask-box" style="margin-bottom:12px">
+    <input type="text" id="askInput" placeholder="问你的笔记 · 按住麦克说话"/>
+    <button id="askMicBtn" title="按住说话">🎤</button>
+    <button onclick="doAsk()">问</button>
+  </div>
+  <div class="ask-result" id="askResult" style="display:none"></div>
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="organize-btn" style="margin:0;flex:1;padding:10px" onclick="doOrganize()">立刻整理今天</button>
+  </div>
+  <div class="tag-cloud" id="tagCloud"></div>
+  <div id="listBox"></div>
+</section>
+
+<section class="view" id="view-cal">
+  <div class="cal-head">
+    <div class="cal-title" id="calTitle"></div>
+    <div class="cal-nav">
+      <button onclick="calMove(-1)">‹</button>
+      <button onclick="calMove(0)">·</button>
+      <button onclick="calMove(1)">›</button>
+    </div>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-legend">
+    <span><i style="background:#333"></i>0</span>
+    <span><i style="background:rgba(255,255,255,0.55)"></i>1-3</span>
+    <span><i style="background:rgba(255,255,255,0.85)"></i>4-7</span>
+    <span><i style="background:#D6151E"></i>8+</span>
+  </div>
+  <div class="cal-day-list" id="calDayList"></div>
+</section>
+
+<section class="view" id="view-ask-deprecated" style="display:none">
+  <div class="ask-box">
+    <input type="text" id="askInputOld" placeholder="-"/>
+    <button>-</button>
+  </div>
+</section>
+
+<!-- bottom nav -->
+<nav class="bnav">
+  <button class="active" data-tab="rec" onclick="switchTab('rec')">
+    <span class="ic"><b></b><b></b><b></b><b></b><b style="opacity:1"></b><b></b><b></b><b></b><b></b></span>
+    <span>记</span>
+  </button>
+  <button data-tab="list" onclick="switchTab('list')">
+    <span class="ic"><b></b><b></b><b></b><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b><b></b><b></b><b></b></span>
+    <span>理</span>
+  </button>
+  <button data-tab="cal" onclick="switchTab('cal')">
+    <span class="ic"><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b><b></b><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b></span>
+    <span>历</span>
+  </button>
+</nav>
+
+<!-- detail modal -->
+<div class="modal" id="modal">
+  <div class="modal-head">
+    <div class="brand-name" style="font-size:12px">详情</div>
+    <button class="modal-close" onclick="closeModal()">×</button>
+  </div>
+  <div class="modal-body" id="modalBody"></div>
+  <div class="modal-actions">
+    <button onclick="deleteEntry()" class="danger">删除</button>
+    <button onclick="closeModal()">关闭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== brand icon (puzzle-piece-style dot grid: W shape) =====
+const ICON_PATTERN = [
+  1,0,1,0,1,
+  1,0,1,0,1,
+  1,0,1,0,1,
+  1,1,1,1,1,
+  0,1,0,1,0,
+]; // W in 5x4 → padded
+function renderBrandIcon(){
+  const grid = document.getElementById('brandIcon');
+  // 4x4 W-ish pattern
+  const pat=[1,0,0,1, 1,0,0,1, 1,1,1,1, 0,1,1,0];
+  grid.innerHTML = pat.map(v=>'<i class="'+(v?'':'off')+'"></i>').join('');
+}
+renderBrandIcon();
+// fill record dot grid (5x5)
+(function(){
+  const g=document.getElementById('recDotGrid');
+  g.innerHTML = Array.from({length:25}).map(()=>'<b></b>').join('');
+})();
+
+// ===== api =====
+const API = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
+const MEDIA = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-media';
+async function api(path, opts={}){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ===== tabs =====
+function switchTab(t){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.bnav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+t).classList.add('active');
+  document.querySelector('.bnav button[data-tab="'+t+'"]').classList.add('active');
+  if(t==='list'){loadList(); loadTags();}
+  if(t==='cal') loadCal();
+}
+
+// ===== recording =====
+let media=null,chunks=[],recStart=0,recTimer=null,liveSR=null,liveText='',pendingBlob=null,pendingImg=null;
+const recBtn=document.getElementById('recBtn');
+const recStatus=document.getElementById('recStatus');
+const recTime=document.getElementById('recTime');
+const recLive=document.getElementById('recLive');
+
+function fmtTime(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+
+async function startRec(){
+  if(media) return;
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    media = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4'});
+    chunks=[]; liveText='';
+    media.ondataavailable=e=>{if(e.data.size>0) chunks.push(e.data)};
+    media.onstop=()=>{
+      pendingBlob = new Blob(chunks, {type: media.mimeType});
+      stream.getTracks().forEach(t=>t.stop());
+      media=null;
+      recBtn.classList.remove('recording');
+      recStatus.textContent='松开 · 文字已捕获 · 检查后保存';
+      recStatus.classList.remove('live');
+      clearInterval(recTimer);
+      document.getElementById('saveBtn').style.display='inline-block';
+      document.getElementById('cancelBtn').style.display='inline-block';
+    };
+    media.start();
+    recStart = Date.now();
+    recBtn.classList.add('recording');
+    recStatus.textContent='录音中';
+    recStatus.classList.add('live');
+    recTime.textContent='0:00';
+    recLive.textContent='';
+    recTimer=setInterval(()=>{
+      recTime.textContent=fmtTime(Math.floor((Date.now()-recStart)/1000));
+    },200);
+    // start local speech recognition for live preview
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(SR){
+      liveSR = new SR();
+      liveSR.lang='zh-CN'; liveSR.interimResults=true; liveSR.continuous=true;
+      liveSR.onresult=e=>{
+        let txt='';
+        for(let i=0;i<e.results.length;i++) txt += e.results[i][0].transcript;
+        liveText=txt; recLive.textContent=txt;
+      };
+      liveSR.onerror=()=>{};
+      try{liveSR.start();}catch(_){}
+    }
+  }catch(e){
+    toast('麦克风权限被拒：'+e.message);
+  }
+}
+function stopRec(){
+  if(media && media.state==='recording'){
+    try{media.stop()}catch(_){}
+  }
+  if(liveSR){try{liveSR.stop()}catch(_){};liveSR=null}
+}
+
+// press-and-hold
+let pressTimer=null;
+recBtn.addEventListener('mousedown', e=>{e.preventDefault(); startRec();});
+recBtn.addEventListener('mouseup', e=>{stopRec();});
+recBtn.addEventListener('mouseleave', e=>{if(media) stopRec();});
+recBtn.addEventListener('touchstart', e=>{e.preventDefault(); startRec();}, {passive:false});
+recBtn.addEventListener('touchend', e=>{e.preventDefault(); stopRec();});
+recBtn.addEventListener('touchcancel', e=>{stopRec();});
+
+function onImg(e){
+  const f = e.target.files[0]; if(!f) return;
+  pendingImg = f;
+  const url = URL.createObjectURL(f);
+  const p = document.getElementById('imgPreview');
+  p.src=url; p.style.display='block';
+}
+
+function cancelEntry(){
+  pendingBlob=null; pendingImg=null; liveText=''; recLive.textContent='';
+  document.getElementById('imgPreview').style.display='none';
+  document.getElementById('saveBtn').style.display='none';
+  document.getElementById('cancelBtn').style.display='none';
+  recStatus.textContent='按住下方按钮开始';
+  recTime.textContent='';
+}
+
+async function saveEntry(){
+  if(!pendingBlob && !pendingImg && !liveText){toast('没东西可存');return}
+  recStatus.textContent='上传中...';
+  const fd = new FormData();
+  if(pendingBlob) fd.append('audio', pendingBlob, 'rec.webm');
+  if(pendingImg) fd.append('image', pendingImg);
+  if(liveText) fd.append('draft_text', liveText);
+  try{
+    const r = await fetch(API+'/entries', {method:'POST', body:fd});
+    if(!r.ok) throw new Error(await r.text());
+    const j = await r.json();
+    toast('已存档 · '+(j.final_text||liveText||'(无文字)').slice(0,20));
+    cancelEntry();
+    loadStats();
+  }catch(e){
+    toast('上传失败：'+e.message);
+    recStatus.textContent='上传失败 · 重试或丢弃';
+  }
+}
+
+// ===== list view =====
+async function loadList(){
+  const j = await api('/entries?limit=200');
+  const box = document.getElementById('listBox');
+  if(!j.entries.length){box.innerHTML='<div class="empty">还没有笔记 · 去录一条</div>';return}
+  let html='';
+  let curDate='';
+  j.entries.forEach(e=>{
+    if(e.local_date !== curDate){
+      curDate = e.local_date;
+      html += '<div class="day-head"><span>'+curDate+'</span><div class="line"></div></div>';
+    }
+    const t = new Date(e.created_at*1000);
+    const hm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+    html += '<div class="entry" onclick="openEntry(\''+e.id+'\')">'+
+      '<div class="entry-meta"><span>'+hm+'</span><span>'+(e.organized?'整理':'原始')+'</span></div>'+
+      (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
+      '<div class="entry-text">'+esc(e.final_text||e.draft_text||'(无文字)')+'</div>'+
+      (e.tags && e.tags.length?'<div class="entry-tags">'+e.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>':'')+
+      (e.image_file?'<img class="entry-img" src="'+MEDIA+'/images/'+e.image_file+'" loading="lazy"/>':'')+
+    '</div>';
+  });
+  box.innerHTML = html;
+}
+
+function esc(s){return (s||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}
+
+// ===== detail =====
+let curEntry=null;
+async function openEntry(id){
+  const e = await api('/entries/'+id);
+  curEntry=e;
+  const t = new Date(e.created_at*1000);
+  const dt = t.toLocaleString('zh-CN',{hour12:false});
+  document.getElementById('modalBody').innerHTML =
+    '<div class="meta">'+dt+(e.organized?' · 已整理':' · 原始')+'</div>'+
+    (e.title?'<h2>'+esc(e.title)+'</h2>':'')+
+    (e.audio_file?'<audio controls src="'+MEDIA+'/audio/'+e.audio_file+'"></audio>':'')+
+    '<p>'+esc(e.final_text||e.draft_text||'(无文字)')+'</p>'+
+    (e.tags && e.tags.length?'<div class="entry-tags">'+e.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>':'')+
+    (e.summary?'<div class="meta" style="margin-top:16px">今日小结</div><p style="font-size:13px;color:#aaa">'+esc(e.summary)+'</p>':'')+
+    (e.image_file?'<img class="full" src="'+MEDIA+'/images/'+e.image_file+'"/>':'');
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');curEntry=null}
+async function deleteEntry(){
+  if(!curEntry) return;
+  if(!confirm('删除这条？')) return;
+  await api('/entries/'+curEntry.id, {method:'DELETE'});
+  closeModal(); loadList(); loadStats();
+}
+
+// ===== calendar =====
+let calCur = new Date();
+async function loadCal(){
+  const y=calCur.getFullYear(),m=calCur.getMonth()+1;
+  document.getElementById('calTitle').textContent = y+' · '+String(m).padStart(2,'0');
+  const data = await api('/calendar?year='+y+'&month='+m);
+  const g = document.getElementById('calGrid');
+  const weeks=['日','一','二','三','四','五','六'];
+  let html = weeks.map(w=>'<div class="cal-week">'+w+'</div>').join('');
+  const first = new Date(y,m-1,1);
+  const firstDay = first.getDay();
+  const days = new Date(y,m,0).getDate();
+  for(let i=0;i<firstDay;i++) html+='<div class="cal-cell empty"></div>';
+  const today=new Date();const tStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  for(let d=1;d<=days;d++){
+    const ds = y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const n = data[ds]||0;
+    let lv='';
+    if(n>=8) lv='lv3'; else if(n>=4) lv='lv2'; else if(n>=1) lv='lv1';
+    const isToday = ds===tStr?'today':'';
+    html += '<div class="cal-cell '+lv+' '+isToday+'" onclick="showCalDay(\''+ds+'\')"><div class="num">'+d+'</div>'+
+      (n>0?'<div class="dots">'+Array.from({length:9}).map(()=>'<b></b>').join('')+'</div>':'')+
+    '</div>';
+  }
+  g.innerHTML = html;
+  document.getElementById('calDayList').innerHTML='';
+}
+function calMove(dir){
+  if(dir===0) calCur=new Date();
+  else calCur.setMonth(calCur.getMonth()+dir);
+  loadCal();
+}
+async function showCalDay(ds){
+  const j = await api('/entries?date='+ds+'&limit=200');
+  document.querySelectorAll('.cal-cell').forEach(c=>c.classList.remove('selected'));
+  const box = document.getElementById('calDayList');
+  if(!j.entries.length){box.innerHTML='<div class="cal-day-title">'+ds+' · 0 条</div><div class="empty">这一天什么也没说</div>';return}
+  let html = '<div class="cal-day-title">'+ds+' · '+j.entries.length+' 条</div>';
+  j.entries.forEach(e=>{
+    const t = new Date(e.created_at*1000);
+    const hm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+    html += '<div class="entry" onclick="openEntry(\''+e.id+'\')">'+
+      '<div class="entry-meta"><span>'+hm+'</span></div>'+
+      (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
+      '<div class="entry-text">'+esc(e.final_text||e.draft_text||'')+'</div>'+
+    '</div>';
+  });
+  box.innerHTML = html;
+}
+
+// ===== ask =====
+async function doAsk(){
+  const q = document.getElementById('askInput').value.trim();
+  if(!q) return;
+  const r = document.getElementById('askResult');
+  r.style.display='block'; r.textContent='思考中...';
+  try{
+    const j = await api('/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question:q})});
+    r.textContent = j.answer;
+  }catch(e){
+    r.textContent='出错：'+e.message;
+  }
+}
+async function doOrganize(){
+  toast('整理中...');
+  try{
+    const j = await api('/organize', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+    if(j.ok){
+      toast('整理完成 · '+j.updated+' 条 · '+(j.summary||'').slice(0,30));
+      loadStats(); if(document.querySelector('#view-list.active')) loadList();
+    } else toast('整理失败：'+(j.reason||''));
+  }catch(e){
+    toast('整理失败：'+e.message);
+  }
+}
+async function loadTags(){
+  const tags = await api('/tags');
+  const box = document.getElementById('tagCloud');
+  if(!tags.length){box.innerHTML='<div class="empty" style="padding:20px;width:100%">还没有标签 · 先记几条再整理</div>';return}
+  box.innerHTML = tags.slice(0,30).map(t=>'<span class="tag" onclick="filterTag(\''+t.tag+'\')">'+esc(t.tag)+' · '+t.count+'</span>').join('');
+}
+function filterTag(t){
+  switchTab('list');
+  // simple filter via list endpoint
+  api('/entries?tag='+encodeURIComponent(t)+'&limit=200').then(j=>{
+    const box=document.getElementById('listBox');
+    let html='<div class="day-head"><span>标签 · '+esc(t)+' · '+j.entries.length+' 条</span><div class="line"></div></div>';
+    j.entries.forEach(e=>{
+      const tt = new Date(e.created_at*1000);
+      const hm = String(tt.getHours()).padStart(2,'0')+':'+String(tt.getMinutes()).padStart(2,'0');
+      html += '<div class="entry" onclick="openEntry(\''+e.id+'\')">'+
+        '<div class="entry-meta"><span>'+e.local_date+' '+hm+'</span></div>'+
+        (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
+        '<div class="entry-text">'+esc(e.final_text||'')+'</div>'+
+      '</div>';
+    });
+    box.innerHTML=html;
+  });
+}
+
+// ===== stats =====
+async function loadStats(){
+  try{
+    const s = await api('/stats');
+    document.getElementById('statsBar').textContent = s.today_count+' 今日 · '+s.streak+' 连击';
+  }catch(_){}
+}
+
+// ===== toast =====
+let toastTimer=null;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+loadStats();
+
+// ===== ask voice button =====
+let askSR=null,askListening=false;
+const askMicBtn=document.getElementById('askMicBtn');
+if(askMicBtn){
+  const startAskListen=()=>{
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){toast('浏览器不支持语音输入');return}
+    askSR = new SR();
+    askSR.lang='zh-CN'; askSR.interimResults=true; askSR.continuous=false;
+    askSR.onresult=e=>{
+      let txt='';
+      for(let i=0;i<e.results.length;i++) txt += e.results[i][0].transcript;
+      document.getElementById('askInput').value = txt;
+    };
+    askSR.onend=()=>{
+      askListening=false; askMicBtn.style.background='transparent'; askMicBtn.style.color='';
+      const v = document.getElementById('askInput').value.trim();
+      if(v) doAsk();
+    };
+    askSR.onerror=()=>{askListening=false; askMicBtn.style.background='transparent';};
+    try{askSR.start(); askListening=true; askMicBtn.style.background='#D6151E'; askMicBtn.style.color='#fff';}catch(_){}
+  };
+  const stopAskListen=()=>{if(askSR){try{askSR.stop()}catch(_){}}};
+  askMicBtn.addEventListener('mousedown',e=>{e.preventDefault(); startAskListen();});
+  askMicBtn.addEventListener('mouseup',()=>stopAskListen());
+  askMicBtn.addEventListener('mouseleave',()=>{if(askListening) stopAskListen();});
+  askMicBtn.addEventListener('touchstart',e=>{e.preventDefault(); startAskListen();},{passive:false});
+  askMicBtn.addEventListener('touchend',e=>{e.preventDefault(); stopAskListen();});
+}
+
+// register sw
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
