@@ -558,11 +558,19 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
                     continue
                 bw = data.get("best_window", [])
                 vdur = probe_dur(videos[vi])
+                # CLAMP: never trust AI timestamps. Force window inside [0, vdur-0.5]
                 if isinstance(bw, list) and len(bw) >= 2:
-                    s_t = max(0, float(bw[0]))
-                    e_t = min(vdur, float(bw[1]))
+                    raw_s, raw_e = float(bw[0]), float(bw[1])
+                    s_t = max(0.0, min(vdur - 0.6, raw_s))
+                    e_t = max(s_t + 0.4, min(vdur - 0.1, raw_e))
+                    if raw_s > vdur or raw_e > vdur + 0.5:
+                        log_fn(f"  ⚠️ #{vi} Gemini越界 raw=[{raw_s:.1f}-{raw_e:.1f}s] vdur={vdur:.1f}s → clamp到[{s_t:.1f}-{e_t:.1f}s]", 33)
                 else:
-                    s_t, e_t = 0, min(vdur, 3.0)
+                    s_t, e_t = 0.0, min(vdur, 3.0)
+                # Reject windows that ended up too small after clamp
+                if e_t - s_t < 0.4:
+                    log_fn(f"  ⚠️ #{vi} 窗口过小 ({e_t-s_t:.2f}s) drop", 33)
+                    continue
                 highlights[vi] = {
                     "start_t": s_t,
                     "end_t": e_t,
@@ -690,21 +698,23 @@ weights:
         picks_data = [(p, 1.0) for p in ps]
         log_fn(f"用兜底分散选片: {len(picks_data)} 个", 44)
 
-    # Dedup: same source within ±2s window only keeps first; same source max 2 picks total
+    # Dedup: same source within ±4s window only keeps first; same source max 1 pick (was 2)
+    # Tightened to prevent same-video repetition after Gemini snap-to-midpoint collapses picks.
     seen = []
     src_count = {}
     deduped = []
+    MAX_PER_SRC = 1
+    DEDUP_WINDOW = 4.0
     for p, w in picks_data:
         s = samples[p]
         src_key = str(s["src"])
         ts = s["ts"]
-        # skip if same src and within 2.5s of any kept pick
         skip = False
         for ks, kts in seen:
-            if ks == src_key and abs(kts - ts) < 2.5:
+            if ks == src_key and abs(kts - ts) < DEDUP_WINDOW:
                 skip = True; break
         if skip: continue
-        if src_count.get(src_key, 0) >= 2: continue
+        if src_count.get(src_key, 0) >= MAX_PER_SRC: continue
         deduped.append((p, w))
         seen.append((src_key, ts))
         src_count[src_key] = src_count.get(src_key, 0) + 1
@@ -753,7 +763,25 @@ weights:
         result.append((s["src"], s["type"], ts, s["dur"], new_w))
     if snapped_count:
         log_fn(f"对齐精髓中心: {snapped_count}/{len(picks_data)} 个 clip", 48)
-    return result
+
+    # Post-snap dedup: after snapping multiple frames may collapse to same (src, ts).
+    # Keep only the first occurrence within ±2s for the same source.
+    post_seen = []
+    post_filtered = []
+    for tup in result:
+        src, typ, ts, dur, w = tup
+        if typ == "video":
+            dup = False
+            for psrc, pts in post_seen:
+                if psrc == str(src) and abs(pts - ts) < 2.0:
+                    dup = True; break
+            if dup:
+                continue
+            post_seen.append((str(src), ts))
+        post_filtered.append(tup)
+    if len(post_filtered) < len(result):
+        log_fn(f"snap 后去重: {len(result)} → {len(post_filtered)} 段", 49)
+    return post_filtered
 
 
 def ffmpeg_escape(s: str) -> str:
@@ -1021,6 +1049,41 @@ async def run_job(jid: str):
         clip_dir.mkdir(parents=True, exist_ok=True)
         clips = []
         last_idx = len(picks) - 1
+        # PREFLIGHT: validate every clip plan, drop or clamp out-of-bounds ones.
+        # Never trust upstream timestamps. ts+dur must fit inside src duration.
+        validated_picks = []
+        validated_durs = []
+        plan_lines = []
+        for i, ((src, typ, ts, src_dur, w), dur_beat) in enumerate(zip(picks, clip_durs)):
+            if typ == "video":
+                actual_dur = probe_dur(Path(src))
+                # Clamp ts so ts + dur_beat fits inside actual_dur with 0.1s safety margin
+                max_ts = max(0.0, actual_dur - dur_beat - 0.1)
+                if ts > max_ts:
+                    new_ts = max(0.0, actual_dur - dur_beat - 0.1)
+                    plan_lines.append(f"  clip{i}: {Path(src).stem[:8]} ts={ts:.1f}+{dur_beat:.1f}s > src={actual_dur:.1f}s → clamp ts={new_ts:.1f}")
+                    ts = new_ts
+                # If even after clamp we cannot fit a min 0.4s clip, drop
+                if actual_dur - ts < 0.4:
+                    plan_lines.append(f"  clip{i}: {Path(src).stem[:8]} 无法装下任何长度 (src={actual_dur:.1f}s ts={ts:.1f}) DROP")
+                    continue
+                # Shrink dur_beat if it exceeds remaining src time
+                if ts + dur_beat > actual_dur - 0.05:
+                    new_dur = max(0.4, actual_dur - ts - 0.05)
+                    plan_lines.append(f"  clip{i}: {Path(src).stem[:8]} dur shrunk {dur_beat:.1f}→{new_dur:.1f}s")
+                    dur_beat = new_dur
+                plan_lines.append(f"  clip{i}: {Path(src).stem[:8]} {ts:.1f}-{ts+dur_beat:.1f}s (src={actual_dur:.1f}s) ok")
+            else:
+                plan_lines.append(f"  clip{i}: image {dur_beat:.1f}s ok")
+            validated_picks.append((src, typ, ts, src_dur, w))
+            validated_durs.append(dur_beat)
+        log(f"渲染预检 {len(validated_picks)}/{len(picks)} 段合法", 75)
+        for ln in plan_lines:
+            log(ln, 75)
+        picks = validated_picks
+        clip_durs = validated_durs
+        last_idx = len(picks) - 1
+
         # Pre-generate ASS files for title (clip 0) and FIN (last clip)
         title_ass = clip_dir / "title.ass"
         fin_ass = clip_dir / "fin.ass"
