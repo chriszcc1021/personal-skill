@@ -64,6 +64,16 @@ def init_db():
             created_at INTEGER NOT NULL,
             PRIMARY KEY(project_id, character_id)
         )""")
+        c.execute("""CREATE TABLE IF NOT EXISTS vacancies(
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            role TEXT DEFAULT '',
+            priority TEXT DEFAULT 'mid',
+            why TEXT DEFAULT '',
+            jd_draft TEXT DEFAULT '',
+            status TEXT DEFAULT 'open',
+            created_at INTEGER NOT NULL
+        )""")
         c.execute("""CREATE TABLE IF NOT EXISTS tasks(
             id TEXT PRIMARY KEY,
             project_id TEXT NOT NULL,
@@ -915,6 +925,94 @@ def ai_risk_scan():
     except Exception:
         ai = {"summary":"AI 不可用，仅展示原始数据","actions":[]}
     return {"data": payload, "ai": ai, "generated_at": int(time.time())}
+
+# ---- B-3 虚位 (vacancies) + AI JD ----
+@app.get("/api/projects/{pid}/vacancies")
+def list_vacancies(pid: str):
+    with db() as c:
+        rows = c.execute("SELECT * FROM vacancies WHERE project_id=? AND status!='filled' ORDER BY created_at DESC", (pid,)).fetchall()
+        return [dict(r) for r in rows]
+
+@app.post("/api/projects/{pid}/vacancies")
+def create_vacancy(pid: str, body: dict = Body(...)):
+    vid = uuid.uuid4().hex[:8]
+    now = int(time.time())
+    with db() as c:
+        c.execute("INSERT INTO vacancies(id,project_id,role,priority,why,jd_draft,status,created_at) VALUES(?,?,?,?,?,?,?,?)",
+                  (vid, pid, body.get("role",""), body.get("priority","mid"), body.get("why",""), body.get("jd_draft",""), "open", now))
+        c.commit()
+        return dict(c.execute("SELECT * FROM vacancies WHERE id=?", (vid,)).fetchone())
+
+@app.patch("/api/vacancies/{vid}")
+def patch_vacancy(vid: str, body: dict = Body(...)):
+    fields = {k:v for k,v in body.items() if k in ("role","priority","why","jd_draft","status")}
+    if not fields: raise HTTPException(400)
+    sets = ",".join(f"{k}=?" for k in fields)
+    with db() as c:
+        c.execute(f"UPDATE vacancies SET {sets} WHERE id=?", (*fields.values(), vid))
+        c.commit()
+        return dict(c.execute("SELECT * FROM vacancies WHERE id=?", (vid,)).fetchone())
+
+@app.delete("/api/vacancies/{vid}")
+def delete_vacancy(vid: str):
+    with db() as c:
+        c.execute("DELETE FROM vacancies WHERE id=?", (vid,))
+        c.commit()
+    return {"ok": True}
+
+@app.post("/api/vacancies/{vid}/ai_jd")
+def ai_generate_jd(vid: str):
+    with db() as c:
+        v = c.execute("SELECT * FROM vacancies WHERE id=?", (vid,)).fetchone()
+        if not v: raise HTTPException(404)
+        p = c.execute("SELECT * FROM projects WHERE id=?", (v["project_id"],)).fetchone()
+        team = _gather_team(c, v["project_id"])
+    system = "你是 HR。按用户要求写 JD。完全拷贝示例的格式。"
+    fewshot = ("示例输出（只要这个格式，不要 markdown / #题 / --- / ** / emoji / 表格）：\n\n"
+        "GNG 项目以营运为主，缺一个专职本地化人手接东南亚五语言发图。\n\n"
+        "职责：\n- 营运文案跨语种适配与本地修辞\n- 与市场对接发图物料排期\n- 重大事件在其他国家市场面的传播发送\n\n"
+        "必备：\n- 2 年以上东南亚本地化经验\n- 熟悉 SEA 用户表达习惯\n- 能独立推进供应商排期\n\n"
+        "总长 200-280 字。如上：3 段、纯文本、三个冲手标题。不要加 #、不要加 ---、不要加 emoji、不要加表格、不要加加粗 **。")
+    user_payload = {
+        "project": {"name": p["name"], "goal": p["goal"]},
+        "role": v["role"], "priority": v["priority"], "why": v["why"],
+        "existing_team": [{"name":t["name"],"role":t["role"]} for t in team[:6]]
+    }
+    text = ai_chat(
+        messages=[{"role":"user","content":fewshot+"\n\n现在为下面的缺口写 JD，严格拷贝示例的格式（三段 / 纯文本 / 冲手标题 / 无 markdown）：\n"+json.dumps(user_payload, ensure_ascii=False, indent=2)}],
+        system=system, max_tokens=700, temperature=0.3
+    )
+    # safety net: strip markdown ornaments if AI ignored instructions
+    import re as _re
+    text = _re.sub(r'^\s*#+\s+', '', text, flags=_re.M)         # # headers
+    text = _re.sub(r'^---+\s*$', '', text, flags=_re.M)         # dividers
+    text = _re.sub(r'\*\*(.+?)\*\*', r'\1', text)               # bold
+    text = _re.sub(r'[�-􏰀-�☀-⟿⬀-⯿←-⇿⌀-⏿✀-➿]', '', text)  # emojis
+    text = _re.sub(r'\n{3,}', '\n\n', text).strip()
+    with db() as c:
+        c.execute("UPDATE vacancies SET jd_draft=? WHERE id=?", (text, vid))
+        c.commit()
+    return {"jd_draft": text, "generated_at": int(time.time())}
+
+# ---- B-3 任务拖拽换列 / 批量归档 ----
+@app.post("/api/tasks/{tid}/move")
+def move_task(tid: str, body: dict = Body(...)):
+    status = body.get("status")
+    if status not in ("todo","doing","done","archived"): raise HTTPException(400)
+    with db() as c:
+        c.execute("UPDATE tasks SET status=?, updated_at=? WHERE id=?", (status, int(time.time()), tid))
+        c.commit()
+        r = c.execute("SELECT * FROM tasks WHERE id=?", (tid,)).fetchone()
+        if not r: raise HTTPException(404)
+        return dict(r)
+
+@app.post("/api/projects/{pid}/archive_done")
+def archive_done(pid: str):
+    with db() as c:
+        cur = c.execute("UPDATE tasks SET status='archived', updated_at=? WHERE project_id=? AND status='done'",
+                        (int(time.time()), pid))
+        c.commit()
+        return {"archived": cur.rowcount}
 
 @app.get("/api/health")
 def health(): return {"ok": True}

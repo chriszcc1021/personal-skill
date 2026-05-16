@@ -389,6 +389,21 @@
   </div>
 </div>
 
+<!-- Vacancy editor modal -->
+<div class="ai-modal-mask" id="vac-mask">
+  <div class="big-modal">
+    <button class="close-x" onclick="document.getElementById('vac-mask').classList.remove('open')">✕</button>
+    <h3>虚位 · 招募草稿</h3>
+    <div class="sub">填上角色信息，让 Claude 生成 JD，拍板后可护贝给 HR</div>
+    <div class="body">
+      <div class="row2"><div class="field"><label>角色名 *</label><input id="vac-role" placeholder="如：商业化负责人"></div><div class="field"><label>优先级</label><select id="vac-priority"><option value="high">高</option><option value="mid">中</option><option value="low">低</option></select></div></div>
+      <div class="field"><label>为什么需要这个人</label><textarea id="vac-why" rows="2" placeholder="如：项目含营运但无专职变现操盘"></textarea></div>
+      <div class="field"><label>JD 草稿 <button type="button" class="btn btn-ai" id="vac-jd-btn" onclick="generateJD()" style="margin-left:8px;font-size:11px;padding:4px 10px">⚡ 生成 JD</button></label><textarea id="vac-jd" rows="14" placeholder="点上面按钮让 AI 生成"></textarea></div>
+    </div>
+    <div class="foot"><button class="btn btn-danger" id="vac-delete" onclick="deleteVacancy()">删除</button><div style="display:flex;gap:8px"><button class="btn" onclick="document.getElementById('vac-mask').classList.remove('open')">取消</button><button class="btn btn-primary" onclick="saveVacancy()">保存</button></div></div>
+  </div>
+</div>
+
 <!-- AI report modal -->
 <div class="ai-modal-mask" id="ai-mask">
   <div class="ai-modal">
@@ -744,11 +759,11 @@ function renderProjectDetail(){
       ${urgentTasks.length?`<div class="alert urgent ${filter==='urgent'?'on':''}" onclick="toggleFilter('urgent')"><span class="dot"></span>${urgentTasks.length} 条逾期${filter==='urgent'?'<span class="clear-x">✕</span>':''}</div>`:''}
       ${soonTasks.length?`<div class="alert soon ${filter==='soon'?'on':''}" onclick="toggleFilter('soon')"><span class="dot"></span>${soonTasks.length} 条 3 天内到期${filter==='soon'?'<span class="clear-x">✕</span>':''}</div>`:''}
     </div>`:''}
-    <div class="pmembers"><h3>团队 · ${(p.members||[]).length} 成员</h3><div class="pm-list" id="pm-list"></div></div>
+    <div class="pmembers"><h3>团队 · ${(p.members||[]).length} 成员 <button class="btn-ghost btn" style="font-size:10px;padding:3px 8px;margin-left:auto;float:right" onclick="openVacancyEditor('${p.id}',null)">+ 设虚位</button></h3><div class="pm-list" id="pm-list"></div><div id="vac-list" style="margin-top:14px"></div></div>
     <div class="kanban">
-      <div class="klane" id="lane-todo"><h4>待办 <span class="badge" id="bg-todo">0</span></h4><button class="add-task" onclick="quickAddTask('todo')">+ 加任务</button></div>
-      <div class="klane" id="lane-doing"><h4>进行中 <span class="badge" id="bg-doing">0</span></h4><button class="add-task" onclick="quickAddTask('doing')">+ 加任务</button></div>
-      <div class="klane" id="lane-done"><h4>已完成 <span class="badge" id="bg-done">0</span></h4><button class="add-task" onclick="quickAddTask('done')">+ 加任务</button></div>
+      <div class="klane" id="lane-todo" data-lane="todo"><h4>待办 <span class="badge" id="bg-todo">0</span></h4><button class="add-task" onclick="quickAddTask('todo')">+ 加任务</button></div>
+      <div class="klane" id="lane-doing" data-lane="doing"><h4>进行中 <span class="badge" id="bg-doing">0</span></h4><button class="add-task" onclick="quickAddTask('doing')">+ 加任务</button></div>
+      <div class="klane" id="lane-done" data-lane="done"><h4>已完成 <span class="badge" id="bg-done">0</span> <button class="btn-ghost btn" style="font-size:10px;padding:3px 8px;margin-left:auto" onclick="event.stopPropagation();archiveDone()">全部归档</button></h4><button class="add-task" onclick="quickAddTask('done')">+ 加任务</button></div>
     </div>
   `;
   state._flash = false;
@@ -766,6 +781,8 @@ function renderProjectDetail(){
   addBtn.className='pm-add'; addBtn.textContent='+ 加入成员';
   addBtn.onclick = () => openMemberDrawer(p.id, null);
   pmList.appendChild(addBtn);
+  // vacancies
+  loadVacancies(p.id);
 
   // tasks
   const cnt = {todo:0,doing:0,done:0};
@@ -784,12 +801,30 @@ function renderProjectDetail(){
     const nextStatus = lane==='todo'?'doing':lane==='doing'?'done':'doing';
     const nextLabel = lane==='todo'?'→':lane==='doing'?'✓':'↶';
     card.innerHTML = `<button class="quickmove" title="${({todo:'移到进行中',doing:'标记完成',done:'重新打开'})[lane]}" onclick="event.stopPropagation();moveTask('${t.id}','${nextStatus}')">${nextLabel}</button><div class="ttitle">${t.title}</div><div class="tbot">${ownerHtml}${ddlHtml}</div>`;
+    card.draggable = true;
+    card.dataset.tid = t.id;
+    card.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', t.id); card.style.opacity='0.5'; });
+    card.addEventListener('dragend', ()=>{ card.style.opacity='1'; });
     card.onclick = () => openTaskDrawer(t.id);
     document.getElementById('lane-'+lane).appendChild(card);
   });
   document.getElementById('bg-todo').textContent = cnt.todo;
   document.getElementById('bg-doing').textContent = cnt.doing;
   document.getElementById('bg-done').textContent = cnt.done;
+  // wire drop zones
+  ['todo','doing','done'].forEach(lane=>{
+    const el = document.getElementById('lane-'+lane);
+    el.addEventListener('dragover', e=>{ e.preventDefault(); el.style.background='var(--accent-bg)'; });
+    el.addEventListener('dragleave', ()=>{ el.style.background=''; });
+    el.addEventListener('drop', async e=>{
+      e.preventDefault(); el.style.background='';
+      const tid = e.dataTransfer.getData('text/plain');
+      if (!tid) return;
+      await api(`/tasks/${tid}/move`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:lane})});
+      await loadTasks(state.currentProj); renderProjectDetail();
+      toast('已移到 '+({todo:'待办',doing:'进行中',done:'已完成'})[lane]);
+    });
+  });
 }
 
 function toggleFilter(f){ state.kanbanFilter = state.kanbanFilter===f?null:f; renderProjectDetail(); }
@@ -847,6 +882,7 @@ async function runAICheckup(pid){
 document.getElementById('ai-mask').onclick = (e) => { if (e.target.id==='ai-mask') e.currentTarget.classList.remove('open'); };
 document.getElementById('bd-mask').onclick = (e) => { if (e.target.id==='bd-mask') e.currentTarget.classList.remove('open'); };
 document.getElementById('te-mask').onclick = (e) => { if (e.target.id==='te-mask') e.currentTarget.classList.remove('open'); };
+document.getElementById('vac-mask').onclick = (e) => { if (e.target.id==='vac-mask') e.currentTarget.classList.remove('open'); };
 
 // ============ B-2 拆任务 ============
 let _bdTasks = [], _bdProjId = null;
@@ -1233,6 +1269,98 @@ function toast(msg, action, actionLabel){
   if (action) document.getElementById('ta').onclick = ()=>{ action(); t.classList.remove('show'); };
   clearTimeout(window._toast);
   window._toast = setTimeout(()=>t.classList.remove('show'), action?6000:2400);
+}
+
+// ============ B-3 虚位 / JD / 归档 ============
+async function archiveDone(){
+  if (!state.currentProj) return;
+  const r = await api(`/projects/${state.currentProj}/archive_done`, {method:'POST'});
+  if (!r.archived) { toast('已完成列是空的'); return; }
+  await loadTasks(state.currentProj); renderProjectDetail();
+  toast(`归档了 ${r.archived} 条任务`);
+}
+
+async function loadVacancies(pid){
+  try {
+    const vacs = await api(`/projects/${pid}/vacancies`);
+    const root = document.getElementById('vac-list');
+    if (!root) return;
+    if (!vacs.length){ root.innerHTML = ''; return; }
+    root.innerHTML = '<div class="section-title" style="margin:0 0 8px">虚位 · 待招募</div>' + vacs.map(v=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px dashed var(--line3);border-radius:9px;margin-bottom:6px;cursor:pointer" onclick="openVacancyEditor('${pid}','${v.id}')">
+        <div style="width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--line3);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:13px">?</div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${v.role||'待填角色'}</div>${v.why?`<div style="font-size:11px;color:var(--dim);margin-top:2px">${v.why}</div>`:''}</div>
+        <span class="pstatus ${v.priority==='high'?'paused':v.priority==='low'?'archived':'active'}">${({high:'高优',mid:'中',medium:'中',low:'低'})[v.priority]||v.priority}</span>
+        <span style="font-size:11px;color:var(--accent);font-weight:600">${v.jd_draft?'有 JD':'生成 JD →'}</span>
+      </div>`).join('');
+  } catch(e){}
+}
+
+let _vacEditing = null;
+function openVacancyEditor(pid, vid){
+  _vacEditing = {pid, id:vid};
+  const isNew = !vid;
+  if (isNew) showVacancyModal({role:'',priority:'mid',why:'',jd_draft:''});
+  else api(`/projects/${pid}/vacancies`).then(arr=>{ const found = arr.find(x=>x.id===vid); if(found) showVacancyModal(found); });
+}
+function showVacancyModal(v){
+  document.getElementById('vac-role').value = v.role||'';
+  document.getElementById('vac-priority').value = v.priority||'mid';
+  document.getElementById('vac-why').value = v.why||'';
+  document.getElementById('vac-jd').value = v.jd_draft||'';
+  document.getElementById('vac-delete').style.display = v.id?'inline-flex':'none';
+  document.getElementById('vac-jd-btn').disabled = !v.id;
+  document.getElementById('vac-jd-btn').textContent = v.jd_draft ? '⚡ 重新生成 JD' : '⚡ 生成 JD';
+  _vacEditing.id = v.id || null;
+  document.getElementById('vac-mask').classList.add('open');
+}
+async function saveVacancy(closeAfter){
+  const data = {
+    role: document.getElementById('vac-role').value.trim(),
+    priority: document.getElementById('vac-priority').value,
+    why: document.getElementById('vac-why').value.trim(),
+    jd_draft: document.getElementById('vac-jd').value.trim()
+  };
+  if (!data.role){ toast('请填角色名'); return false; }
+  const {pid, id} = _vacEditing;
+  try {
+    let saved;
+    if (id) saved = await api(`/vacancies/${id}`, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    else saved = await api(`/projects/${pid}/vacancies`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    _vacEditing.id = saved.id;
+    document.getElementById('vac-jd-btn').disabled = false;
+    document.getElementById('vac-delete').style.display = 'inline-flex';
+    loadVacancies(pid);
+    if (closeAfter !== false) { document.getElementById('vac-mask').classList.remove('open'); toast('已保存'); }
+    return true;
+  } catch(e){ toast('保存失败：'+e.message); return false; }
+}
+async function deleteVacancy(){
+  const {pid, id} = _vacEditing;
+  if (!id) return;
+  await api(`/vacancies/${id}`, {method:'DELETE'});
+  document.getElementById('vac-mask').classList.remove('open');
+  toast('已删除'); loadVacancies(pid);
+}
+async function generateJD(){
+  if (!_vacEditing.id){
+    const ok = await saveVacancy(false);
+    if (!ok) return;
+  }
+  const id = _vacEditing.id;
+  const btn = document.getElementById('vac-jd-btn');
+  btn.disabled = true; btn.textContent = 'Claude 生成中...';
+  try {
+    const data = await api(`/vacancies/${id}/ai_jd`, {method:'POST'});
+    document.getElementById('vac-jd').value = data.jd_draft;
+    btn.textContent = '⚡ 重新生成 JD';
+    btn.disabled = false;
+    toast('JD 已生成');
+  } catch(e){
+    btn.textContent = '⚡ 生成 JD';
+    btn.disabled = false;
+    toast('生成失败：'+e.message);
+  }
 }
 
 routeRender();
