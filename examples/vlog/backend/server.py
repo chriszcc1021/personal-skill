@@ -554,32 +554,30 @@ async def run_job(jid: str):
             cum += seg
         clip_durs = snapped
 
-        # Force first/last clips long enough for title/FIN animations
-        MIN_FIRST = 2.8
-        MIN_LAST = 2.3
-        if clip_durs and clip_durs[0] < MIN_FIRST:
-            need = MIN_FIRST - clip_durs[0]
-            clip_durs[0] = MIN_FIRST
-            # steal from middle clips proportionally
-            mids = list(range(1, len(clip_durs)-1)) if len(clip_durs) > 2 else []
-            if mids:
-                per = need / len(mids)
-                for j in mids: clip_durs[j] = max(0.5, clip_durs[j] - per)
-        if len(clip_durs) > 1 and clip_durs[-1] < MIN_LAST:
-            need = MIN_LAST - clip_durs[-1]
-            clip_durs[-1] = MIN_LAST
-            mids = list(range(1, len(clip_durs)-1))
-            if mids:
-                per = need / len(mids)
-                for j in mids: clip_durs[j] = max(0.5, clip_durs[j] - per)
-        log(f"调整后开头/结尾: {clip_durs[0]:.2f}s / {clip_durs[-1]:.2f}s", 52)
+        # P0: Rhythm curve - explicit pattern (not by weight)
+        # Structure: HOLD (intro) - DROP (fast cuts) - MID (medium) - HOLD (outro)
+        n = len(clip_durs)
+        if n >= 5:
+            rhythm = [2.8]  # intro hold
+            # next 3 fast cuts (drop)
+            for _ in range(3): rhythm.append(0.55)
+            # medium for the rest except last
+            for _ in range(n - 5): rhythm.append(1.1)
+            rhythm.append(2.3)  # outro hold
+        elif n >= 3:
+            rhythm = [2.8] + [0.8] * (n - 2) + [2.3]
+        else:
+            rhythm = [2.8] * max(1, n-1) + [2.3]
+            rhythm = rhythm[:n]
+        clip_durs = rhythm
+        log(f"节奏曲线: {[f'{d:.1f}' for d in clip_durs]}", 52)
 
-        # 5. Render — 9:16 with overlaid title on first clip, FIN on last clip
+        # P0: Bright clean look (was too dark/heavy)
         cine_vf = (
             "scale=720:1280:force_original_aspect_ratio=increase,"
             "crop=720:1280,setsar=1,"
-            "eq=contrast=1.10:saturation=1.30:gamma=0.95,"
-            "curves=r='0/0 0.5/0.55 1/1':b='0/0 0.5/0.45 1/0.95'"
+            "eq=brightness=0.04:contrast=1.08:saturation=1.18,"
+            "curves=r='0/0.04 0.5/0.55 1/1':b='0/0 0.5/0.48 1/0.97'"
         )
 
         # Title overlay vars
@@ -600,6 +598,11 @@ async def run_job(jid: str):
         for i, ((src, typ, ts, src_dur, _w), dur_beat) in enumerate(zip(picks, clip_durs)):
             out = clip_dir / f"c{i:03d}.mp4"
             vf = cine_vf
+            # Ken Burns slow zoom for ALL video clips (P1: motion feel)
+            kb_zoom_end = 1.05  # subtle
+            vf_motion = vf + f",scale=iw*1.06:ih*1.06,crop=720:1280:'(iw-720)/2*(t/{max(0.1,dur_beat):.2f})':'(ih-1280)/2'"
+            # Simpler: use zoompan-like effect via scale+crop animated
+            # Actually keep vf clean for video, apply gentle zoom via vf chain below
             # First clip: overlay BUDAPEST title (pop in + hold + drift up out)
             if i == 0:
                 td = min(TITLE_DUR, dur_beat)
@@ -625,18 +628,34 @@ async def run_job(jid: str):
                     f"if(lt(t\\,{hold_end:.2f})\\,1\\,"
                     f"1-(t-{hold_end:.2f})/0.55))"
                 )
+                # Add subtitle line + decorative tag (P1: multi-layer info like ref vlog)
+                subtitle_text = ffmpeg_escape("TRAVEL DIARY")
+                deco_text = ffmpeg_escape("— EXPLORING —")
                 # Darken background lightly
                 vf += (
                     f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.30:t=fill:enable='lt(t\\,{td-0.3:.2f})',"
+                    # Decorative top tag
+                    f"drawtext=fontfile='{FONT_PATH}':text='{deco_text}':"
+                    f"fontcolor=#ffb84d:fontsize=32:"
+                    f"x=(w-text_w)/2:y=(h-text_h)/2-160:"
+                    f"alpha='if(lt(t\\,0.2)\\,0\\,if(lt(t\\,0.5)\\,(t-0.2)/0.3\\,if(lt(t\\,{hold_end:.2f})\\,1\\,1-(t-{hold_end:.2f})/0.55)))',"
+                    # Main title with skew via fontsize/y dynamic for parallax
                     f"drawtext=fontfile='{FONT_PATH}':text='{title_esc}':"
                     f"fontcolor=#ffb84d:fontsize='{size_expr}':"
                     f"x=(w-text_w)/2:y='{y_expr}':"
-                    f"borderw=4:bordercolor=#1a1a1a:"
+                    f"borderw=5:bordercolor=#1a1a1a:"
                     f"alpha='{alpha_expr}',"
-                    f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
-                    f"fontcolor=white:fontsize=40:"
+                    # Subtitle (smaller, English)
+                    f"drawtext=fontfile='{FONT_PATH}':text='{subtitle_text}':"
+                    f"fontcolor=white:fontsize=48:"
                     f"x=(w-text_w)/2:y=(h-text_h)/2+90:"
-                    f"alpha='if(lt(t\\,{pop_in+0.2:.2f})\\,0\\,if(lt(t\\,{pop_in+0.5:.2f})\\,(t-{pop_in+0.2:.2f})/0.3\\,if(lt(t\\,{hold_end:.2f})\\,1\\,1-(t-{hold_end:.2f})/0.55)))'"
+                    f"borderw=2:bordercolor=#1a1a1a:"
+                    f"alpha='if(lt(t\\,{pop_in+0.2:.2f})\\,0\\,if(lt(t\\,{pop_in+0.5:.2f})\\,(t-{pop_in+0.2:.2f})/0.3\\,if(lt(t\\,{hold_end:.2f})\\,1\\,1-(t-{hold_end:.2f})/0.55)))',"
+                    # Date below subtitle
+                    f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
+                    f"fontcolor=#ffb84d:fontsize=36:"
+                    f"x=(w-text_w)/2:y=(h-text_h)/2+160:"
+                    f"alpha='if(lt(t\\,{pop_in+0.4:.2f})\\,0\\,if(lt(t\\,{pop_in+0.7:.2f})\\,(t-{pop_in+0.4:.2f})/0.3\\,if(lt(t\\,{hold_end:.2f})\\,1\\,1-(t-{hold_end:.2f})/0.55)))'"
                 )
             # Last clip: overlay FIN (slide in from right + scale up)
             if i == last_idx:
@@ -669,17 +688,36 @@ async def run_job(jid: str):
                 )
             if typ == "video":
                 start_t = max(0, min(max(0, src_dur - dur_beat - 0.05), ts - dur_beat/2))
+                # P1: Ken Burns - slow zoom in across clip duration
+                # zoompan on video: scale up source 1.1x, animate crop offset slightly
+                zoom_speed = 0.0008  # subtle zoom-in
+                vf_kb = (
+                    "scale=792:1408:force_original_aspect_ratio=increase,"
+                    f"zoompan=z='min(1.0+{zoom_speed}*on,1.10)':d=1:s=720x1280:fps=30,"
+                    "setsar=1,"
+                    "eq=brightness=0.04:contrast=1.08:saturation=1.18,"
+                    "curves=r='0/0.04 0.5/0.55 1/1':b='0/0 0.5/0.48 1/0.97'"
+                )
+                # Replace cine_vf in vf with vf_kb (vf currently starts with cine_vf)
+                vf_final = vf_kb + vf[len(cine_vf):]
                 cmd = ["ffmpeg", "-y", "-ss", f"{start_t:.3f}", "-i", str(src),
                     "-t", f"{dur_beat:.3f}",
-                    "-vf", vf,
+                    "-vf", vf_final,
                     "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
                     "-an", str(out)]
             else:
                 frames = max(2, int(dur_beat * 30))
-                vf_img = vf + f",zoompan=z='min(zoom+0.0015,1.18)':d={frames}:s=720x1280"
-                # zoompan must be before draws -> rebuild order
+                # zoompan z grows over frames
+                vf_kb_img = (
+                    "scale=792:1408:force_original_aspect_ratio=increase,"
+                    f"zoompan=z='min(1.0+0.0015*on,1.15)':d={frames}:s=720x1280:fps=30,"
+                    "setsar=1,"
+                    "eq=brightness=0.04:contrast=1.08:saturation=1.18,"
+                    "curves=r='0/0.04 0.5/0.55 1/1':b='0/0 0.5/0.48 1/0.97'"
+                )
+                vf_final = vf_kb_img + vf[len(cine_vf):]
                 cmd = ["ffmpeg", "-y", "-loop", "1", "-i", str(src), "-t", f"{dur_beat:.3f}",
-                    "-vf", vf,  # zoompan on image without overlay separately
+                    "-vf", vf_final,
                     "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
                     "-an", "-pix_fmt", "yuv420p", str(out)]
             subprocess.run(cmd, check=True, capture_output=True)
