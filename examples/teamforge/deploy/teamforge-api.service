@@ -1,0 +1,14 @@
+[Unit]
+Description=TeamForge API
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/teamforge/backend
+ExecStart=/var/www/teamforge/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8083
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
