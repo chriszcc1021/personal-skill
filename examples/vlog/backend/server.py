@@ -331,18 +331,47 @@ def phash_dedup(samples, threshold=4):
         return samples
 
 
+def detect_motion_peaks(video: Path, dur: float) -> list:
+    """Return timestamps of scene/motion changes via ffmpeg scene detection."""
+    if dur < 1.5:
+        return []
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-i", str(video), "-vf",
+             "select='gt(scene,0.15)',showinfo", "-f", "null", "-"],
+            capture_output=True, timeout=60, text=True
+        )
+        peaks = []
+        for line in result.stderr.split("\n"):
+            m = re.search(r'pts_time:([0-9.]+)', line)
+            if m:
+                t = float(m.group(1))
+                if 0.3 < t < dur - 0.3:
+                    peaks.append(t)
+        peaks.sort()
+        merged = []
+        for p in peaks:
+            if not merged or p - merged[-1] > 0.8:
+                merged.append(p)
+        return merged[:8]
+    except Exception:
+        return []
+
+
 def ai_pick_clips(videos, images, prompt, n_target, log_fn):
     samples = []
     thumb_dir = OUTPUTS / "_thumbs"
     thumb_dir.mkdir(exist_ok=True)
+    motion_by_video = {}
     for v in videos:
         dur = probe_dur(v)
-        n_samples = min(8, max(2, int(dur / 2)))
+        n_samples = min(10, max(3, int(dur / 1.2)))
         for k in range(n_samples):
             ts = dur * (k + 0.5) / n_samples
             tp = thumb_dir / f"{uuid.uuid4().hex[:8]}.jpg"
             if extract_thumb(v, ts, tp):
                 samples.append({"src": v, "type": "video", "ts": ts, "thumb": tp, "dur": dur})
+        motion_by_video[str(v)] = detect_motion_peaks(v, dur)
     for img in images:
         tp = thumb_dir / f"{uuid.uuid4().hex[:8]}.jpg"
         try:
@@ -359,30 +388,56 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
     before = len(samples)
     samples = phash_dedup(samples)
     log_fn(f"去重后 {len(samples)} 帧 (-{before - len(samples)} 重复)", 28)
-    samples = samples[:25]
+    samples = samples[:30]
 
-    user_prompt = f"""你是电影感旅行 vlog 剪辑师。我有 {len(samples)} 个候选帧,编号 0-{len(samples)-1}。
+    # B 档: motion hints + frame index with timestamps
+    motion_hints = []
+    for vi, v in enumerate(videos):
+        peaks = motion_by_video.get(str(v), [])
+        if peaks:
+            peaks_str = ", ".join(f"{p:.1f}s" for p in peaks[:5])
+            motion_hints.append(f"视频 {Path(v).stem[:6]} 动作峰值: {peaks_str}")
+    motion_text = "\n".join(motion_hints) if motion_hints else "(无)"
 
-风格: 9:16 竖屏短片,电影感,有叙事节奏的卡点剪辑。
+    frame_info = []
+    for i, s in enumerate(samples):
+        src_short = Path(s["src"]).stem[:6]
+        if s["type"] == "image":
+            frame_info.append(f"#{i}: 图片 ({src_short})")
+        else:
+            frame_info.append(f"#{i}: 视频 {src_short} @ {s['ts']:.1f}s")
+    frame_index_str = "\n".join(frame_info)
+
+    user_prompt = f"""你是电影感旅行 vlog 剪辑师。我有 {len(samples)} 个候选帧。
+
+风格: 9:16 竖屏短片，电影感，有叙事节奏的卡点剪辑。
 用户描述: {prompt or "(无)"}
 
-挑 {n_target} 个最值得用的,按"叙事节奏"排:
-1. 开头 2-3 个: 地标/全景/天空(建立场景)
-2. 中段大量混切: 人物/街景/招牌/特写/细节(远近交错)
-3. 结尾 2-3 个: 标志性建筑/夕阳/静帧
+帧列表（带源视频和时间戳）:
+{frame_index_str}
+
+动作峰值提示（这些时刻有明显镜头/动作变化，可能是精髓）:
+{motion_text}
+
+挑 {n_target} 个最值得用的，按叙事节奏排:
+1. 开头 1-2 个: 地标/全景/天空
+2. 中段大量混切: 人物/街景/招牌/特写
+3. 结尾 1-2 个: 标志性建筑/夕阳/静帧
+
+⚠️ 重点: 如果某帧贴近动作峰值（±1s 内），强烈优先选这个帧——原素材正在发生动作/推进/zoom/镜头变化，这里就是精髓。
 
 要求:
 - 镜头多样性: 远景/特写/动态/静态混合
 - 严禁重复或近似镜头
-- 优先有内容的(人物/招牌/动作)
+- 优先有内容的(人物/招牌/动作/zoom)
 - 拒绝模糊/黑屏
 
-⚠️ 同时给出 weights 数组(与 picks 等长),代表每个镜头的叙事权重:
-- 2.0 = 重头戏(地标/人物特写/精彩动作),给长时长
+⚠️ weights 数组(与 picks 等长):
+- 2.0 = 重头戏(地标/人物特写/精髓动作如 zoom)，给长时长
 - 1.0 = 普通镜头
-- 0.5 = 空镜/过渡/转场,一闪而过
+- 0.5 = 空镜/过渡
 
-⚠️ 严格按此 JSON 格式返回,不要任何其他字符或 markdown 包裹:
+⚠️ 严格按此 JSON 格式返回，不要任何其他字符或 markdown 包裹:
 {{"picks":[0,5,2,8],"weights":[2.0,1.0,0.5,2.0],"reason":"中文一句话"}}"""
 
     images_for_api = [s["thumb"] for s in samples]
@@ -464,8 +519,29 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
         picks_data.append(picks_data[len(picks_data) % max(1, len(picks_data))])
     picks_data = picks_data[:n_target]
 
-    return [(samples[p]["src"], samples[p]["type"], samples[p]["ts"],
-             samples[p]["dur"], w) for (p, w) in picks_data]
+    # B 档: snap pick timestamps to nearest motion peak within ±1.5s
+    # so the clip window centers on action (e.g. zoom, gesture) not on idle frames
+    snapped_count = 0
+    result = []
+    for (p, w) in picks_data:
+        s = samples[p]
+        ts = s["ts"]
+        if s["type"] == "video":
+            peaks = motion_by_video.get(str(s["src"]), [])
+            best = None
+            best_d = 1.5
+            for pk in peaks:
+                d = abs(pk - ts)
+                if d < best_d:
+                    best_d = d
+                    best = pk
+            if best is not None and best_d > 0.1:
+                ts = best
+                snapped_count += 1
+        result.append((s["src"], s["type"], ts, s["dur"], w))
+    if snapped_count:
+        log_fn(f"对齐动作峰值: {snapped_count}/{len(picks_data)} 个 clip", 48)
+    return result
 
 
 def ffmpeg_escape(s: str) -> str:
