@@ -351,6 +351,33 @@ def call_claude_vision(prompt: str, image_paths: List[Path], max_tokens: int = 2
         return ""
 
 
+def detect_chorus_start(bgm_path: Path) -> float:
+    """Find approximate chorus/drop start by RMS energy jump."""
+    try:
+        import librosa
+        import numpy as np
+        y, sr = librosa.load(str(bgm_path), sr=22050, mono=True)
+        hop = 512
+        rms = librosa.feature.rms(y=y, hop_length=hop)[0]
+        times = librosa.frames_to_time(np.arange(len(rms)), sr=sr, hop_length=hop)
+        try:
+            from scipy.ndimage import uniform_filter1d
+            rms_s = uniform_filter1d(rms, size=int(sr/hop*3))
+        except:
+            rms_s = rms
+        if len(rms_s) < 10:
+            return 0.0
+        # Find first time after 8s where rms exceeds 80% of overall max
+        thresh = rms_s.max() * 0.80
+        for i, t in enumerate(times):
+            if t > 8 and rms_s[i] >= thresh:
+                # Snap to beat-friendly second
+                return float(t)
+        return 0.0
+    except Exception:
+        return 0.0
+
+
 def detect_beats(bgm_path: Path):
     """Returns (tempo_float, beat_times_list, total_duration)."""
     try:
@@ -860,10 +887,23 @@ async def run_job(jid: str):
                 ref_bgm = random.choice(bgm_pool)
         log(f"BGM: {ref_bgm.name}", 10)
 
-        # 2. Beats
+        # 2. Beats - skip BGM intro to start near chorus
         loop = asyncio.get_event_loop()
+        chorus_t = await loop.run_in_executor(None, detect_chorus_start, ref_bgm)
+        log(f"副歌起点探测: {chorus_t:.1f}s", 12)
         tempo, beats, bgm_dur = await loop.run_in_executor(None, detect_beats, ref_bgm)
-        log(f"节拍: BPM={tempo:.1f}, {len(beats)} beats, {bgm_dur:.1f}s", 15)
+        # Filter beats to start near chorus (snap to nearest beat at/after chorus_t)
+        bgm_offset = 0.0
+        if chorus_t > 0 and beats:
+            # Find first beat >= chorus_t - 0.3 (slight lead-in)
+            for b in beats:
+                if b >= chorus_t - 0.3:
+                    bgm_offset = b
+                    break
+            # Shift beats so first beat is at t=0
+            beats = [b - bgm_offset for b in beats if b >= bgm_offset]
+            bgm_dur = bgm_dur - bgm_offset
+        log(f"节拍: BPM={tempo:.1f}, {len(beats)} beats, BGM 跳过前 {bgm_offset:.1f}s", 15)
 
         target_dur = min(bgm_dur, 28.0)
         beat_schedule = build_beat_schedule(beats, target_dur)
@@ -909,10 +949,14 @@ async def run_job(jid: str):
         beat_pts = [0] + [sum(d for _,d in beat_schedule[:i+1]) for i in range(len(beat_schedule))]
         for d in clip_durs:
             target = cum + d
-            # find nearest beat boundary
-            best = min(beat_pts, key=lambda b: abs(b - target))
-            seg = best - cum
-            if seg < 0.3: seg = 0.4  # min
+            # find nearest beat boundary (exclude already-used ones)
+            candidates = [b for b in beat_pts if b > cum + 0.3]
+            if not candidates:
+                seg = d
+            else:
+                best = min(candidates, key=lambda b: abs(b - target))
+                seg = best - cum
+            if seg < 0.3: seg = 0.4
             snapped.append(seg)
             cum += seg
         clip_durs = snapped
@@ -935,6 +979,22 @@ async def run_job(jid: str):
             if mids:
                 per = need / len(mids)
                 for j in mids: clip_durs[j] = max(0.6, clip_durs[j] - per)
+
+        # RE-SNAP after MIN_FIRST/LAST adjustment so cuts land on beats again
+        snapped2 = []
+        cum = 0
+        for d in clip_durs:
+            target = cum + d
+            candidates = [b for b in beat_pts if b > cum + 0.3]
+            if not candidates:
+                seg = d
+            else:
+                best = min(candidates, key=lambda b: abs(b - target))
+                seg = best - cum
+            if seg < 0.3: seg = 0.4
+            snapped2.append(seg)
+            cum += seg
+        clip_durs = snapped2
         weights_log = [f'{w:.1f}->{d:.1f}s' for w, d in zip(weights, clip_durs)]
         log(f"权重驱动时长: {weights_log}", 52)
 
@@ -1043,10 +1103,11 @@ async def run_job(jid: str):
             "-c", "copy", str(merged)], check=True, capture_output=True)
         log("拼接完成", 88)
 
-        # 7. BGM mix
+        # 7. BGM mix (skip BGM intro via -ss bgm_offset)
         final = OUTPUTS / f"{jid}.mp4"
         video_len = probe_dur(merged)
-        subprocess.run(["ffmpeg", "-y", "-i", str(merged), "-i", str(ref_bgm),
+        subprocess.run(["ffmpeg", "-y", "-i", str(merged),
+            "-ss", f"{bgm_offset:.3f}", "-i", str(ref_bgm),
             "-c:v", "copy", "-c:a", "aac", "-b:a", "160k",
             "-map", "0:v", "-map", "1:a", "-t", f"{video_len:.2f}",
             "-af", f"afade=t=in:st=0:d=0.5,afade=t=out:st={max(0, video_len-1.5):.2f}:d=1.5,volume=0.8",
