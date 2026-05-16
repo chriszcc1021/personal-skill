@@ -1,0 +1,17 @@
+[Unit]
+Description=Vlog API (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/vlog
+Environment="VLOG_GATEWAY_URL=https://your-gateway.example.com"
+Environment="VLOG_GATEWAY_KEY=sk-REPLACE"
+Environment="GEMINI_API_KEY=REPLACE"
+ExecStart=/var/www/vlog/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8082
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
