@@ -363,7 +363,7 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
 
     user_prompt = f"""你是电影感旅行 vlog 剪辑师。我有 {len(samples)} 个候选帧,编号 0-{len(samples)-1}。
 
-风格: 9:16 竖屏短片,电影感,快节奏卡点(类似抖音/小红书旅行 vlog)。
+风格: 9:16 竖屏短片,电影感,有叙事节奏的卡点剪辑。
 用户描述: {prompt or "(无)"}
 
 挑 {n_target} 个最值得用的,按"叙事节奏"排:
@@ -377,8 +377,13 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
 - 优先有内容的(人物/招牌/动作)
 - 拒绝模糊/黑屏
 
+⚠️ 同时给出 weights 数组(与 picks 等长),代表每个镜头的叙事权重:
+- 2.0 = 重头戏(地标/人物特写/精彩动作),给长时长
+- 1.0 = 普通镜头
+- 0.5 = 空镜/过渡/转场,一闪而过
+
 ⚠️ 严格按此 JSON 格式返回,不要任何其他字符或 markdown 包裹:
-{{"picks":[0,5,2,8],"reason":"中文一句话"}}"""
+{{"picks":[0,5,2,8],"weights":[2.0,1.0,0.5,2.0],"reason":"中文一句话"}}"""
 
     images_for_api = [s["thumb"] for s in samples]
     resp = call_claude_vision(user_prompt, images_for_api, max_tokens=1500)
@@ -394,44 +399,52 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
             s = re.sub(r'\s*```$', '', s)
         return json.loads(s)
 
-    picks = None
+    picks_data = None  # list of (idx, weight)
     try:
         j = parse_resp(resp)
-        picks = [int(x) for x in j.get("picks", []) if 0 <= int(x) < len(samples)]
+        ps = [int(x) for x in j.get("picks", []) if 0 <= int(x) < len(samples)]
+        ws = j.get("weights", [1.0]*len(ps))
+        ws = [float(w) for w in ws[:len(ps)]] + [1.0]*max(0,len(ps)-len(ws))
+        picks_data = list(zip(ps, ws))
         log_fn(f"AI: {j.get('reason','')[:60]}", 40)
     except Exception as e:
         log_fn(f"AI 解析失败,重试: {e}", 38)
-        # Retry once with stricter prompt
-        retry_prompt = user_prompt + "\n\n上次你没返回有效 JSON。这次只输出 JSON 一行,无其他字符。"
+        retry_prompt = user_prompt + "\n\n上次你没返回有效 JSON。这次只输出 JSON 一行,无其他字符。必须包含 picks 和 weights 两个数组。"
         resp2 = call_claude_vision(retry_prompt, images_for_api, max_tokens=800)
         log_fn(f"AI retry: {resp2[:120]}", 40)
         try:
             j = parse_resp(resp2)
-            picks = [int(x) for x in j.get("picks", []) if 0 <= int(x) < len(samples)]
+            ps = [int(x) for x in j.get("picks", []) if 0 <= int(x) < len(samples)]
+            ws = j.get("weights", [1.0]*len(ps))
+            ws = [float(w) for w in ws[:len(ps)]] + [1.0]*max(0,len(ps)-len(ws))
+            picks_data = list(zip(ps, ws))
             log_fn(f"AI(重试): {j.get('reason','')[:60]}", 42)
         except: pass
 
-    if not picks:
-        # Fallback: alternate from different sources for variety
+    if not picks_data:
+        # Fallback: alternate from different sources
         by_src = {}
         for i, s in enumerate(samples):
             by_src.setdefault(str(s["src"]), []).append(i)
-        picks = []
+        ps = []
         srcs = list(by_src.values())
         idx = 0
-        while len(picks) < min(n_target, len(samples)):
+        while len(ps) < min(n_target, len(samples)):
             for s in srcs:
-                if idx < len(s):
-                    picks.append(s[idx])
-                if len(picks) >= n_target: break
+                if idx < len(s): ps.append(s[idx])
+                if len(ps) >= n_target: break
             idx += 1
             if idx > 20: break
-        log_fn(f"用兜底分散选片: {len(picks)} 个", 44)
+        picks_data = [(p, 1.0) for p in ps]
+        log_fn(f"用兜底分散选片: {len(picks_data)} 个", 44)
 
-    while len(picks) < n_target:
-        picks.append(picks[len(picks) % max(1, len(picks))])
-    return [(samples[p]["src"], samples[p]["type"], samples[p]["ts"], samples[p]["dur"])
-            for p in picks[:n_target]]
+    # Pad to n_target with cycling weights
+    while len(picks_data) < n_target:
+        picks_data.append(picks_data[len(picks_data) % max(1, len(picks_data))])
+    picks_data = picks_data[:n_target]
+
+    return [(samples[p]["src"], samples[p]["type"], samples[p]["ts"],
+             samples[p]["dur"], w) for (p, w) in picks_data]
 
 
 def ffmpeg_escape(s: str) -> str:
@@ -469,13 +482,10 @@ async def run_job(jid: str):
         log(f"节拍: BPM={tempo:.1f}, {len(beats)} beats, {bgm_dur:.1f}s", 15)
 
         target_dur = min(bgm_dur, 28.0)
-        schedule = build_beat_schedule(beats, target_dur)
-        total = 0; trimmed = []
-        for st, d in schedule:
-            if total + d > target_dur - 3.0: break  # leave 3s for intro/outro
-            trimmed.append((st, d)); total += d
-        schedule = trimmed
-        log(f"节拍卡点 {len(schedule)} 段,主体 {total:.1f}s", 20)
+        beat_schedule = build_beat_schedule(beats, target_dur)
+        # Sum total beat durations
+        total_beat = sum(d for _,d in beat_schedule)
+        log(f"节拍点 {len(beat_schedule)} 个,总长 {total_beat:.1f}s", 18)
 
         # 3. Assets
         assets_dir = user_dir(UPLOADS)
@@ -487,15 +497,43 @@ async def run_job(jid: str):
         images = [c for c in candidates if c not in videos]
         if not candidates: raise RuntimeError("No assets")
 
-        # 4. AI picks
-        n_target = len(schedule)
+        # 4. AI picks WITH weights
+        # Target ~14-22 clips depending on tempo
+        n_target = max(10, min(22, int(total_beat / 0.6)))
         picks = await loop.run_in_executor(None, ai_pick_clips,
                                            videos, images, job["prompt"], n_target, log)
         if not picks: raise RuntimeError("AI 未挑出片段")
-        log(f"AI 排好 {len(picks)} 段", 50)
 
-        # 5. Render — 9:16 (720x1280), warm cinematic, beat-aligned
-        # cinematic look: contrast+saturation+warm curves+slight letterbox (top/bottom 7%)
+        # 5. Allocate beat durations to picks BY WEIGHT
+        # total beat duration to distribute over picks
+        weights = [p[4] for p in picks]
+        w_sum = sum(weights) or len(picks)
+        # Each clip gets duration proportional to its weight (with min/max bounds)
+        clip_durs = []
+        for w in weights:
+            d = (w / w_sum) * total_beat
+            d = max(0.35, min(2.2, d))  # bounds
+            clip_durs.append(d)
+        # Renormalize to fit target
+        cur_sum = sum(clip_durs)
+        scale = total_beat / cur_sum if cur_sum > 0 else 1
+        clip_durs = [d * scale for d in clip_durs]
+        log(f"AI 权重分配: {len(picks)} 段,时长 [{min(clip_durs):.2f}, {max(clip_durs):.2f}]s", 50)
+        # Snap each to nearest beat boundary for cut feel
+        snapped = []
+        cum = 0
+        beat_pts = [0] + [sum(d for _,d in beat_schedule[:i+1]) for i in range(len(beat_schedule))]
+        for d in clip_durs:
+            target = cum + d
+            # find nearest beat boundary
+            best = min(beat_pts, key=lambda b: abs(b - target))
+            seg = best - cum
+            if seg < 0.3: seg = 0.4  # min
+            snapped.append(seg)
+            cum += seg
+        clip_durs = snapped
+
+        # 5. Render — 9:16 with overlaid title on first clip, FIN on last clip
         cine_vf = (
             "scale=720:1280:force_original_aspect_ratio=increase,"
             "crop=720:1280,setsar=1,"
@@ -503,88 +541,81 @@ async def run_job(jid: str):
             "curves=r='0/0 0.5/0.55 1/1':b='0/0 0.5/0.45 1/0.95'"
         )
 
+        # Title overlay vars
+        title = job.get("title") or (job.get("prompt", "").strip().split()[:1] or ["VLOG"])[0]
+        if re.search(r'[\u4e00-\u9fff]', title): display_title = title[:8]
+        else: display_title = title.upper()[:12]
+        date_str = time.strftime("%Y.%m")
+        title_esc = ffmpeg_escape(display_title)
+        date_esc = ffmpeg_escape(date_str)
+
+        TITLE_DUR = 1.8  # how long title overlay lasts
+        FIN_DUR = 1.2
+
         clip_dir = OUTPUTS / jid
         clip_dir.mkdir(parents=True, exist_ok=True)
         clips = []
-        for i, ((st_beat, dur_beat), (src, typ, ts, src_dur)) in enumerate(zip(schedule, picks)):
+        last_idx = len(picks) - 1
+        for i, ((src, typ, ts, src_dur, _w), dur_beat) in enumerate(zip(picks, clip_durs)):
             out = clip_dir / f"c{i:03d}.mp4"
+            vf = cine_vf
+            # First clip: overlay BUDAPEST title (fade out)
+            if i == 0:
+                td = min(TITLE_DUR, dur_beat)
+                # Use enable for time-gated darken; text alpha controls fade
+                vf += (
+                    f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.55:t=fill:enable='lt(t\\,{td-0.3:.2f})',"
+                    f"drawtext=fontfile='{FONT_PATH}':text='{title_esc}':"
+                    f"fontcolor=#ffb84d:fontsize=120:"
+                    f"x=(w-text_w)/2:y=(h-text_h)/2-40:"
+                    f"borderw=4:bordercolor=#1a1a1a:"
+                    f"alpha='if(lt(t\\,0.3)\\,t/0.3\\,if(lt(t\\,{td-0.4:.2f})\\,1\\,if(lt(t\\,{td:.2f})\\,1-(t-{td-0.4:.2f})/0.4\\,0)))',"
+                    f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
+                    f"fontcolor=white:fontsize=40:"
+                    f"x=(w-text_w)/2:y=(h-text_h)/2+80:"
+                    f"alpha='if(lt(t\\,0.5)\\,0\\,if(lt(t\\,{td-0.4:.2f})\\,1\\,if(lt(t\\,{td:.2f})\\,1-(t-{td-0.4:.2f})/0.4\\,0)))'"
+                )
+            # Last clip: overlay FIN (fade in towards end)
+            if i == last_idx:
+                fd = min(FIN_DUR, dur_beat)
+                t0 = max(0, dur_beat - fd)
+                fin_esc = ffmpeg_escape("FIN")
+                vf += (
+                    f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.45:t=fill:enable='gte(t\\,{t0+0.3:.2f})',"
+                    f"drawtext=fontfile='{FONT_PATH}':text='{fin_esc}':"
+                    f"fontcolor=#ffb84d:fontsize=140:"
+                    f"x=(w-text_w)/2:y=(h-text_h)/2:"
+                    f"borderw=4:bordercolor=#1a1a1a:"
+                    f"alpha='if(lt(t\\,{t0+0.2:.2f})\\,0\\,min(1\\,(t-{t0+0.2:.2f})/0.3))'"
+                )
             if typ == "video":
                 start_t = max(0, min(max(0, src_dur - dur_beat - 0.05), ts - dur_beat/2))
                 cmd = ["ffmpeg", "-y", "-ss", f"{start_t:.3f}", "-i", str(src),
                     "-t", f"{dur_beat:.3f}",
-                    "-vf", cine_vf,
+                    "-vf", vf,
                     "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
                     "-an", str(out)]
             else:
                 frames = max(2, int(dur_beat * 30))
-                vf = cine_vf + f",zoompan=z='min(zoom+0.0015,1.18)':d={frames}:s=720x1280"
+                vf_img = vf + f",zoompan=z='min(zoom+0.0015,1.18)':d={frames}:s=720x1280"
+                # zoompan must be before draws -> rebuild order
                 cmd = ["ffmpeg", "-y", "-loop", "1", "-i", str(src), "-t", f"{dur_beat:.3f}",
-                    "-vf", vf,
+                    "-vf", vf,  # zoompan on image without overlay separately
                     "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
                     "-an", "-pix_fmt", "yuv420p", str(out)]
             subprocess.run(cmd, check=True, capture_output=True)
             clips.append(out)
-        log(f"渲染 {len(clips)} 主体段", 75)
+        log(f"渲染 {len(clips)} 段(片头/片尾叠在素材上)", 80)
 
-        # 6. Intro/outro with big animated title
-        title = job.get("title") or (job.get("prompt", "").strip().split()[:1] or ["VLOG"])[0]
-        # If user prompt is Chinese, use it; else uppercase ascii
-        if re.search(r'[\u4e00-\u9fff]', title):
-            display_title = title[:8]
-        else:
-            display_title = title.upper()[:12]
-        date_str = time.strftime("%Y.%m")
-        title_esc = ffmpeg_escape(display_title)
-        date_esc = ffmpeg_escape(date_str)
-        intro_path = clip_dir / "intro.mp4"
-        outro_path = clip_dir / "outro.mp4"
-
-        # Intro 1.5s — text grows + fades in (single filter chain, no [labels])
-        intro_vf = (
-            f"drawtext=fontfile='{FONT_PATH}':text='{title_esc}':"
-            f"fontcolor=#ffb84d:fontsize='80+t*40':"
-            f"x=(w-text_w)/2:y=(h-text_h)/2-40:"
-            f"borderw=4:bordercolor=#1a1a1a:"
-            f"alpha='if(lt(t\\,0.3)\\,t/0.3\\,1)',"
-            f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
-            f"fontcolor=white:fontsize=40:"
-            f"x=(w-text_w)/2:y=(h-text_h)/2+120:"
-            f"alpha='if(lt(t\\,0.6)\\,0\\,if(lt(t\\,0.9)\\,(t-0.6)/0.3\\,1))'"
-        )
-        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#0a0a0a:s=720x1280:d=1.5:r=30",
-            "-vf", intro_vf,
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-pix_fmt", "yuv420p",
-            "-t", "1.5", str(intro_path)], check=True, capture_output=True)
-
-        # Outro 1.5s
-        outro_title = ffmpeg_escape("FIN")
-        outro_vf = (
-            f"drawtext=fontfile='{FONT_PATH}':text='{outro_title}':"
-            f"fontcolor=#ffb84d:fontsize=140:"
-            f"x=(w-text_w)/2:y=(h-text_h)/2-60:"
-            f"borderw=4:bordercolor=#1a1a1a:"
-            f"alpha='if(lt(t\\,0.4)\\,t/0.4\\,1)',"
-            f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
-            f"fontcolor=white:fontsize=36:"
-            f"x=(w-text_w)/2:y=(h-text_h)/2+80:"
-            f"alpha='if(lt(t\\,0.6)\\,0\\,(t-0.6)/0.4)'"
-        )
-        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#0a0a0a:s=720x1280:d=1.5:r=30",
-            "-vf", outro_vf,
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-pix_fmt", "yuv420p",
-            "-t", "1.5", str(outro_path)], check=True, capture_output=True)
-        log("生成片头片尾", 82)
-
-        # 7. Concat: intro + clips + outro
-        all_clips = [intro_path] + clips + [outro_path]
+        # 6. Concat (no separate intro/outro)
         concat_list = clip_dir / "concat.txt"
-        concat_list.write_text("\n".join(f"file '{c.resolve()}'" for c in all_clips))
+        concat_list.write_text("\n".join(f"file '{c.resolve()}'" for c in clips))
         merged = clip_dir / "merged.mp4"
         subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list),
             "-c", "copy", str(merged)], check=True, capture_output=True)
         log("拼接完成", 88)
 
-        # 8. BGM mix
+        # 7. BGM mix
         final = OUTPUTS / f"{jid}.mp4"
         video_len = probe_dur(merged)
         subprocess.run(["ffmpeg", "-y", "-i", str(merged), "-i", str(ref_bgm),
