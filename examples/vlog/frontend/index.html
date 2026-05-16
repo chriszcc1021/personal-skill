@@ -172,7 +172,7 @@
       <div class="label" style="margin-bottom:8px">完成</div>
       <video id="result-video" controls playsinline></video>
       <div class="result-btns">
-        <button class="btn" id="download">下载</button>
+        <button class="btn" id="download">存到相册</button>
         <button class="btn secondary" id="restart">再剪一个</button>
       </div>
       <pre id="summary-text" style="margin-top:14px;padding:12px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;white-space:pre-wrap;word-break:break-all;line-height:1.55;max-height:240px;overflow:auto"></pre>
@@ -393,7 +393,20 @@ function renderRefs(){
 
 function updateBtn(){
   const ready=state.assets.filter(a=>!a.uploading&&!a.error&&a.id);
-  document.getElementById('go').disabled=ready.length<2;
+  const uploading=state.assets.filter(a=>a.uploading).length;
+  const errored=state.assets.filter(a=>a.error).length;
+  const btn=document.getElementById('go');
+  // 要求：至少 2 段准备好 且 无任何在传。错误项不阻止（用户可以删掉错误项）。
+  btn.disabled = (ready.length < 2) || (uploading > 0);
+  if(uploading > 0){
+    btn.textContent = `上传中 · ${uploading} 个未完成`;
+  } else if(ready.length < 2){
+    btn.textContent = `至少需 2 个素材（当前 ${ready.length}）`;
+  } else if(errored > 0){
+    btn.textContent = `开始剪片 · ${ready.length} 个素材（${errored} 个失败已忽略）`;
+  } else {
+    btn.textContent = `开始剪片 · ${ready.length} 个素材`;
+  }
 }
 
 document.getElementById('go').onclick=async()=>{
@@ -435,7 +448,11 @@ async function poll(){
   }catch{setTimeout(poll,3000);}
 }
 
-document.getElementById('download').onclick=()=>window.location.href=`${API}/jobs/${state.jobId}/result`;
+document.getElementById('download').onclick=()=>{
+  const id=state.jobId;
+  toast('播放后点右下分享 → 存储视频');
+  window.location.href=`${API}/jobs/${id}/result`;
+};
 document.getElementById('restart').onclick=()=>location.reload();
 
 // ----- History drawer -----
@@ -482,7 +499,10 @@ window.toggleSel=(id)=>{
   if(state.sel.has(id))state.sel.delete(id);else state.sel.add(id);
   renderHistory();
 };
-window.downloadJob=(id)=>window.open(`${API}/jobs/${id}/result`,'_blank');
+window.downloadJob=(id)=>{
+  toast('播放后点右下分享 → 存储视频');
+  window.location.href=`${API}/jobs/${id}/result`;
+};
 window.deleteJob=async(id)=>{
   if(!confirm('确定删除这个任务（含素材和成片）？'))return;
   await fetch(`${API}/jobs/${id}`,{method:'DELETE'});

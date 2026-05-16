@@ -5,6 +5,58 @@ from pathlib import Path
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 AI_PICK_META = {}
 
+
+def detect_subject_center_cv(video_path: Path, sample_t: float = None) -> tuple:
+    """Fallback: find subject center via OpenCV face/saliency on a single frame.
+    Returns (cx, cy) normalized in [0.05, 0.95]; defaults (0.5, 0.5) on failure."""
+    try:
+        import cv2
+        cap = cv2.VideoCapture(str(video_path))
+        if not cap.isOpened():
+            return (0.5, 0.5)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+        target_frame = int((sample_t * fps) if sample_t else max(1, total // 2))
+        target_frame = max(0, min(total - 1, target_frame))
+        cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
+        ok, frame = cap.read()
+        cap.release()
+        if not ok or frame is None:
+            return (0.5, 0.5)
+        h, w = frame.shape[:2]
+        # 1. Try Haar face detection first (best for human subjects)
+        try:
+            cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+            face_cascade = cv2.CascadeClassifier(cascade_path)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=4, minSize=(60, 60))
+            if len(faces) > 0:
+                # pick largest face
+                fx, fy, fw, fh = max(faces, key=lambda r: r[2] * r[3])
+                cx = (fx + fw / 2) / w
+                cy = (fy + fh / 2) / h
+                return (max(0.05, min(0.95, cx)), max(0.05, min(0.95, cy)))
+        except Exception:
+            pass
+        # 2. Saliency map (spectral residual)
+        try:
+            saliency = cv2.saliency.StaticSaliencySpectralResidual_create()
+            ok2, smap = saliency.computeSaliency(frame)
+            if ok2:
+                smap = (smap * 255).astype('uint8')
+                _, thresh = cv2.threshold(smap, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+                M = cv2.moments(thresh)
+                if M["m00"] > 0:
+                    cx = (M["m10"] / M["m00"]) / w
+                    cy = (M["m01"] / M["m00"]) / h
+                    return (max(0.05, min(0.95, cx)), max(0.05, min(0.95, cy)))
+        except Exception:
+            pass
+        return (0.5, 0.5)
+    except Exception:
+        return (0.5, 0.5)
+
+
 def gemini_analyze_video(video_path: Path, timeout: int = 90) -> dict:
     """Upload video to Gemini Files API and ask for content analysis + highlight window."""
     if not GEMINI_API_KEY:
@@ -58,10 +110,11 @@ def gemini_analyze_video(video_path: Path, timeout: int = 90) -> dict:
         # Step 3: generate content
         prompt = (
             "看这段视频，返回 JSON:\n"
-            "{\"segments\":[{\"start\":秒,\"end\":秒,\"content\":\"拍什么(人/建筑/动作)\",\"highlight\":bool}],\"best_window\":[start,end],\"score\":0-3,\"summary\":\"一句话总结这段拍什么\",\"location\":\"辨认出的城市/地点名称若能辨认出来\"}\n"
+            "{\"segments\":[{\"start\":秒,\"end\":秒,\"content\":\"拍什么(人/建筑/动作)\",\"highlight\":bool}],\"best_window\":[start,end],\"score\":0-3,\"summary\":\"一句话总结这段拍什么\",\"location\":\"地名若能识别\",\"subject_cx\":0到1主体水平中心归一化,\"subject_cy\":0到1主体垂直中心归一化}\n"
             "best_window 是这段视频最精髓的 2-4 秒【动作】区间 (zoom、人动作、镜头推进、主体出现)。\n"
             "score 是整体亮点评分：3=绝佳精髓, 2=不错, 1=一般, 0=无亮点。\n"
             "location 只填能识别出的明显地标/城市名 (如 BUDAPEST, KYOTO)，识不出填空字符串。\n"
+            "subject_cx/subject_cy 是画面主体（人/动物/主要建筑）的中心归一化坐标（左上角0,0 右下角1,1），识不出都填 0.5。裁剪 9:16 会以此为中心。\n"
             "只返 JSON。"
         )
         req4 = urllib.request.Request(
@@ -588,6 +641,13 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
             loc = str(data.get("location", "") or "").strip()[:24]
             if loc and not location_hint:
                 location_hint = loc
+            try:
+                scx = float(data.get("subject_cx", 0.5))
+                scy = float(data.get("subject_cy", 0.5))
+            except (TypeError, ValueError):
+                scx, scy = 0.5, 0.5
+            scx = max(0.05, min(0.95, scx))
+            scy = max(0.05, min(0.95, scy))
             highlights[vi] = {
                 "start_t": s_t,
                 "end_t": e_t,
@@ -595,6 +655,8 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
                 "desc": str(data.get("summary", ""))[:80],
                 "summary": str(data.get("summary", ""))[:80],
                 "location": loc,
+                "subject_cx": scx,
+                "subject_cy": scy,
             }
             time.sleep(2.5)  # 2.5s between calls to stay under RPM
         log_fn(f"Gemini 读懂 {len(highlights)}/{len(videos)} 个视频" + (f" | 地点={location_hint}" if location_hint else ""), 32)
@@ -808,6 +870,11 @@ weights:
         "location_hint": location_hint,
         "gemini_n": len(highlights),
         "gemini_total": len(videos),
+        "subject_coords": {  # str(src_path) -> (cx, cy) normalized
+            str(videos[vi]): (h["subject_cx"], h["subject_cy"])
+            for vi, h in highlights.items()
+            if "subject_cx" in h
+        },
     })
     return post_filtered
 
@@ -1157,11 +1224,25 @@ async def run_job(jid: str):
                 "curves=r='0/0.04 0.5/0.55 1/1':b='0/0 0.5/0.48 1/0.97'"
             )
             if typ == "video":
-                # Cover-fit to 9:16 then static (motion comes from source itself + slight zoom)
-                # Scale up 8% then animate crop x slightly for parallax feel
+                # Look up subject center from Gemini first, fall back to OpenCV detection.
+                # subject_cx/cy are normalized [0.05, 0.95]; default (0.5, 0.5) = center.
+                subj = AI_PICK_META.get("subject_coords", {}).get(str(src))
+                source_kind = "gemini"
+                if subj is None:
+                    subj = detect_subject_center_cv(Path(src), sample_t=ts + dur_beat / 2)
+                    source_kind = "cv"
+                scx, scy = subj
+                # We scale source to 778x1382 (108% of 720x1280) then crop 720x1280.
+                # Pre-scale W=778, H=1382. Crop x range: [0, 778-720]=[0,58], y range: [0, 1382-1280]=[0,102].
+                # But scaling preserves aspect via force_original_aspect_ratio=increase, so we cannot
+                # know exact intermediate dimensions; use ffmpeg expressions referring to in_w/in_h.
+                # crop_x = clamp(scx*in_w - 360, 0, in_w-720); crop_y = clamp(scy*in_h - 640, 0, in_h-1280)
+                cx_expr = f"max(0\\,min(in_w-720\\,{scx:.3f}*in_w-360+sin(t*0.5)*10))"
+                cy_expr = f"max(0\\,min(in_h-1280\\,{scy:.3f}*in_h-640))"
+                log(f"  clip subject={source_kind} cx={scx:.2f} cy={scy:.2f} src={Path(src).stem[:8]}", 76)
                 vf_base = (
                     f"scale=778:1382:force_original_aspect_ratio=increase,"
-                    f"crop=720:1280:'(in_w-720)/2+sin(t*0.5)*15':'(in_h-1280)/2',"
+                    f"crop=720:1280:'{cx_expr}':'{cy_expr}',"
                     f"setsar=1,"
                     + color_chain
                 )
@@ -1290,10 +1371,16 @@ async def get_job(jid: str):
 
 
 @app.get("/api/jobs/{jid}/result")
-async def job_result(jid: str):
+async def job_result(jid: str, dl: int = 0):
     f = OUTPUTS / f"{jid}.mp4"
     if not f.exists(): raise HTTPException(404)
-    return FileResponse(f, media_type="video/mp4", filename=f"vlog_{jid}.mp4")
+    headers = {}
+    if dl:
+        headers["Content-Disposition"] = f'attachment; filename="vlog_{jid}.mp4"'
+    else:
+        # inline playback (used by <video src=...>)
+        headers["Content-Disposition"] = f'inline; filename="vlog_{jid}.mp4"'
+    return FileResponse(f, media_type="video/mp4", headers=headers)
 
 
 @app.get("/api/jobs/{jid}/thumb")
