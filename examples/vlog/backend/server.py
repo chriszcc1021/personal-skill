@@ -13,7 +13,7 @@ def detect_subject_center_cv(video_path: Path, sample_t: float = None) -> tuple:
         import cv2
         cap = cv2.VideoCapture(str(video_path))
         if not cap.isOpened():
-            return (0.5, 0.5)
+            return (0.5, 0.4)
         fps = cap.get(cv2.CAP_PROP_FPS) or 30
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
         target_frame = int((sample_t * fps) if sample_t else max(1, total // 2))
@@ -22,7 +22,7 @@ def detect_subject_center_cv(video_path: Path, sample_t: float = None) -> tuple:
         ok, frame = cap.read()
         cap.release()
         if not ok or frame is None:
-            return (0.5, 0.5)
+            return (0.5, 0.4)
         h, w = frame.shape[:2]
         # 1. Try Haar face detection first (best for human subjects)
         try:
@@ -52,9 +52,9 @@ def detect_subject_center_cv(video_path: Path, sample_t: float = None) -> tuple:
                     return (max(0.05, min(0.95, cx)), max(0.05, min(0.95, cy)))
         except Exception:
             pass
-        return (0.5, 0.5)
+        return (0.5, 0.4)
     except Exception:
-        return (0.5, 0.5)
+        return (0.5, 0.4)
 
 
 def gemini_analyze_video(video_path: Path, timeout: int = 90) -> dict:
