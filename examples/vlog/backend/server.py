@@ -438,6 +438,27 @@ def ai_pick_clips(videos, images, prompt, n_target, log_fn):
         picks_data = [(p, 1.0) for p in ps]
         log_fn(f"用兜底分散选片: {len(picks_data)} 个", 44)
 
+    # Dedup: same source within ±2s window only keeps first; same source max 2 picks total
+    seen = []
+    src_count = {}
+    deduped = []
+    for p, w in picks_data:
+        s = samples[p]
+        src_key = str(s["src"])
+        ts = s["ts"]
+        # skip if same src and within 2.5s of any kept pick
+        skip = False
+        for ks, kts in seen:
+            if ks == src_key and abs(kts - ts) < 2.5:
+                skip = True; break
+        if skip: continue
+        if src_count.get(src_key, 0) >= 2: continue
+        deduped.append((p, w))
+        seen.append((src_key, ts))
+        src_count[src_key] = src_count.get(src_key, 0) + 1
+    log_fn(f"去重后 {len(deduped)} 段 (删 {len(picks_data)-len(deduped)} 个重复)", 46)
+    picks_data = deduped
+
     # Pad to n_target with cycling weights
     while len(picks_data) < n_target:
         picks_data.append(picks_data[len(picks_data) % max(1, len(picks_data))])
@@ -533,6 +554,26 @@ async def run_job(jid: str):
             cum += seg
         clip_durs = snapped
 
+        # Force first/last clips long enough for title/FIN animations
+        MIN_FIRST = 2.8
+        MIN_LAST = 2.3
+        if clip_durs and clip_durs[0] < MIN_FIRST:
+            need = MIN_FIRST - clip_durs[0]
+            clip_durs[0] = MIN_FIRST
+            # steal from middle clips proportionally
+            mids = list(range(1, len(clip_durs)-1)) if len(clip_durs) > 2 else []
+            if mids:
+                per = need / len(mids)
+                for j in mids: clip_durs[j] = max(0.5, clip_durs[j] - per)
+        if len(clip_durs) > 1 and clip_durs[-1] < MIN_LAST:
+            need = MIN_LAST - clip_durs[-1]
+            clip_durs[-1] = MIN_LAST
+            mids = list(range(1, len(clip_durs)-1))
+            if mids:
+                per = need / len(mids)
+                for j in mids: clip_durs[j] = max(0.5, clip_durs[j] - per)
+        log(f"调整后开头/结尾: {clip_durs[0]:.2f}s / {clip_durs[-1]:.2f}s", 52)
+
         # 5. Render — 9:16 with overlaid title on first clip, FIN on last clip
         cine_vf = (
             "scale=720:1280:force_original_aspect_ratio=increase,"
@@ -549,8 +590,8 @@ async def run_job(jid: str):
         title_esc = ffmpeg_escape(display_title)
         date_esc = ffmpeg_escape(date_str)
 
-        TITLE_DUR = 1.8  # how long title overlay lasts
-        FIN_DUR = 1.2
+        TITLE_DUR = 2.5  # how long title overlay lasts
+        FIN_DUR = 2.0
 
         clip_dir = OUTPUTS / jid
         clip_dir.mkdir(parents=True, exist_ok=True)
@@ -559,34 +600,72 @@ async def run_job(jid: str):
         for i, ((src, typ, ts, src_dur, _w), dur_beat) in enumerate(zip(picks, clip_durs)):
             out = clip_dir / f"c{i:03d}.mp4"
             vf = cine_vf
-            # First clip: overlay BUDAPEST title (fade out)
+            # First clip: overlay BUDAPEST title (pop in + hold + drift up out)
             if i == 0:
                 td = min(TITLE_DUR, dur_beat)
-                # Use enable for time-gated darken; text alpha controls fade
+                # Title animation timing
+                pop_in = 0.45  # pop-in duration
+                hold_end = td - 0.55  # when drift starts
+                # Easing: pop scale 60->130 then settle 130->120; y slides from +60 to baseline
+                # x always centered; y baseline = (h-text_h)/2-40, slides from y+60 to y, then up to y-30
+                base_y = "(h-text_h)/2-40"
+                y_expr = (
+                    f"if(lt(t\\,{pop_in:.2f})\\,"
+                    f"{base_y}+60-(60*t/{pop_in:.2f})\\,"  # slide up during pop_in
+                    f"if(lt(t\\,{hold_end:.2f})\\,{base_y}\\,"  # hold
+                    f"{base_y}-30*(t-{hold_end:.2f})/0.55))"  # drift up
+                )
+                size_expr = (
+                    f"if(lt(t\\,{pop_in:.2f})\\,"
+                    f"60+90*t/{pop_in:.2f}\\,"  # 60 -> 150 pop
+                    f"if(lt(t\\,{pop_in+0.15:.2f})\\,150-30*(t-{pop_in:.2f})/0.15\\,120))"  # settle to 120
+                )
+                alpha_expr = (
+                    f"if(lt(t\\,{pop_in:.2f})\\,t/{pop_in:.2f}\\,"
+                    f"if(lt(t\\,{hold_end:.2f})\\,1\\,"
+                    f"1-(t-{hold_end:.2f})/0.55))"
+                )
+                # Darken background lightly
                 vf += (
-                    f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.55:t=fill:enable='lt(t\\,{td-0.3:.2f})',"
+                    f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.30:t=fill:enable='lt(t\\,{td-0.3:.2f})',"
                     f"drawtext=fontfile='{FONT_PATH}':text='{title_esc}':"
-                    f"fontcolor=#ffb84d:fontsize=120:"
-                    f"x=(w-text_w)/2:y=(h-text_h)/2-40:"
+                    f"fontcolor=#ffb84d:fontsize='{size_expr}':"
+                    f"x=(w-text_w)/2:y='{y_expr}':"
                     f"borderw=4:bordercolor=#1a1a1a:"
-                    f"alpha='if(lt(t\\,0.3)\\,t/0.3\\,if(lt(t\\,{td-0.4:.2f})\\,1\\,if(lt(t\\,{td:.2f})\\,1-(t-{td-0.4:.2f})/0.4\\,0)))',"
+                    f"alpha='{alpha_expr}',"
                     f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
                     f"fontcolor=white:fontsize=40:"
-                    f"x=(w-text_w)/2:y=(h-text_h)/2+80:"
-                    f"alpha='if(lt(t\\,0.5)\\,0\\,if(lt(t\\,{td-0.4:.2f})\\,1\\,if(lt(t\\,{td:.2f})\\,1-(t-{td-0.4:.2f})/0.4\\,0)))'"
+                    f"x=(w-text_w)/2:y=(h-text_h)/2+90:"
+                    f"alpha='if(lt(t\\,{pop_in+0.2:.2f})\\,0\\,if(lt(t\\,{pop_in+0.5:.2f})\\,(t-{pop_in+0.2:.2f})/0.3\\,if(lt(t\\,{hold_end:.2f})\\,1\\,1-(t-{hold_end:.2f})/0.55)))'"
                 )
-            # Last clip: overlay FIN (fade in towards end)
+            # Last clip: overlay FIN (slide in from right + scale up)
             if i == last_idx:
                 fd = min(FIN_DUR, dur_beat)
                 t0 = max(0, dur_beat - fd)
+                fin_in = 0.5  # slide-in duration
                 fin_esc = ffmpeg_escape("FIN")
+                # x slides from right (+200) to center; size 80 -> 160
+                fx_expr = (
+                    f"if(lt(t\\,{t0:.2f})\\,w\\,"
+                    f"if(lt(t\\,{t0+fin_in:.2f})\\,"
+                    f"(w-text_w)/2+200*(1-(t-{t0:.2f})/{fin_in:.2f})\\,"
+                    f"(w-text_w)/2))"
+                )
+                fsize_expr = (
+                    f"if(lt(t\\,{t0:.2f})\\,80\\,"
+                    f"if(lt(t\\,{t0+fin_in:.2f})\\,80+80*(t-{t0:.2f})/{fin_in:.2f}\\,160))"
+                )
+                falpha_expr = (
+                    f"if(lt(t\\,{t0:.2f})\\,0\\,"
+                    f"min(1\\,(t-{t0:.2f})/0.3))"
+                )
                 vf += (
-                    f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.45:t=fill:enable='gte(t\\,{t0+0.3:.2f})',"
+                    f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.35:t=fill:enable='gte(t\\,{t0+0.2:.2f})',"
                     f"drawtext=fontfile='{FONT_PATH}':text='{fin_esc}':"
-                    f"fontcolor=#ffb84d:fontsize=140:"
-                    f"x=(w-text_w)/2:y=(h-text_h)/2:"
+                    f"fontcolor=#ffb84d:fontsize='{fsize_expr}':"
+                    f"x='{fx_expr}':y=(h-text_h)/2:"
                     f"borderw=4:bordercolor=#1a1a1a:"
-                    f"alpha='if(lt(t\\,{t0+0.2:.2f})\\,0\\,min(1\\,(t-{t0+0.2:.2f})/0.3))'"
+                    f"alpha='{falpha_expr}'"
                 )
             if typ == "video":
                 start_t = max(0, min(max(0, src_dur - dur_beat - 0.05), ts - dur_beat/2))
