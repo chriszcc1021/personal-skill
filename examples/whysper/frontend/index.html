@@ -49,7 +49,9 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .view.active{display:block}
 
 /* record view */
-#view-rec.active{display:flex;flex-direction:column;align-items:center;padding-top:24px;min-height:calc(100vh - 200px)}
+#view-rec.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-top:12px;padding-bottom:32px;min-height:calc(100vh - 180px)}
+.rec-top{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:8px}
+.rec-bottom{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
 .rec-status{font-size:11px;color:var(--dim);letter-spacing:0.3em;text-transform:uppercase;margin-bottom:24px;height:14px}
 .rec-status.live{color:var(--red)}
 .rec-btn{
@@ -163,18 +165,22 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 
 <!-- views -->
 <section class="view active" id="view-rec">
-  <div class="rec-status" id="recStatus">按住下方按钮开始</div>
-  <div class="rec-btn" id="recBtn">
-    <div class="rec-dot-grid" id="recDotGrid"></div>
+  <div class="rec-top">
+    <div class="rec-status" id="recStatus">按住下方按钮开始</div>
+    <div class="rec-live" id="recLive"></div>
+    <img class="img-preview" id="imgPreview" style="display:none"/>
   </div>
-  <div class="rec-time" id="recTime"></div>
-  <div class="rec-label">长按 / 按住录音</div>
-  <div class="rec-live" id="recLive"></div>
-  <img class="img-preview" id="imgPreview" style="display:none"/>
-  <div class="rec-actions">
-    <button onclick="document.getElementById('imgInput').click()">＋ 图片</button>
-    <button id="saveBtn" class="primary" style="display:none" onclick="saveEntry()">保存</button>
-    <button id="cancelBtn" class="danger" style="display:none" onclick="cancelEntry()">丢弃</button>
+  <div class="rec-bottom">
+    <div class="rec-time" id="recTime"></div>
+    <div class="rec-btn" id="recBtn">
+      <div class="rec-dot-grid" id="recDotGrid"></div>
+    </div>
+    <div class="rec-label">长按 / 按住录音</div>
+    <div class="rec-actions">
+      <button onclick="document.getElementById('imgInput').click()">＋ 图片</button>
+      <button id="saveBtn" class="primary" style="display:none" onclick="saveEntry()">保存</button>
+      <button id="cancelBtn" class="danger" style="display:none" onclick="cancelEntry()">丢弃</button>
+    </div>
   </div>
   <input type="file" id="imgInput" accept="image/*" capture="environment" style="display:none" onchange="onImg(event)"/>
 </section>
