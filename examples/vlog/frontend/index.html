@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vlog">
+<meta name="theme-color" content="#0A0A0A">
+<link rel="apple-touch-icon" href="/vlog/icon-180.png">
+<link rel="manifest" href="/vlog/manifest.json">
+<title>Vlog · AI 自动剪辑</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { background:#0A0A0A; color:#fff; font-family:'Inter', system-ui, sans-serif; min-height:100vh; overscroll-behavior:none; }
+  body { padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .mono { font-family:'JetBrains Mono', monospace; }
+
+  .container { max-width:600px; margin:0 auto; padding:20px 16px 80px; }
+  header { text-align:center; padding:24px 0 32px; }
+  header h1 { font-size:32px; font-weight:700; letter-spacing:-0.02em; }
+  header p { color:#888; font-size:13px; margin-top:6px; }
+
+  .section { background:#141414; border:1px solid #222; border-radius:16px; padding:20px; margin-bottom:16px; }
+  .section h2 { font-size:13px; color:#999; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px; font-weight:500; }
+
+  .drop {
+    border:2px dashed #333; border-radius:12px; padding:32px 20px; text-align:center;
+    cursor:pointer; transition:.2s;
+  }
+  .drop:active { background:#1a1a1a; border-color:#555; }
+  .drop .icon { font-size:36px; margin-bottom:8px; }
+  .drop p { color:#888; font-size:14px; }
+  .drop input { display:none; }
+
+  .asset-list { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px; }
+  .asset { position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; background:#1a1a1a;
+    display:flex; align-items:center; justify-content:center; font-size:11px; color:#666; }
+  .asset .badge { position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); padding:2px 6px;
+    border-radius:4px; font-size:10px; }
+  .asset .del { position:absolute; top:4px; right:4px; width:18px; height:18px; background:rgba(0,0,0,0.7);
+    border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; }
+
+  .style-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .style { padding:18px 14px; border:1px solid #222; border-radius:12px; cursor:pointer; transition:.2s; }
+  .style.active { border-color:#fff; background:#1a1a1a; }
+  .style .name { font-size:15px; font-weight:600; }
+  .style .desc { color:#777; font-size:12px; margin-top:4px; }
+
+  textarea {
+    width:100%; background:#0A0A0A; border:1px solid #222; border-radius:10px;
+    padding:12px 14px; color:#fff; font-size:14px; font-family:inherit;
+    resize:none; min-height:60px;
+  }
+  textarea:focus { outline:none; border-color:#444; }
+
+  .ref-list { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .ref { padding:6px 10px; background:#1a1a1a; border-radius:6px; font-size:12px; color:#aaa;
+    border:1px solid #222; cursor:pointer; }
+  .ref.active { border-color:#fff; color:#fff; }
+
+  .btn {
+    width:100%; padding:16px; border-radius:12px; border:0; background:#fff; color:#000;
+    font-size:15px; font-weight:600; cursor:pointer; transition:.2s;
+    font-family:inherit;
+  }
+  .btn:active { transform:scale(0.98); }
+  .btn:disabled { background:#222; color:#666; cursor:not-allowed; }
+
+  .progress { padding:24px; text-align:center; }
+  .progress-bar { width:100%; height:6px; background:#222; border-radius:3px; overflow:hidden; margin:16px 0; }
+  .progress-bar > div { height:100%; background:linear-gradient(90deg, #fff, #aaa); transition:width 0.3s; }
+  .progress .pct { font-size:32px; font-weight:700; }
+  .progress .log { color:#777; font-size:12px; margin-top:8px; min-height:18px; }
+
+  video { width:100%; border-radius:12px; }
+  .result { text-align:center; }
+  .result h3 { font-size:18px; margin-bottom:14px; }
+
+  .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#fff;
+    color:#000; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:500; z-index:1000;
+    opacity:0; transition:.3s; pointer-events:none; }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🎬 Vlog AI</h1>
+    <p>丢素材 · 选风格 · 出片</p>
+  </header>
+
+  <!-- 1. 上传素材 -->
+  <div class="section">
+    <h2>① 素材</h2>
+    <label class="drop">
+      <div class="icon">📷</div>
+      <p>点击选择视频/照片（可多选）</p>
+      <input type="file" id="files" multiple accept="image/*,video/*">
+    </label>
+    <div class="asset-list" id="assets"></div>
+  </div>
+
+  <!-- 2. 风格 -->
+  <div class="section">
+    <h2>② 风格</h2>
+    <div class="style-grid">
+      <div class="style active" data-style="daily">
+        <div class="name">日常 vlog</div>
+        <div class="desc">温和节奏，柔和过渡</div>
+      </div>
+      <div class="style" data-style="travel">
+        <div class="name">旅行电影感</div>
+        <div class="desc">慢节奏，宽屏感</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 描述 -->
+  <div class="section">
+    <h2>③ 一句话描述（可选）</h2>
+    <textarea id="prompt" placeholder="例：周末在公园遛狗的悠闲下午"></textarea>
+  </div>
+
+  <!-- 4. 参考 vlog -->
+  <div class="section">
+    <h2>④ 参考 vlog（可选）</h2>
+    <p style="font-size:12px; color:#666; margin-bottom:10px;">上传你喜欢的 vlog，AI 学它的剪法</p>
+    <label class="drop" style="padding:16px;">
+      <p style="font-size:13px;">📥 添加参考视频</p>
+      <input type="file" id="ref-file" accept="video/*">
+    </label>
+    <div class="ref-list" id="refs"></div>
+  </div>
+
+  <!-- 5. 生成按钮 -->
+  <button class="btn" id="go" disabled>开始剪片</button>
+
+  <!-- 进度 / 结果 -->
+  <div class="section" id="progress-box" style="display:none;">
+    <div class="progress">
+      <div class="pct" id="pct">0%</div>
+      <div class="progress-bar"><div id="bar" style="width:0%;"></div></div>
+      <div class="log" id="log">等待开始...</div>
+    </div>
+  </div>
+
+  <div class="section" id="result-box" style="display:none;">
+    <div class="result">
+      <h3>✨ 剪好了</h3>
+      <video id="result-video" controls playsinline></video>
+      <div style="margin-top:14px; display:flex; gap:8px;">
+        <button class="btn" id="download" style="background:#fff;">下载</button>
+        <button class="btn" id="restart" style="background:#1a1a1a; color:#fff; border:1px solid #333;">再剪一个</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/vlog-api';
+const state = {
+  assets: [],   // {id, kind, filename}
+  style: 'daily',
+  refs: [],     // {id, name}
+  refId: null,
+  jobId: null,
+};
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function renderAssets() {
+  const el = document.getElementById('assets');
+  el.innerHTML = state.assets.map(a => `
+    <div class="asset">
+      <span class="badge">${a.kind === 'video' ? '🎬' : '🖼️'}</span>
+      <span class="del" data-id="${a.id}">×</span>
+      <span>${a.id.slice(0,6)}</span>
+    </div>
+  `).join('');
+  el.querySelectorAll('.del').forEach(d => d.onclick = () => {
+    state.assets = state.assets.filter(a => a.id !== d.dataset.id);
+    renderAssets(); updateBtn();
+  });
+}
+
+async function uploadOne(file) {
+  const fd = new FormData(); fd.append('file', file);
+  const r = await fetch(`${API}/upload`, { method:'POST', body:fd });
+  if (!r.ok) throw new Error('upload fail');
+  return r.json();
+}
+
+document.getElementById('files').onchange = async (e) => {
+  for (const f of e.target.files) {
+    try {
+      const a = await uploadOne(f);
+      state.assets.push(a);
+      renderAssets();
+      toast(`已加 ${a.kind === 'video' ? '视频' : '图片'}`);
+    } catch(err) { toast('上传失败'); }
+  }
+  updateBtn();
+};
+
+document.querySelectorAll('.style').forEach(s => s.onclick = () => {
+  document.querySelectorAll('.style').forEach(x => x.classList.remove('active'));
+  s.classList.add('active');
+  state.style = s.dataset.style;
+});
+
+document.getElementById('ref-file').onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  toast('上传参考视频...');
+  const fd = new FormData(); fd.append('file', f); fd.append('name', f.name);
+  const r = await fetch(`${API}/refs/upload`, { method:'POST', body:fd });
+  const ref = await r.json();
+  state.refs.push(ref); renderRefs();
+  toast('参考视频已添加');
+};
+
+function renderRefs() {
+  document.getElementById('refs').innerHTML = state.refs.map(r => `
+    <div class="ref ${state.refId === r.id ? 'active' : ''}" data-id="${r.id}">${r.name.slice(0, 20)}</div>
+  `).join('');
+  document.querySelectorAll('.ref').forEach(el => el.onclick = () => {
+    state.refId = state.refId === el.dataset.id ? null : el.dataset.id;
+    renderRefs();
+  });
+}
+
+function updateBtn() {
+  document.getElementById('go').disabled = state.assets.length < 2;
+}
+
+document.getElementById('go').onclick = async () => {
+  const fd = new FormData();
+  fd.append('style', state.style);
+  fd.append('prompt', document.getElementById('prompt').value);
+  fd.append('asset_ids', state.assets.map(a => a.id).join(','));
+  if (state.refId) fd.append('ref_id', state.refId);
+  const r = await fetch(`${API}/jobs`, { method:'POST', body:fd });
+  const job = await r.json();
+  state.jobId = job.id;
+  document.getElementById('progress-box').style.display = 'block';
+  document.getElementById('go').style.display = 'none';
+  poll();
+};
+
+async function poll() {
+  if (!state.jobId) return;
+  const r = await fetch(`${API}/jobs/${state.jobId}`);
+  const j = await r.json();
+  document.getElementById('pct').textContent = j.progress + '%';
+  document.getElementById('bar').style.width = j.progress + '%';
+  const lastLog = (j.logs || []).slice(-1)[0] || '';
+  document.getElementById('log').textContent = lastLog;
+  if (j.status === 'done') {
+    document.getElementById('progress-box').style.display = 'none';
+    document.getElementById('result-box').style.display = 'block';
+    const v = document.getElementById('result-video');
+    v.src = `${API}/jobs/${state.jobId}/result`;
+    return;
+  }
+  if (j.status === 'error') {
+    document.getElementById('log').textContent = '❌ ' + (j.error || '失败');
+    return;
+  }
+  setTimeout(poll, 1500);
+}
+
+document.getElementById('download').onclick = () => {
+  window.location.href = `${API}/jobs/${state.jobId}/result`;
+};
+document.getElementById('restart').onclick = () => location.reload();
+
+// PWA service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/vlog/sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
