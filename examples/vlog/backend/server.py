@@ -472,6 +472,103 @@ def ffmpeg_escape(s: str) -> str:
     return s.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
 
 
+def build_title_ass(out_path, title, subtitle, deco, date_str, td=2.5, w=720, h=1280):
+    """Build .ass file with 3D-perspective animated title (Y-axis rotation tilt)."""
+    def ts(sec):
+        ms = int(sec * 100) % 100
+        s = int(sec) % 60
+        m = int(sec / 60) % 60
+        return f"0:{m:02d}:{s:02d}.{ms:02d}"
+    end_t = td
+    pop_in_end = 0.45
+    hold_end = td - 0.55
+    fade_out_dur = int(0.55 * 1000)
+    # ASS template - use Anton font, white/orange, big sizes
+    # \frx=tilt around X (top-back), \fry=tilt around Y (left-back), \frz=roll
+    # We animate: start huge + tilted -> settle to perspective rest
+    ass = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: {w}
+PlayResY: {h}
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Title,Anton,160,&H004DB8FF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,0,0,1,5,0,5,0,0,0,1
+Style: Sub,Anton,52,&H00FFFFFF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,2,0,1,3,0,5,0,0,0,1
+Style: Deco,Anton,36,&H004DB8FF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,4,0,1,2,0,5,0,0,0,1
+Style: Date,Anton,42,&H004DB8FF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,2,0,1,2,0,5,0,0,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    # Decorative top: fades in early, fades out at end
+    ass += (
+        f"Dialogue: 0,{ts(0.15)},{ts(end_t)},Deco,,0,0,0,,"
+        f"{{\\an5\\pos({w//2},{h//2-180})\\fad(250,500)}}{deco}\n"
+    )
+    # Main title - 3D perspective: tilt around Y (\fry) and slight X (\frx)
+    # Animation: \t() interpolates over duration
+    # Pop-in: scale 60->100, fry -25->-8 (settles into perspective)
+    pop_ms = int(pop_in_end * 1000)
+    out_ms = int((end_t - hold_end) * 1000)
+    ass += (
+        f"Dialogue: 1,{ts(0)},{ts(end_t)},Title,,0,0,0,,"
+        f"{{\\an5\\pos({w//2},{h//2-30})\\fscx60\\fscy60\\fry-30\\frx10\\alpha&HFF&"
+        f"\\t(0,{pop_ms},\\fscx115\\fscy115\\fry-8\\frx5\\alpha&H00&)"
+        f"\\t({pop_ms},{pop_ms+200},\\fscx100\\fscy100)"
+        f"\\t({int(hold_end*1000)},{int(end_t*1000)},\\fscx95\\fscy95\\fry-15\\frx10\\alpha&HFF&)}}"
+        f"{title}\n"
+    )
+    # Subtitle
+    ass += (
+        f"Dialogue: 1,{ts(pop_in_end+0.1)},{ts(end_t)},Sub,,0,0,0,,"
+        f"{{\\an5\\pos({w//2},{h//2+90})\\fad(300,500)\\fry-8\\frx5}}{subtitle}\n"
+    )
+    # Date
+    ass += (
+        f"Dialogue: 1,{ts(pop_in_end+0.3)},{ts(end_t)},Date,,0,0,0,,"
+        f"{{\\an5\\pos({w//2},{h//2+155})\\fad(300,500)\\fry-8\\frx5}}{date_str}\n"
+    )
+    out_path.write_text(ass, encoding="utf-8")
+    return out_path
+
+
+def build_fin_ass(out_path, fin_text, start_t, end_t, w=720, h=1280):
+    def ts(sec):
+        ms = int(sec * 100) % 100
+        s = int(sec) % 60
+        m = int(sec / 60) % 60
+        return f"0:{m:02d}:{s:02d}.{ms:02d}"
+    ass = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: {w}
+PlayResY: {h}
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Fin,Anton,180,&H004DB8FF,&H000000FF,&H001A1A1A,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,0,0,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    # FIN: slide in from right + 3D tilt
+    slide_ms = 500
+    in_start_ms = int(start_t * 1000)
+    in_end_ms = in_start_ms + slide_ms
+    ass += (
+        f"Dialogue: 1,{ts(start_t)},{ts(end_t)},Fin,,0,0,0,,"
+        f"{{\\an5\\pos({w+200},{h//2})\\fscx80\\fscy80\\fry30\\frx-10\\alpha&HFF&"
+        f"\\t(0,{slide_ms},\\pos({w//2},{h//2})\\fscx100\\fscy100\\fry-10\\frx5\\alpha&H00&)}}"
+        f"{fin_text}\n"
+    )
+    out_path.write_text(ass, encoding="utf-8")
+    return out_path
+
+
 async def run_job(jid: str):
     jf = JOBS / f"{jid}.json"
     job = json.loads(jf.read_text())
@@ -595,134 +692,71 @@ async def run_job(jid: str):
         clip_dir.mkdir(parents=True, exist_ok=True)
         clips = []
         last_idx = len(picks) - 1
+        # Pre-generate ASS files for title (clip 0) and FIN (last clip)
+        title_ass = clip_dir / "title.ass"
+        fin_ass = clip_dir / "fin.ass"
         for i, ((src, typ, ts, src_dur, _w), dur_beat) in enumerate(zip(picks, clip_durs)):
             out = clip_dir / f"c{i:03d}.mp4"
-            vf = cine_vf
-            # Ken Burns slow zoom for ALL video clips (P1: motion feel)
-            kb_zoom_end = 1.05  # subtle
-            vf_motion = vf + f",scale=iw*1.06:ih*1.06,crop=720:1280:'(iw-720)/2*(t/{max(0.1,dur_beat):.2f})':'(ih-1280)/2'"
-            # Simpler: use zoompan-like effect via scale+crop animated
-            # Actually keep vf clean for video, apply gentle zoom via vf chain below
-            # First clip: overlay BUDAPEST title (pop in + hold + drift up out)
+            extra_sub = None  # path to ass file to overlay
             if i == 0:
                 td = min(TITLE_DUR, dur_beat)
-                # Title animation timing
-                pop_in = 0.45  # pop-in duration
-                hold_end = td - 0.55  # when drift starts
-                # Easing: pop scale 60->130 then settle 130->120; y slides from +60 to baseline
-                # x always centered; y baseline = (h-text_h)/2-40, slides from y+60 to y, then up to y-30
-                base_y = "(h-text_h)/2-40"
-                y_expr = (
-                    f"if(lt(t\\,{pop_in:.2f})\\,"
-                    f"{base_y}+60-(60*t/{pop_in:.2f})\\,"  # slide up during pop_in
-                    f"if(lt(t\\,{hold_end:.2f})\\,{base_y}\\,"  # hold
-                    f"{base_y}-30*(t-{hold_end:.2f})/0.55))"  # drift up
-                )
-                size_expr = (
-                    f"if(lt(t\\,{pop_in:.2f})\\,"
-                    f"60+90*t/{pop_in:.2f}\\,"  # 60 -> 150 pop
-                    f"if(lt(t\\,{pop_in+0.15:.2f})\\,150-30*(t-{pop_in:.2f})/0.15\\,120))"  # settle to 120
-                )
-                alpha_expr = (
-                    f"if(lt(t\\,{pop_in:.2f})\\,t/{pop_in:.2f}\\,"
-                    f"if(lt(t\\,{hold_end:.2f})\\,1\\,"
-                    f"1-(t-{hold_end:.2f})/0.55))"
-                )
-                # Add subtitle line + decorative tag (P1: multi-layer info like ref vlog)
-                subtitle_text = ffmpeg_escape("TRAVEL DIARY")
-                deco_text = ffmpeg_escape("— EXPLORING —")
-                # Darken background lightly
-                vf += (
-                    f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.30:t=fill:enable='lt(t\\,{td-0.3:.2f})',"
-                    # Decorative top tag
-                    f"drawtext=fontfile='{FONT_PATH}':text='{deco_text}':"
-                    f"fontcolor=#ffb84d:fontsize=32:"
-                    f"x=(w-text_w)/2:y=(h-text_h)/2-160:"
-                    f"alpha='if(lt(t\\,0.2)\\,0\\,if(lt(t\\,0.5)\\,(t-0.2)/0.3\\,if(lt(t\\,{hold_end:.2f})\\,1\\,1-(t-{hold_end:.2f})/0.55)))',"
-                    # Main title with skew via fontsize/y dynamic for parallax
-                    f"drawtext=fontfile='{FONT_PATH}':text='{title_esc}':"
-                    f"fontcolor=#ffb84d:fontsize='{size_expr}':"
-                    f"x=(w-text_w)/2:y='{y_expr}':"
-                    f"borderw=5:bordercolor=#1a1a1a:"
-                    f"alpha='{alpha_expr}',"
-                    # Subtitle (smaller, English)
-                    f"drawtext=fontfile='{FONT_PATH}':text='{subtitle_text}':"
-                    f"fontcolor=white:fontsize=48:"
-                    f"x=(w-text_w)/2:y=(h-text_h)/2+90:"
-                    f"borderw=2:bordercolor=#1a1a1a:"
-                    f"alpha='if(lt(t\\,{pop_in+0.2:.2f})\\,0\\,if(lt(t\\,{pop_in+0.5:.2f})\\,(t-{pop_in+0.2:.2f})/0.3\\,if(lt(t\\,{hold_end:.2f})\\,1\\,1-(t-{hold_end:.2f})/0.55)))',"
-                    # Date below subtitle
-                    f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
-                    f"fontcolor=#ffb84d:fontsize=36:"
-                    f"x=(w-text_w)/2:y=(h-text_h)/2+160:"
-                    f"alpha='if(lt(t\\,{pop_in+0.4:.2f})\\,0\\,if(lt(t\\,{pop_in+0.7:.2f})\\,(t-{pop_in+0.4:.2f})/0.3\\,if(lt(t\\,{hold_end:.2f})\\,1\\,1-(t-{hold_end:.2f})/0.55)))'"
-                )
-            # Last clip: overlay FIN (slide in from right + scale up)
+                build_title_ass(title_ass, display_title, "TRAVEL DIARY",
+                                "— EXPLORING —", date_str, td=td)
+                extra_sub = title_ass
             if i == last_idx:
                 fd = min(FIN_DUR, dur_beat)
                 t0 = max(0, dur_beat - fd)
-                fin_in = 0.5  # slide-in duration
-                fin_esc = ffmpeg_escape("FIN")
-                # x slides from right (+200) to center; size 80 -> 160
-                fx_expr = (
-                    f"if(lt(t\\,{t0:.2f})\\,w\\,"
-                    f"if(lt(t\\,{t0+fin_in:.2f})\\,"
-                    f"(w-text_w)/2+200*(1-(t-{t0:.2f})/{fin_in:.2f})\\,"
-                    f"(w-text_w)/2))"
-                )
-                fsize_expr = (
-                    f"if(lt(t\\,{t0:.2f})\\,80\\,"
-                    f"if(lt(t\\,{t0+fin_in:.2f})\\,80+80*(t-{t0:.2f})/{fin_in:.2f}\\,160))"
-                )
-                falpha_expr = (
-                    f"if(lt(t\\,{t0:.2f})\\,0\\,"
-                    f"min(1\\,(t-{t0:.2f})/0.3))"
-                )
-                vf += (
-                    f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.35:t=fill:enable='gte(t\\,{t0+0.2:.2f})',"
-                    f"drawtext=fontfile='{FONT_PATH}':text='{fin_esc}':"
-                    f"fontcolor=#ffb84d:fontsize='{fsize_expr}':"
-                    f"x='{fx_expr}':y=(h-text_h)/2:"
-                    f"borderw=4:bordercolor=#1a1a1a:"
-                    f"alpha='{falpha_expr}'"
-                )
+                build_fin_ass(fin_ass, "FIN", t0, dur_beat)
+                extra_sub = fin_ass  # overrides title if both same clip
+
+            # Build base vf with Ken Burns + color
             if typ == "video":
-                start_t = max(0, min(max(0, src_dur - dur_beat - 0.05), ts - dur_beat/2))
-                # P1: Ken Burns - slow zoom in across clip duration
-                # zoompan on video: scale up source 1.1x, animate crop offset slightly
-                zoom_speed = 0.0008  # subtle zoom-in
-                vf_kb = (
+                vf_base = (
                     "scale=792:1408:force_original_aspect_ratio=increase,"
-                    f"zoompan=z='min(1.0+{zoom_speed}*on,1.10)':d=1:s=720x1280:fps=30,"
+                    f"zoompan=z='min(1.0+0.0008*on,1.10)':d=1:s=720x1280:fps=30,"
                     "setsar=1,"
                     "eq=brightness=0.04:contrast=1.08:saturation=1.18,"
                     "curves=r='0/0.04 0.5/0.55 1/1':b='0/0 0.5/0.48 1/0.97'"
                 )
-                # Replace cine_vf in vf with vf_kb (vf currently starts with cine_vf)
-                vf_final = vf_kb + vf[len(cine_vf):]
-                cmd = ["ffmpeg", "-y", "-ss", f"{start_t:.3f}", "-i", str(src),
-                    "-t", f"{dur_beat:.3f}",
-                    "-vf", vf_final,
-                    "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
-                    "-an", str(out)]
             else:
                 frames = max(2, int(dur_beat * 30))
-                # zoompan z grows over frames
-                vf_kb_img = (
+                vf_base = (
                     "scale=792:1408:force_original_aspect_ratio=increase,"
                     f"zoompan=z='min(1.0+0.0015*on,1.15)':d={frames}:s=720x1280:fps=30,"
                     "setsar=1,"
                     "eq=brightness=0.04:contrast=1.08:saturation=1.18,"
                     "curves=r='0/0.04 0.5/0.55 1/1':b='0/0 0.5/0.48 1/0.97'"
                 )
-                vf_final = vf_kb_img + vf[len(cine_vf):]
+
+            # If first clip: add darken overlay during title hold
+            if i == 0:
+                vf_base += f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.25:t=fill:enable='lt(t\\,{td-0.3:.2f})'"
+            if i == last_idx:
+                fd = min(FIN_DUR, dur_beat)
+                t0 = max(0, dur_beat - fd)
+                vf_base += f",drawbox=x=0:y=0:w=iw:h=ih:color=black@0.30:t=fill:enable='gte(t\\,{t0+0.2:.2f})'"
+
+            # Append subtitle filter if ASS file applies
+            if extra_sub is not None:
+                # subtitles filter needs the path with : escaped
+                ass_path = str(extra_sub).replace(':', '\\:').replace("'", "\\'")
+                vf_base += f",subtitles='{ass_path}':fontsdir='/usr/share/fonts/truetype/anton'"
+
+            if typ == "video":
+                start_t = max(0, min(max(0, src_dur - dur_beat - 0.05), ts - dur_beat/2))
+                cmd = ["ffmpeg", "-y", "-ss", f"{start_t:.3f}", "-i", str(src),
+                    "-t", f"{dur_beat:.3f}",
+                    "-vf", vf_base,
+                    "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
+                    "-an", str(out)]
+            else:
                 cmd = ["ffmpeg", "-y", "-loop", "1", "-i", str(src), "-t", f"{dur_beat:.3f}",
-                    "-vf", vf_final,
+                    "-vf", vf_base,
                     "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
                     "-an", "-pix_fmt", "yuv420p", str(out)]
             subprocess.run(cmd, check=True, capture_output=True)
             clips.append(out)
-        log(f"渲染 {len(clips)} 段(片头/片尾叠在素材上)", 80)
+        log(f"渲染 {len(clips)} 段(ASS 3D 透视字幕)", 80)
 
         # 6. Concat (no separate intro/outro)
         concat_list = clip_dir / "concat.txt"
