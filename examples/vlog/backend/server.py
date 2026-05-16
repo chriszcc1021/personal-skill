@@ -10,7 +10,7 @@ import urllib.request
 
 GATEWAY_URL = os.environ.get("VLOG_GATEWAY_URL", "https://new-api.openclaw.ingarena.net")
 GATEWAY_KEY = os.environ.get("VLOG_GATEWAY_KEY", "")
-MODEL_VISION = "claude-sonnet-4-5-20250929"
+MODEL_VISION = "claude-sonnet-4-6"  # gateway only exposes 4-6 for sonnet vision
 FONT_PATH = "/usr/share/fonts/truetype/anton/Anton-Regular.ttf"
 
 # ---- Quota ----
@@ -534,46 +534,43 @@ async def run_job(jid: str):
         else:
             display_title = title.upper()[:12]
         date_str = time.strftime("%Y.%m")
-
-        intro_path = clip_dir / "intro.mp4"
-        outro_path = clip_dir / "outro.mp4"
-        # Background: dark with a hint of warm gradient (use first frame of first clip blurred? simpler: solid black)
-        # Title animation: scale-in big text
         title_esc = ffmpeg_escape(display_title)
         date_esc = ffmpeg_escape(date_str)
-        # Intro 1.5s — text grows + fades in
-        intro_filter = (
-            f"color=c=#0a0a0a:s=720x1280:d=1.5:r=30[bg];"
-            f"[bg]drawtext=fontfile='{FONT_PATH}':text='{title_esc}':"
+        intro_path = clip_dir / "intro.mp4"
+        outro_path = clip_dir / "outro.mp4"
+
+        # Intro 1.5s — text grows + fades in (single filter chain, no [labels])
+        intro_vf = (
+            f"drawtext=fontfile='{FONT_PATH}':text='{title_esc}':"
             f"fontcolor=#ffb84d:fontsize='80+t*40':"
             f"x=(w-text_w)/2:y=(h-text_h)/2-40:"
             f"borderw=4:bordercolor=#1a1a1a:"
-            f"alpha='if(lt(t,0.3),t/0.3,1)'[t1];"
-            f"[t1]drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
+            f"alpha='if(lt(t\\,0.3)\\,t/0.3\\,1)',"
+            f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
             f"fontcolor=white:fontsize=40:"
             f"x=(w-text_w)/2:y=(h-text_h)/2+120:"
-            f"alpha='if(lt(t,0.6),0,if(lt(t,0.9),(t-0.6)/0.3,1))'"
+            f"alpha='if(lt(t\\,0.6)\\,0\\,if(lt(t\\,0.9)\\,(t-0.6)/0.3\\,1))'"
         )
-        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=#0a0a0a:s=720x1280:d=1.5:r=30",
-            "-vf", intro_filter.split("[bg];")[1].replace("[t1]", "").replace("[bg]", ""),
+        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#0a0a0a:s=720x1280:d=1.5:r=30",
+            "-vf", intro_vf,
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-pix_fmt", "yuv420p",
             "-t", "1.5", str(intro_path)], check=True, capture_output=True)
 
-        # Outro 1.5s — "THE END" + date
+        # Outro 1.5s
         outro_title = ffmpeg_escape("FIN")
-        outro_filter = (
+        outro_vf = (
             f"drawtext=fontfile='{FONT_PATH}':text='{outro_title}':"
             f"fontcolor=#ffb84d:fontsize=140:"
             f"x=(w-text_w)/2:y=(h-text_h)/2-60:"
             f"borderw=4:bordercolor=#1a1a1a:"
-            f"alpha='if(lt(t,0.4),t/0.4,1)',"
+            f"alpha='if(lt(t\\,0.4)\\,t/0.4\\,1)',"
             f"drawtext=fontfile='{FONT_PATH}':text='{date_esc}':"
             f"fontcolor=white:fontsize=36:"
             f"x=(w-text_w)/2:y=(h-text_h)/2+80:"
-            f"alpha='if(lt(t,0.6),0,(t-0.6)/0.4)'"
+            f"alpha='if(lt(t\\,0.6)\\,0\\,(t-0.6)/0.4)'"
         )
         subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#0a0a0a:s=720x1280:d=1.5:r=30",
-            "-vf", outro_filter,
+            "-vf", outro_vf,
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-pix_fmt", "yuv420p",
             "-t", "1.5", str(outro_path)], check=True, capture_output=True)
         log("生成片头片尾", 82)
