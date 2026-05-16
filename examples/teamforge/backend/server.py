@@ -572,8 +572,103 @@ def chars_with_load():
             ch["project_load"] = [{"project_id": l["pid"], "project_name": l["pname"], "color": l["color"],
                                     "allocation": l["allocation"], "role": l["role"], "is_lead": bool(l["is_lead"])} for l in loads]
             ch["computed_capacity"] = sum(l["allocation"] for l in loads)
+            # active tasks (todo + doing) assigned
+            tk = c.execute("""SELECT COUNT(*) cnt, SUM(CASE WHEN status='doing' THEN 1 ELSE 0 END) doing,
+                                     SUM(CASE WHEN status='todo' THEN 1 ELSE 0 END) todo
+                              FROM tasks WHERE owner_id=? AND status IN ('todo','doing')""", (r["id"],)).fetchone()
+            ch["active_tasks"] = tk["cnt"] or 0
+            ch["doing_tasks"] = tk["doing"] or 0
+            ch["todo_tasks"] = tk["todo"] or 0
+            # overdue
+            today = time.strftime("%Y-%m-%d")
+            od = c.execute("""SELECT COUNT(*) cnt FROM tasks WHERE owner_id=? AND status IN ('todo','doing')
+                              AND deadline != '' AND deadline < ?""", (r["id"], today)).fetchone()
+            ch["overdue_tasks"] = od["cnt"] or 0
             out.append(ch)
         return out
+
+@app.get("/api/my_tasks")
+def my_tasks(owner_id: str):
+    """List all tasks across projects assigned to a character."""
+    with db() as c:
+        rows = c.execute("""SELECT t.*, p.name proj_name, p.color proj_color
+                            FROM tasks t JOIN projects p ON p.id=t.project_id
+                            WHERE t.owner_id=? AND p.deleted_at IS NULL
+                            ORDER BY CASE WHEN t.deadline='' THEN 1 ELSE 0 END, t.deadline ASC, t.created_at ASC""", (owner_id,)).fetchall()
+        return [dict(row_to_task(r), proj_name=r["proj_name"], proj_color=r["proj_color"]) for r in rows]
+
+# ============ AI ============
+import urllib.request as _ur
+AI_GATEWAY = os.environ.get("AI_GATEWAY", "https://new-api.openclaw.ingarena.net")
+AI_KEY = os.environ.get("AI_KEY", "sk-y5OvzZALUDqXBnSHcFKCdNcmBfvbD8r2NJG27EOAllObZonR")
+AI_MODEL = os.environ.get("AI_MODEL", "claude-sonnet-4-6")
+
+def ai_chat(messages, max_tokens=1200, system=None, temperature=0.4):
+    body = {"model": AI_MODEL, "messages": messages, "max_tokens": max_tokens, "temperature": temperature}
+    if system: body["system"] = system
+    t0 = time.time()
+    req = _ur.Request(f"{AI_GATEWAY}/v1/chat/completions",
+                      data=json.dumps(body).encode(),
+                      headers={"Content-Type":"application/json","Authorization":f"Bearer {AI_KEY}"},
+                      method="POST")
+    try:
+        with _ur.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read())
+    except Exception as e:
+        print(f"[AI] ERR {e}")
+        raise HTTPException(502, f"AI gateway: {e}")
+    dt = time.time() - t0
+    txt = data.get("choices",[{}])[0].get("message",{}).get("content","") or ""
+    usage = data.get("usage",{})
+    print(f"[AI] {dt:.1f}s tokens={usage} reply[:200]={txt[:200]!r}")
+    return txt
+
+@app.post("/api/projects/{pid}/ai_checkup")
+def ai_checkup(pid: str):
+    with db() as c:
+        p = c.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+        if not p: raise HTTPException(404)
+        members = project_members(c, pid)
+        # Fetch each member's skills
+        member_full = []
+        for m in members:
+            ch = c.execute("SELECT cn_name, style, skills_json, strengths, weakness FROM characters WHERE id=?", (m["character_id"],)).fetchone()
+            if not ch: continue
+            member_full.append({
+                "name": ch["cn_name"], "role": m["role"], "allocation": m["allocation"],
+                "is_lead": m["is_lead"], "style": ch["style"],
+                "skills": json.loads(ch["skills_json"] or "{}"),
+                "strengths": ch["strengths"], "weakness": ch["weakness"]
+            })
+        tasks = c.execute("SELECT title, status, owner_id, deadline FROM tasks WHERE project_id=?", (pid,)).fetchall()
+        task_summary = []
+        for t in tasks:
+            owner_name = ""
+            if t["owner_id"]:
+                row = c.execute("SELECT cn_name FROM characters WHERE id=?", (t["owner_id"],)).fetchone()
+                if row: owner_name = row["cn_name"]
+            task_summary.append({"title": t["title"], "status": t["status"], "owner": owner_name, "deadline": t["deadline"]})
+
+    system = "输出严格按照 user 提供的示例格式。一个字都不能多写。不要加额外 H1 标题、不要引用块、不要表格、不要 emoji、不要分隔线。只能有 4 个二级标题：目标进度 / 人员配置 / 风险 / 建议。中文。人话，不要 AI 口吻。"
+    fewshot = (
+        "示例（另一个项目的巡检，格式严格学这个）：\n\n"
+        "## 目标进度\n项目刚启动 2 周，8 条任务刚起穿，进展低于预期。主要是调研阶段还没出结论。\n\n"
+        "## 人员配置\n刘伟作为 Lead 手里 3 个任务并行，偏满；黄宇 30% 投入但手上任务空。\n\n"
+        "## 风险\n- 调研任务没设 deadline，容易拖到下个月\n- 张鱼哥在本项目是全职，但同时被拉去另两个项目会、实际交付会打折\n\n"
+        "## 建议\n- 今天给调研任务填上 deadline\n- 下周开个 30 分钟对齐会，看是不是往方案阶段走\n"
+    )
+    user_payload = {
+        "project": {"name": p["name"], "goal": p["goal"], "deadline": p["deadline"], "status": p["status"]},
+        "team": member_full,
+        "tasks": task_summary,
+        "task_count_by_status": {s: sum(1 for t in tasks if t["status"]==s) for s in ["todo","doing","done","archived"]}
+    }
+    text = ai_chat(
+        messages=[{"role":"user","content":fewshot + "\n现在请用上面一模一样的格式和长度，对下面这个项目出报告。不要加 H1、不要加表格、不要 emoji：\n\n" + json.dumps(user_payload, ensure_ascii=False, indent=2)}],
+        system=system, max_tokens=550, temperature=0.4
+    )
+
+    return {"report": text, "generated_at": int(time.time())}
 
 @app.get("/api/health")
 def health(): return {"ok": True}
