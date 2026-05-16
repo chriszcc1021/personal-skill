@@ -34,7 +34,9 @@
   .asset{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#666}
   .asset img{width:100%;height:100%;object-fit:cover}
   .asset .badge{position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px;font-size:10px;z-index:2}
-  .asset .del{position:absolute;top:4px;right:4px;width:20px;height:20px;background:rgba(0,0,0,0.8);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;z-index:2}
+  .asset .del{position:absolute;top:4px;right:4px;width:22px;height:22px;background:rgba(0,0,0,0.85);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;z-index:3;color:#fff;font-weight:600}
+  .asset .retry{position:absolute;top:4px;left:4px;width:22px;height:22px;background:rgba(240,80,80,0.95);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;z-index:3;color:#fff}
+  .asset.errored{outline:1px solid #c33}
   .asset.uploading::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,0.05) 0 10px,transparent 10px 20px);animation:slide 1s linear infinite;z-index:1}
   @keyframes slide{0%{background-position:0 0}100%{background-position:28px 0}}
   .asset .pct{position:absolute;bottom:4px;left:4px;right:4px;background:rgba(0,0,0,0.8);padding:2px 6px;border-radius:4px;font-size:10px;text-align:center;z-index:2}
@@ -74,11 +76,13 @@
 
   <div class="section">
     <h2>① 素材</h2>
-    <label class="drop">
+    <label class="drop" id="drop">
       <div class="icon">📷</div>
-      <p>点击选择视频/照片（可多选）</p>
+      <p>点击选择视频/照片（建议每次≤5段视频）</p>
+      <p style="font-size:11px;color:#555;margin-top:6px">iPhone 选多个视频后会停在相册<br>是 iOS 在转码，等 30-90 秒即可</p>
       <input type="file" id="files" multiple accept="image/*,video/*">
     </label>
+    <div id="prep-notice" style="display:none;margin-top:10px;padding:10px 14px;background:#1a1a1a;border-radius:8px;font-size:12px;color:#aaa;text-align:center">⏳ iOS 正在处理素材，请等待...</div>
     <div class="asset-list" id="assets"></div>
   </div>
 
@@ -129,17 +133,73 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 function renderAssets(){
   const el=document.getElementById('assets');
-  el.innerHTML=state.assets.map(a=>{
-    const cls=a.uploading?'asset uploading':'asset';
-    const thumb=a.thumbDataUrl?`<img src="${a.thumbDataUrl}">`:(a.thumb_url?`<img src="${API}${a.thumb_url}">`:'<span>📁</span>');
-    const pct=a.uploading?`<div class="pct">${a.progress||0}%</div>`:'';
-    const del=a.uploading?'':`<div class="del" data-tmp="${a.tmpId}">×</div>`;
-    return `<div class="${cls}"><span class="badge">${a.kind==='video'?'🎬':'🖼️'}</span>${del}${thumb}${pct}</div>`;
-  }).join('');
-  el.querySelectorAll('.del').forEach(d=>d.onclick=()=>{
-    state.assets=state.assets.filter(a=>a.tmpId!==d.dataset.tmp);
-    renderAssets();updateBtn();
-  });
+  // diff render: only build cards once per asset, update progress in place
+  const have=new Set();
+  el.querySelectorAll('[data-tmp]').forEach(n=>have.add(n.dataset.tmp));
+  // remove gone
+  const live=new Set(state.assets.map(a=>a.tmpId));
+  el.querySelectorAll('[data-tmp]').forEach(n=>{ if(!live.has(n.dataset.tmp)) n.remove(); });
+  for(const a of state.assets){
+    let card=el.querySelector(`[data-tmp="${a.tmpId}"]`);
+    if(!card){
+      card=document.createElement('div');
+      card.className='asset';
+      card.dataset.tmp=a.tmpId;
+      const icon=a.kind==='video'?'🎬':'🖼️';
+      card.innerHTML=`<span class="badge">${a.kind==='video'?'🎬':'🖼️'}</span>`+
+        `<div class="del" data-tmp="${a.tmpId}">×</div>`+
+        `<div class="retry" data-tmp="${a.tmpId}" style="display:none">↻</div>`+
+        `<span class="ph" style="font-size:24px">${icon}</span>`+
+        `<div class="pct" style="display:none">⬆ 0%</div>`;
+      card.querySelector('.del').onclick=(ev)=>{
+        ev.stopPropagation();
+        // abort if uploading
+        if(a.xhr){try{a.xhr.abort();}catch{}}
+        state.assets=state.assets.filter(x=>x.tmpId!==a.tmpId);
+        renderAssets();updateBtn();
+      };
+      card.querySelector('.retry').onclick=(ev)=>{
+        ev.stopPropagation();
+        if(a._file) uploadAsset(a._file,a);
+      };
+      el.appendChild(card);
+    }
+    // uploading/error state
+    card.classList.toggle('uploading',!!a.uploading);
+    card.classList.toggle('errored',!!a.error);
+    const pctEl=card.querySelector('.pct');
+    const retryEl=card.querySelector('.retry');
+    const delEl=card.querySelector('.del');
+    if(a.uploading){
+      pctEl.style.display='block';
+      pctEl.textContent=`⬆ ${a.progress||0}%`;
+      delEl.style.display='flex';  // 也能叉掉取消
+      retryEl.style.display='none';
+    }else if(a.error){
+      pctEl.style.display='block';
+      pctEl.textContent=`❌ ${a.errorMsg||'失败'}`;
+      pctEl.style.background='rgba(180,30,30,0.9)';
+      delEl.style.display='flex';
+      retryEl.style.display='flex';
+    }else{
+      pctEl.style.display='none';
+      pctEl.style.background='rgba(0,0,0,0.8)';
+      delEl.style.display='flex';
+      retryEl.style.display='none';
+    }
+    // thumbnail: only set src once
+    let img=card.querySelector('img');
+    const src=a.thumbDataUrl||(a.thumb_url?`${API}${a.thumb_url}`:null);
+    if(src && (!img || img.dataset.src!==src)){
+      if(img) img.remove();
+      img=document.createElement('img');
+      img.dataset.src=src;
+      img.src=src;
+      img.onerror=()=>{img.style.display='none'};
+      card.insertBefore(img,card.querySelector('.pct'));
+      const ph=card.querySelector('.ph'); if(ph) ph.style.display='none';
+    }
+  }
 }
 
 // Generate thumbnail in browser (instant)
@@ -166,39 +226,79 @@ function genThumb(file, kind){
         try{res(c.toDataURL('image/jpeg',0.7));}catch{res(null);}
       };
       v.onerror=()=>{URL.revokeObjectURL(u);res(null);}
-      // safety timeout
-      setTimeout(()=>res(null),5000);
+      // safety timeout - HEVC on iOS often fails silently
+      setTimeout(()=>{URL.revokeObjectURL(u);res(null);},3000);
     }
   });
 }
 
-async function uploadOne(file, asset){
+function uploadOne(file, asset){
   const fd=new FormData();fd.append('file',file);
   return new Promise((res,rej)=>{
     const x=new XMLHttpRequest();
+    asset.xhr=x;
+    asset.lastProgressAt=Date.now();
     x.open('POST',`${API}/upload`);
     x.upload.onprogress=e=>{
       if(e.lengthComputable){
         asset.progress=Math.round(e.loaded/e.total*100);
+        asset.lastProgressAt=Date.now();
         renderAssets();
       }
     };
     x.onload=()=>{
+      asset.xhr=null;
       if(x.status>=200&&x.status<300){
         try{res(JSON.parse(x.responseText));}catch(e){rej(e);}
       }else rej(new Error('HTTP '+x.status));
     };
-    x.onerror=()=>rej(new Error('Network'));
+    x.onerror=()=>{asset.xhr=null;rej(new Error('Network'));};
+    x.onabort=()=>{asset.xhr=null;rej(new Error('Aborted'));};
+    // stall detector: if no progress for 30s, abort
+    const stallTimer=setInterval(()=>{
+      if(!asset.xhr){clearInterval(stallTimer);return;}
+      if(Date.now()-asset.lastProgressAt>30000){
+        clearInterval(stallTimer);
+        try{x.abort();}catch{}
+        asset.stalled=true;
+      }
+    },5000);
     x.send(fd);
   });
 }
 
+async function uploadAsset(file, asset){
+  asset.uploading=true;asset.error=false;asset.stalled=false;asset.progress=0;
+  renderAssets();
+  try{
+    const result=await uploadOne(file,asset);
+    Object.assign(asset,result,{uploading:false,progress:100,error:false,stalled:false});
+  }catch(err){
+    asset.uploading=false;
+    asset.error=true;
+    asset.errorMsg=asset.stalled?'超时':err.message;
+    toast(`上传失败: ${file.name}`);
+  }
+  renderAssets();updateBtn();
+}
+
+// iOS picker is modal — show prep notice when user taps the input
+document.getElementById('files').addEventListener('click',()=>{
+  document.getElementById('prep-notice').style.display='block';
+  document.getElementById('prep-notice').textContent='⏳ 选好后点完成，iOS 会转码 30-90 秒...';
+});
+document.getElementById('files').addEventListener('cancel',()=>{
+  document.getElementById('prep-notice').style.display='none';
+});
 document.getElementById('files').onchange=async (e)=>{
+  document.getElementById('prep-notice').style.display='none';
   const files=Array.from(e.target.files);
+  if(files.length===0)return;
+  toast(`收到 ${files.length} 个文件,开始上传`);
   // Add placeholder cards immediately
   const placeholders=files.map(f=>{
     const kind=f.type.startsWith('video')?'video':'image';
-    return{tmpId:Math.random().toString(36).slice(2,10),kind,size:f.size,filename:f.name,uploading:true,progress:0};
+    return{tmpId:Math.random().toString(36).slice(2,10),kind,size:f.size,filename:f.name,uploading:true,progress:0,_file:f};
   });
   state.assets.push(...placeholders);
   renderAssets();
@@ -207,22 +307,13 @@ document.getElementById('files').onchange=async (e)=>{
   const thumbPromises=files.map((f,i)=>genThumb(f,placeholders[i].kind).then(d=>{
     if(d){placeholders[i].thumbDataUrl=d;renderAssets();}
   }));
-  // Upload in parallel (concurrency 3)
+  // Upload in parallel (concurrency 3) using uploadAsset
   const UP_CONC=3;
   let i=0;
   async function next(){
     while(i<files.length){
       const idx=i++;
-      try{
-        const result=await uploadOne(files[idx],placeholders[idx]);
-        Object.assign(placeholders[idx],result,{uploading:false,progress:100});
-        renderAssets();
-      }catch(err){
-        placeholders[idx].uploading=false;
-        placeholders[idx].error=true;
-        toast(`上传失败: ${files[idx].name}`);
-        renderAssets();
-      }
+      await uploadAsset(files[idx],placeholders[idx]);
     }
   }
   const workers=Array(Math.min(UP_CONC,files.length)).fill(0).map(()=>next());
