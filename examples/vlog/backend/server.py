@@ -297,14 +297,17 @@ async def batch_delete(payload: dict):
 @app.post("/api/jobs")
 async def create_job(prompt: str = Form(""), asset_ids: str = Form(""),
                      ref_id: Optional[str] = Form(None),
-                     title: Optional[str] = Form(None)):
+                     title: Optional[str] = Form(None),
+                     skip_intro: Optional[str] = Form(None)):
     used = total_used()
     if used / QUOTA_BYTES > REJECT_PCT:
         raise HTTPException(507, "配额已满")
     jid = uuid.uuid4().hex[:12]
     aids = [a.strip() for a in asset_ids.split(",") if a.strip()]
+    skip_intro_b = (skip_intro or "").lower() in ("1", "true", "yes", "on")
     job = {"id": jid, "status": "queued", "prompt": prompt, "asset_ids": aids,
            "ref_id": ref_id, "title": title or "",
+           "skip_intro": skip_intro_b,
            "created_at": int(time.time()), "progress": 0, "logs": []}
     (JOBS / f"{jid}.json").write_text(json.dumps(job, ensure_ascii=False, indent=2))
     asyncio.create_task(run_job(jid))
@@ -915,14 +918,16 @@ async def run_job(jid: str):
                 ref_bgm = random.choice(bgm_pool)
         log(f"BGM: {ref_bgm.name}", 10)
 
-        # 2. Beats - skip BGM intro to start near chorus
+        # 2. Beats - auto-decide whether to skip BGM intro
         loop = asyncio.get_event_loop()
         chorus_t = await loop.run_in_executor(None, detect_chorus_start, ref_bgm)
-        log(f"副歌起点探测: {chorus_t:.1f}s", 12)
         tempo, beats, bgm_dur = await loop.run_in_executor(None, detect_beats, ref_bgm)
-        # Filter beats to start near chorus (snap to nearest beat at/after chorus_t)
+        # Auto-skip rule: only skip when BGM is long AND intro is meaningfully long
+        # AND chorus starts in first 1/3 (don't skip half-songs)
         bgm_offset = 0.0
-        if chorus_t > 0 and beats:
+        will_skip = (bgm_dur >= 30.0 and chorus_t >= 12.0 and chorus_t <= bgm_dur / 3.0)
+        log(f"副歌起点 {chorus_t:.1f}s | BGM {bgm_dur:.1f}s | 自动跳过intro={will_skip}", 12)
+        if will_skip and beats:
             # Find first beat >= chorus_t - 0.3 (slight lead-in)
             for b in beats:
                 if b >= chorus_t - 0.3:
