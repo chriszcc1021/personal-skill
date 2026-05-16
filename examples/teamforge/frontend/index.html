@@ -3,48 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>TeamForge · GNG 团队</title>
+<title>TeamForge · 团队驾驶舱</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root{
-    --bg:#FBFBFD; --bg-card:#FFFFFF; --line:rgba(0,0,0,0.06); --line2:rgba(0,0,0,0.1);
+    --bg:#FBFBFD; --bg-card:#FFFFFF; --line:rgba(0,0,0,0.06); --line2:rgba(0,0,0,0.1); --line3:rgba(0,0,0,0.16);
     --text:#1D1D1F; --text2:#515154; --dim:#86868B; --faint:#A1A1A6;
-    --accent:#0071E3; --accent-h:#0077ED;
-    --good:#34C759; --warn:#FF9500; --bad:#FF3B30;
+    --accent:#0071E3; --accent-h:#0077ED; --accent-bg:rgba(0,113,227,0.08);
+    --good:#34C759; --warn:#FF9500; --bad:#FF3B30; --purple:#AF52DE; --teal:#5AC8FA;
     --shadow:0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.04);
     --shadow-hover:0 1px 2px rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.08);
     --shadow-drawer:-12px 0 40px rgba(0,0,0,0.12);
+    --r-sm:9px; --r-md:12px; --r-lg:18px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
   html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','PingFang SC','Helvetica Neue',Inter,sans-serif}
-  body{min-height:100vh;padding:48px 24px 80px;letter-spacing:-0.01em}
+  body{min-height:100vh;letter-spacing:-0.01em}
+  .wrap{max-width:1320px;margin:0 auto;padding:40px 24px 80px}
 
-  .topbar{max-width:1280px;margin:0 auto 48px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  /* Topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:40px;flex-wrap:wrap}
   .brand{display:flex;align-items:baseline;gap:14px}
-  .brand .logo{font-size:28px;font-weight:600;letter-spacing:-0.03em;line-height:1}
+  .brand .logo{font-size:28px;font-weight:600;letter-spacing:-0.03em}
   .brand .v{font-size:11px;color:var(--faint);letter-spacing:0.5px;font-weight:500}
   .nav{display:flex;gap:4px;background:rgba(0,0,0,0.04);padding:4px;border-radius:10px}
-  .nav a{font-size:13px;color:var(--text2);padding:7px 14px;border-radius:7px;text-decoration:none;font-weight:500;cursor:pointer;transition:all 0.15s}
+  .nav a{font-size:13px;color:var(--text2);padding:7px 14px;border-radius:7px;cursor:pointer;font-weight:500;transition:all 0.15s;text-decoration:none}
   .nav a.on{color:var(--text);background:var(--bg-card);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
   .nav a:not(.on):hover{color:var(--text)}
 
-  .section-head{max-width:1280px;margin:0 auto 24px;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  .section-head h2{font-size:32px;font-weight:700;letter-spacing:-0.02em}
+  /* Section head */
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+  .section-head h2{font-size:30px;font-weight:700;letter-spacing:-0.02em}
   .section-head h2 span{color:var(--dim);font-weight:500}
   .section-head .meta{font-size:13px;color:var(--dim)}
-  .actions{display:flex;gap:8px}
-  .btn{font-family:inherit;font-size:13px;font-weight:500;padding:8px 16px;border-radius:9px;border:1px solid var(--line2);background:var(--bg-card);color:var(--text);cursor:pointer;transition:all 0.15s;letter-spacing:0.1px}
-  .btn:hover{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.16)}
+  .section-head .actions{display:flex;gap:8px}
+  .breadcrumb{font-size:13px;color:var(--dim);margin-bottom:6px;display:flex;gap:6px;align-items:center}
+  .breadcrumb a{color:var(--accent);cursor:pointer;text-decoration:none}
+  .breadcrumb a:hover{text-decoration:underline}
+
+  /* Buttons */
+  .btn{font-family:inherit;font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--bg-card);color:var(--text);cursor:pointer;transition:all 0.15s;letter-spacing:0.1px;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{background:rgba(0,0,0,0.03);border-color:var(--line3)}
   .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
   .btn-primary:hover{background:var(--accent-h);border-color:var(--accent-h)}
   .btn-danger{color:var(--bad);border-color:rgba(255,59,48,0.3)}
   .btn-danger:hover{background:rgba(255,59,48,0.06)}
   .btn-ghost{background:transparent;border:0;color:var(--text2)}
   .btn-ghost:hover{color:var(--text);background:rgba(0,0,0,0.04)}
+  .btn-sm{padding:6px 12px;font-size:12px}
 
-  .grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
-
-  .card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:24px;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);box-shadow:var(--shadow);position:relative;cursor:pointer}
+  /* Character grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
+  .card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);box-shadow:var(--shadow);cursor:pointer;position:relative}
   .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover);border-color:var(--line2)}
   .card.deleted{opacity:0.55;border-style:dashed}
   .card-head{display:flex;gap:16px;align-items:center;margin-bottom:18px}
@@ -55,46 +65,119 @@
   .style-line{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.35}
   .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
   .tag{font-size:11px;color:var(--text2);background:rgba(0,0,0,0.04);padding:4px 10px;border-radius:6px;font-weight:500}
-  .radar-wrap{height:200px;margin:6px 0 16px;position:relative}
+  .radar-wrap{height:200px;margin:6px 0 16px}
   .cap-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
   .cap-label{font-size:12px;color:var(--dim);min-width:54px;font-weight:500}
-  .cap-bar{flex:1;height:5px;background:rgba(0,0,0,0.06);border-radius:3px;overflow:hidden}
-  .cap-fill{height:100%;border-radius:3px;transition:width 0.4s ease}
-  .cap-pct{font-size:13px;font-weight:600;min-width:40px;text-align:right;font-feature-settings:'tnum'}
+  .cap-bar{flex:1;height:6px;background:rgba(0,0,0,0.06);border-radius:3px;overflow:hidden;display:flex}
+  .cap-seg{height:100%;transition:width 0.4s ease}
+  .cap-pct{font-size:13px;font-weight:600;min-width:46px;text-align:right;font-feature-settings:'tnum'}
+  .proj-tags{display:flex;flex-wrap:wrap;gap:5px;padding:10px 0;border-top:1px solid var(--line)}
+  .proj-chip{font-size:11px;padding:3px 9px;border-radius:5px;color:#fff;font-weight:500;display:inline-flex;align-items:center;gap:5px}
+  .proj-chip .alloc{opacity:0.75;font-size:10px}
+  .proj-chip .lead{font-size:10px;opacity:0.95}
   .bio{font-size:13px;color:var(--text2);line-height:1.55;padding-top:14px;border-top:1px solid var(--line);margin-top:4px}
   .bio em{color:var(--text);font-style:normal;font-weight:600}
-  .more-btn{margin-top:14px;width:100%;background:rgba(0,0,0,0.03);border:0;color:var(--text2);font-size:12px;padding:9px 0;border-radius:9px;cursor:pointer;font-weight:500;transition:background 0.15s;font-family:inherit}
+  .more-btn{margin-top:14px;width:100%;background:rgba(0,0,0,0.03);border:0;color:var(--text2);font-size:12px;padding:9px 0;border-radius:var(--r-sm);cursor:pointer;font-weight:500;transition:background 0.15s;font-family:inherit}
   .more-btn:hover{background:rgba(0,0,0,0.06)}
-  .more-detail{display:none;margin-top:12px;padding:14px 16px;background:#F5F5F7;border-radius:12px;font-size:12.5px;color:var(--text2);line-height:1.7}
-  .more-detail.open{display:block;animation:slideIn 0.2s ease-out}
-  @keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+  .more-detail{display:none;margin-top:12px;padding:14px 16px;background:#F5F5F7;border-radius:var(--r-md);font-size:12.5px;color:var(--text2);line-height:1.7}
+  .more-detail.open{display:block}
   .more-detail .row{display:flex;gap:10px;padding:3px 0}
   .more-detail .k{color:var(--dim);min-width:60px;flex-shrink:0;font-weight:500}
   .more-detail .v{color:var(--text);flex:1}
   .restore-row{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
   .restore-row .btn{flex:1}
 
+  /* Project grid */
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px}
+  .pcard{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px 24px;box-shadow:var(--shadow);cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden}
+  .pcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover);border-color:var(--line2)}
+  .pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--c,var(--accent))}
+  .pcard-head{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .pcard h3{font-size:20px;font-weight:600;letter-spacing:-0.01em}
+  .pstatus{font-size:10px;font-weight:600;padding:3px 8px;border-radius:5px;letter-spacing:0.5px;text-transform:uppercase}
+  .pstatus.active{background:rgba(52,199,89,0.12);color:var(--good)}
+  .pstatus.paused{background:rgba(255,149,0,0.12);color:var(--warn)}
+  .pstatus.archived{background:rgba(0,0,0,0.06);color:var(--dim)}
+  .pcard .goal{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;min-height:38px}
+  .pcard .ddl{font-size:12px;color:var(--dim);margin-bottom:14px}
+  .pcard .ddl b{color:var(--text);font-weight:500}
+  .stack{display:flex;align-items:center;margin-bottom:12px}
+  .stack .av{width:30px;height:30px;border-radius:50%;border:2px solid var(--bg-card);margin-left:-8px;background:#F5F5F7;object-fit:cover;font-size:13px;display:inline-flex;align-items:center;justify-content:center;color:var(--dim)}
+  .stack .av:first-child{margin-left:0}
+  .stack .more-n{margin-left:-8px;width:30px;height:30px;border-radius:50%;border:2px solid var(--bg-card);background:#F5F5F7;font-size:11px;display:inline-flex;align-items:center;justify-content:center;color:var(--text2);font-weight:600}
+  .stack .count{margin-left:10px;font-size:12px;color:var(--dim);font-weight:500}
+  .pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-top:14px;border-top:1px solid var(--line)}
+  .pstat{text-align:center}
+  .pstat b{font-size:18px;font-weight:600;display:block;line-height:1.1}
+  .pstat span{font-size:10px;color:var(--dim);letter-spacing:0.4px;text-transform:uppercase;display:block;margin-top:4px}
+
+  /* Project detail / kanban */
+  .pdetail-head{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px 26px;margin-bottom:24px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .pdetail-head::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--c,var(--accent))}
+  .pd-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .pd-title{display:flex;align-items:center;gap:14px;flex:1;min-width:240px}
+  .pd-title h2{font-size:26px;font-weight:700;letter-spacing:-0.02em}
+  .pd-meta{font-size:13px;color:var(--text2);margin-top:6px}
+  .pd-meta b{color:var(--text);font-weight:500}
+  .pd-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+  .pmembers{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 22px;margin-bottom:24px;box-shadow:var(--shadow)}
+  .pmembers h3{font-size:13px;font-weight:600;color:var(--dim);letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px}
+  .pm-list{display:flex;flex-wrap:wrap;gap:10px}
+  .pm-chip{display:flex;align-items:center;gap:8px;background:#F5F5F7;border-radius:24px;padding:5px 12px 5px 5px;font-size:13px;cursor:pointer;transition:background 0.15s}
+  .pm-chip:hover{background:#EBEBED}
+  .pm-chip img,.pm-chip .ph{width:26px;height:26px;border-radius:50%;background:#fff;font-size:12px;display:inline-flex;align-items:center;justify-content:center;color:var(--dim);object-fit:cover}
+  .pm-chip .role{font-size:11px;color:var(--dim);margin-left:2px}
+  .pm-chip .alloc{font-size:11px;color:var(--accent);font-weight:600;margin-left:4px}
+  .pm-chip.lead{background:var(--accent-bg)}
+  .pm-chip.lead .role{color:var(--accent)}
+  .pm-add{background:transparent;border:1px dashed var(--line3);color:var(--dim);font-family:inherit;font-size:13px;padding:4px 12px;border-radius:24px;cursor:pointer}
+  .pm-add:hover{color:var(--accent);border-color:var(--accent)}
+
+  /* Kanban */
+  .kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .klane{background:rgba(0,0,0,0.025);border-radius:var(--r-lg);padding:14px;min-height:300px}
+  .klane h4{font-size:13px;font-weight:600;color:var(--text2);letter-spacing:0.3px;margin-bottom:12px;display:flex;align-items:center;gap:8px;padding:0 4px}
+  .klane h4 .badge{background:rgba(0,0,0,0.08);font-size:11px;padding:1px 7px;border-radius:5px;color:var(--text2);font-weight:600}
+  .klane .add-task{background:transparent;border:1px dashed var(--line3);color:var(--dim);font-family:inherit;font-size:12px;padding:8px;border-radius:var(--r-md);cursor:pointer;width:100%;margin-bottom:10px;transition:all 0.15s}
+  .klane .add-task:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
+  .tcard{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:all 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
+  .tcard:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.06);border-color:var(--line2)}
+  .tcard.done{opacity:0.78}
+  .tcard .ttitle{font-size:14px;font-weight:500;line-height:1.4;color:var(--text);margin-bottom:8px}
+  .tcard.done .ttitle{text-decoration:line-through;color:var(--text2)}
+  .tcard .tbot{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px}
+  .tcard .tleft{display:flex;align-items:center;gap:6px}
+  .tcard .av-mini{width:20px;height:20px;border-radius:50%;background:#F5F5F7;font-size:10px;display:inline-flex;align-items:center;justify-content:center;color:var(--dim);object-fit:cover}
+  .tcard .owner-name{color:var(--text2);font-weight:500}
+  .tcard .ddl{padding:2px 8px;border-radius:5px;font-size:10px;font-weight:600;background:rgba(0,0,0,0.04);color:var(--text2)}
+  .tcard .ddl.urgent{background:rgba(255,59,48,0.12);color:var(--bad)}
+  .tcard .ddl.soon{background:rgba(255,149,0,0.12);color:var(--warn)}
+  .tcard .tactions{display:none;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+  .tcard:hover .tactions{display:flex}
+  .tcard .tactions button{flex:1;font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:inherit;transition:all 0.15s}
+  .tcard .tactions button:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+
   /* Drawer */
   .drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,0.32);backdrop-filter:blur(4px);z-index:90;opacity:0;pointer-events:none;transition:opacity 0.25s}
   .drawer-mask.open{opacity:1;pointer-events:auto}
-  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,92vw);background:var(--bg-card);z-index:100;box-shadow:var(--shadow-drawer);transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,94vw);background:var(--bg-card);z-index:100;box-shadow:var(--shadow-drawer);transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column}
   .drawer.open{transform:translateX(0)}
   .drawer-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
   .drawer-head h3{font-size:18px;font-weight:600;letter-spacing:-0.01em}
   .drawer-body{flex:1;overflow-y:auto;padding:20px 24px 100px}
   .drawer-foot{padding:14px 24px;border-top:1px solid var(--line);background:var(--bg-card);display:flex;gap:10px;justify-content:space-between;align-items:center}
-  .drawer-foot .left{display:flex;gap:8px}
-  .drawer-foot .right{display:flex;gap:8px}
   .section-title{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:0.6px;text-transform:uppercase;margin:18px 0 10px}
   .section-title:first-of-type{margin-top:0}
   .field{margin-bottom:12px}
   .field label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
-  .field input, .field textarea, .field select{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:#fff;color:var(--text);transition:border-color 0.15s,box-shadow 0.15s}
+  .field input, .field textarea, .field select{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line2);border-radius:var(--r-sm);background:#fff;color:var(--text);transition:border-color 0.15s,box-shadow 0.15s}
   .field input:focus, .field textarea:focus, .field select:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,0.12)}
   .field textarea{resize:vertical;min-height:60px;line-height:1.5}
-  .skills-collapse{background:#F5F5F7;border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text2);user-select:none}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .skills-collapse{background:#F5F5F7;border-radius:var(--r-sm);padding:12px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text2);user-select:none}
   .skills-collapse:hover{background:#EBEBED}
-  .skills-grid{display:none;margin-top:10px;padding:14px;background:#F5F5F7;border-radius:10px;gap:12px;grid-template-columns:1fr}
+  .skills-grid{display:none;margin-top:10px;padding:14px;background:#F5F5F7;border-radius:var(--r-sm);gap:12px;grid-template-columns:1fr}
   .skills-grid.open{display:grid}
   .skill-row{display:flex;align-items:center;gap:12px}
   .skill-row label{font-size:12px;color:var(--text2);min-width:60px}
@@ -102,16 +185,19 @@
   .skill-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
   .skill-row .val{font-size:12px;font-weight:600;min-width:30px;text-align:right;font-feature-settings:'tnum'}
   .avatar-edit{display:flex;gap:14px;align-items:center;margin-bottom:18px}
-  .avatar-edit img{width:72px;height:72px;border-radius:50%;background:#F5F5F7;object-fit:cover}
-  .avatar-edit .ph{width:72px;height:72px;border-radius:50%;background:#F5F5F7;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:24px}
-  .upload-btn{display:inline-block;font-size:12px;padding:7px 14px;border-radius:8px;background:rgba(0,0,0,0.05);color:var(--text2);cursor:pointer;font-weight:500;transition:background 0.15s}
+  .avatar-edit img,.avatar-edit .ph{width:72px;height:72px;border-radius:50%;background:#F5F5F7;object-fit:cover;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:24px}
+  .upload-btn{font-size:12px;padding:7px 14px;border-radius:var(--r-sm);background:rgba(0,0,0,0.05);color:var(--text2);cursor:pointer;font-weight:500;transition:background 0.15s;display:inline-block}
   .upload-btn:hover{background:rgba(0,0,0,0.08)}
   .upload-btn input{display:none}
+  .color-row{display:flex;gap:8px;flex-wrap:wrap}
+  .color-chip{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform 0.15s}
+  .color-chip:hover{transform:scale(1.1)}
+  .color-chip.on{border-color:var(--text);box-shadow:0 0 0 2px #fff inset}
 
   /* Modal */
   .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,0.32);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s}
   .modal-mask.open{opacity:1;pointer-events:auto}
-  .modal{background:var(--bg-card);border-radius:16px;padding:24px 26px;width:min(380px,92vw);box-shadow:0 20px 60px rgba(0,0,0,0.2);transform:scale(0.96);transition:transform 0.2s}
+  .modal{background:var(--bg-card);border-radius:16px;padding:24px 26px;width:min(420px,92vw);box-shadow:0 20px 60px rgba(0,0,0,0.2);transform:scale(0.96);transition:transform 0.2s}
   .modal-mask.open .modal{transform:scale(1)}
   .modal h4{font-size:17px;font-weight:600;margin-bottom:8px}
   .modal p{font-size:13.5px;color:var(--text2);line-height:1.5}
@@ -122,94 +208,173 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast a{color:#0a84ff;cursor:pointer;font-weight:600}
 
-  .empty{max-width:1280px;margin:60px auto;text-align:center;color:var(--dim);font-size:14px;padding:40px}
+  .empty{text-align:center;color:var(--dim);font-size:14px;padding:60px 40px}
 
-  @media(max-width:600px){
-    body{padding:24px 16px 60px}
-    .grid{grid-template-columns:1fr}
-    .topbar{margin-bottom:32px}
+  @media(max-width:768px){
+    .wrap{padding:24px 16px 60px}
+    .kanban{grid-template-columns:1fr}
+    .pgrid,.grid{grid-template-columns:1fr}
   }
 </style>
 </head>
 <body>
+<div class="wrap">
 
 <div class="topbar">
   <div class="brand">
     <div class="logo">TeamForge</div>
-    <div class="v">v0.3 · GNG</div>
+    <div class="v">v1.0 · GNG</div>
   </div>
   <div class="nav">
-    <a class="on" data-view="active">角色卡</a>
+    <a class="on" data-view="characters">角色卡</a>
+    <a data-view="projects">项目</a>
     <a data-view="trash">回收站</a>
   </div>
 </div>
 
-<div class="section-head">
-  <h2 id="hdr">当前阵容 <span>· GNG</span></h2>
-  <div style="display:flex;gap:14px;align-items:center">
-    <div class="meta" id="meta"></div>
-    <div class="actions">
-      <button class="btn btn-primary" onclick="openDrawer(null)">+ 新增成员</button>
-    </div>
-  </div>
+<div id="page-characters" class="page"></div>
+<div id="page-projects" class="page" style="display:none"></div>
+<div id="page-detail" class="page" style="display:none"></div>
+<div id="page-trash" class="page" style="display:none"></div>
+
 </div>
 
-<div class="grid" id="grid"></div>
-<div class="empty" id="empty" style="display:none">空空如也</div>
-
-<!-- Drawer -->
-<div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>
-<div class="drawer" id="drawer">
+<!-- Char drawer -->
+<div class="drawer-mask" id="mask"></div>
+<div class="drawer" id="drawer-char">
   <div class="drawer-head">
-    <h3 id="drawer-title">编辑成员</h3>
-    <button class="btn-ghost btn" onclick="closeDrawer()">关闭</button>
+    <h3 id="ch-title">编辑成员</h3>
+    <button class="btn btn-ghost" onclick="closeDrawer()">关闭</button>
   </div>
   <div class="drawer-body">
     <div class="avatar-edit">
       <div id="avatar-preview" class="ph">👤</div>
-      <label class="upload-btn">
-        上传头像
-        <input type="file" id="avatar-input" accept="image/*">
-      </label>
+      <label class="upload-btn">上传头像<input type="file" id="avatar-input" accept="image/*"></label>
     </div>
-
     <div class="section-title">基础信息</div>
     <div class="field"><label>中文名 *</label><input id="f-cn"></div>
-    <div class="field"><label>英文名 / 花名</label><input id="f-en"></div>
-    <div class="field"><label>职能（如：数据 / 产品）</label><input id="f-func"></div>
-    <div class="field"><label>年限</label><input id="f-years" placeholder="如 5 年"></div>
-    <div class="field"><label>主项目</label><input id="f-project"></div>
-    <div class="field"><label>标签（逗号分隔）</label><input id="f-tags" placeholder="如 创意, 审美, 活跃"></div>
-
+    <div class="row2">
+      <div class="field"><label>英文名 / 花名</label><input id="f-en"></div>
+      <div class="field"><label>年限</label><input id="f-years" placeholder="如 5 年"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>职能</label><input id="f-func" placeholder="数据 / 产品"></div>
+      <div class="field"><label>主项目</label><input id="f-project"></div>
+    </div>
+    <div class="field"><label>标签（逗号分隔）</label><input id="f-tags"></div>
     <div class="section-title">风格与描述</div>
-    <div class="field"><label>一句话风格（卡面副标题）</label><input id="f-style"></div>
-    <div class="field"><label>Bio（卡面正文，支持 &lt;em&gt;）</label><textarea id="f-bio" rows="4"></textarea></div>
-    <div class="field"><label>擅长</label><textarea id="f-strengths" rows="2"></textarea></div>
-    <div class="field"><label>不擅长</label><textarea id="f-weakness" rows="2"></textarea></div>
-
-    <div class="section-title">满载度</div>
-    <div class="field">
-      <div class="skill-row">
-        <label>0–100</label>
-        <input type="range" id="f-cap" min="0" max="100" step="5">
-        <span class="val" id="f-cap-val">50</span>
-      </div>
+    <div class="field"><label>一句话风格</label><input id="f-style"></div>
+    <div class="field"><label>Bio</label><textarea id="f-bio" rows="3"></textarea></div>
+    <div class="row2">
+      <div class="field"><label>擅长</label><textarea id="f-strengths" rows="2"></textarea></div>
+      <div class="field"><label>不擅长</label><textarea id="f-weakness" rows="2"></textarea></div>
     </div>
-
     <div class="section-title">技能 12 维</div>
-    <div class="skills-collapse" id="skills-toggle">
-      <span>展开编辑技能值</span>
-      <span id="skills-chev">▾</span>
-    </div>
+    <div class="skills-collapse" id="skills-toggle"><span>展开编辑技能值</span><span id="skills-chev">▾</span></div>
     <div class="skills-grid" id="skills-grid"></div>
   </div>
   <div class="drawer-foot">
-    <div class="left">
-      <button class="btn btn-danger" id="btn-delete" onclick="confirmDelete()">删除</button>
-    </div>
-    <div class="right">
+    <button class="btn btn-danger" id="btn-delete-char" onclick="confirmDeleteChar()">删除</button>
+    <div style="display:flex;gap:8px">
       <button class="btn" onclick="closeDrawer()">取消</button>
       <button class="btn btn-primary" onclick="saveCharacter()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project drawer -->
+<div class="drawer" id="drawer-proj">
+  <div class="drawer-head">
+    <h3 id="pj-title">新建项目</h3>
+    <button class="btn btn-ghost" onclick="closeDrawer()">关闭</button>
+  </div>
+  <div class="drawer-body">
+    <div class="section-title">基础信息</div>
+    <div class="field"><label>项目名 *</label><input id="pf-name"></div>
+    <div class="field"><label>目标</label><textarea id="pf-goal" rows="3" placeholder="如：英雄系统改版，提升 30d 留存"></textarea></div>
+    <div class="row2">
+      <div class="field"><label>状态</label>
+        <select id="pf-status">
+          <option value="active">进行中</option>
+          <option value="paused">暂停</option>
+          <option value="archived">已归档</option>
+        </select>
+      </div>
+      <div class="field"><label>截止日期</label><input type="date" id="pf-deadline"></div>
+    </div>
+    <div class="field"><label>项目颜色</label>
+      <div class="color-row" id="pf-colors"></div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-danger" id="btn-delete-proj" onclick="confirmDeleteProj()">删除</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="closeDrawer()">取消</button>
+      <button class="btn btn-primary" onclick="saveProject()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task drawer -->
+<div class="drawer" id="drawer-task">
+  <div class="drawer-head">
+    <h3 id="tk-title">新建任务</h3>
+    <button class="btn btn-ghost" onclick="closeDrawer()">关闭</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field"><label>任务标题 *</label><input id="tf-title"></div>
+    <div class="field"><label>描述</label><textarea id="tf-descr" rows="3"></textarea></div>
+    <div class="row2">
+      <div class="field"><label>负责人</label>
+        <select id="tf-owner"><option value="">（未指派）</option></select>
+      </div>
+      <div class="field"><label>状态</label>
+        <select id="tf-status">
+          <option value="todo">待办</option>
+          <option value="doing">进行中</option>
+          <option value="done">已完成</option>
+          <option value="archived">已归档</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>截止日期</label><input type="date" id="tf-deadline"></div>
+      <div class="field"><label>预估工时（小时）</label><input type="number" id="tf-est" min="0" step="0.5"></div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-danger" id="btn-delete-task" onclick="confirmDeleteTask()">删除</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="closeDrawer()">取消</button>
+      <button class="btn btn-primary" onclick="saveTask()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Member drawer (assign to project) -->
+<div class="drawer" id="drawer-member">
+  <div class="drawer-head">
+    <h3 id="mb-title">配置成员</h3>
+    <button class="btn btn-ghost" onclick="closeDrawer()">关闭</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field"><label>成员</label>
+      <select id="mf-cid"></select>
+    </div>
+    <div class="field"><label>本项目内职能</label>
+      <input id="mf-role" placeholder="如：数据负责人 / 市场对接 / 活跃 owner">
+    </div>
+    <div class="field">
+      <label>投入度 <span id="mf-alloc-val">30</span>%</label>
+      <input type="range" id="mf-alloc" min="0" max="100" step="5" value="30" style="width:100%">
+    </div>
+    <div class="field"><label><input type="checkbox" id="mf-lead"> 设为本项目 Lead</label></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-danger" id="btn-delete-member" onclick="confirmDeleteMember()">从项目移除</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="closeDrawer()">取消</button>
+      <button class="btn btn-primary" onclick="saveMember()">保存</button>
     </div>
   </div>
 </div>
@@ -217,11 +382,11 @@
 <!-- Confirm modal -->
 <div class="modal-mask" id="modal-mask">
   <div class="modal">
-    <h4 id="modal-title">确认删除？</h4>
-    <p id="modal-body">删除后可在「回收站」恢复，不会立即丢失。</p>
+    <h4 id="modal-title">确认</h4>
+    <p id="modal-body"></p>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">取消</button>
-      <button class="btn btn-danger" id="modal-ok">删除</button>
+      <button class="btn btn-danger" id="modal-ok">确认</button>
     </div>
   </div>
 </div>
@@ -229,282 +394,540 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API = '/teamforge-api';
-const SKILL_KEYS = ['项目管理','战略大局','沟通协调','数据分析','商业化','用户运营','市场推广','本地化','创意策划','审美','执行力','抗压'];
+const API='/teamforge-api';
+const SKILL_KEYS=['项目管理','战略大局','沟通协调','数据分析','商业化','用户运营','市场推广','本地化','创意策划','审美','执行力','抗压'];
+const PROJ_COLORS=['#0071E3','#FF9500','#34C759','#AF52DE','#FF3B30','#5AC8FA','#FFCC00','#8E8E93'];
 
-let state = { view: 'active', chars: [], editing: null, charts: {}, dirty:false, pendingFile:null };
+const state={ view:'characters', chars:[], projects:[], currentProj:null, tasks:[], charts:{},
+  editChar:null, editProj:null, editTask:null, editMember:null, pendingFile:null, modalAction:null };
 
-function capColor(p){if(p>=90)return'var(--bad)';if(p>=80)return'var(--warn)';return'var(--good)'}
-
-async function load(){
-  const url = state.view === 'active' ? `${API}/characters` : `${API}/characters/trash`;
-  const r = await fetch(url);
-  state.chars = await r.json();
-  render();
+// ============ API ============
+async function api(path, opts={}){
+  const r = await fetch(API+path, opts);
+  if (!r.ok) throw new Error(`${path}: ${r.status}`);
+  if (r.status===204) return null;
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
 }
 
-function render(){
-  document.getElementById('hdr').innerHTML = state.view === 'active'
-    ? '当前阵容 <span>· GNG</span>' : '回收站 <span>· 可恢复</span>';
-  document.getElementById('meta').textContent = `${state.chars.length} 张卡`;
-  document.getElementById('empty').style.display = state.chars.length ? 'none' : 'block';
+async function loadChars(){ state.chars = await api('/characters_with_load'); }
+async function loadProjects(){ state.projects = await api('/projects'); }
+async function loadTasks(pid){ state.tasks = await api(`/tasks?project_id=${pid}`); }
 
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  // destroy old charts
-  Object.values(state.charts).forEach(c => c.destroy?.());
-  state.charts = {};
-
-  state.chars.forEach(p => {
-    const card = document.createElement('div');
-    card.className = 'card' + (p.deleted_at ? ' deleted' : '');
-    const tags = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
-    const avatar = p.avatar_url
-      ? `<img class="avatar" src="${p.avatar_url}" onerror="this.outerHTML='<div class=avatar>👤</div>'">`
-      : `<div class="avatar">👤</div>`;
-    const cap = p.capacity || 0;
-    const restoreUI = p.deleted_at
-      ? `<div class="restore-row"><button class="btn" onclick="event.stopPropagation();restoreChar('${p.id}')">恢复</button><button class="btn btn-danger" onclick="event.stopPropagation();confirmPurge('${p.id}','${p.cn_name}')">彻底删除</button></div>`
-      : `<button class="more-btn" onclick="event.stopPropagation();const d=this.nextElementSibling;d.classList.toggle('open');this.textContent=d.classList.contains('open')?'收起':'更多'">更多</button>
-         <div class="more-detail">
-           <div class="row"><span class="k">职能</span><span class="v">${p.func||'—'}</span></div>
-           <div class="row"><span class="k">年限</span><span class="v">${p.years||'—'}</span></div>
-           <div class="row"><span class="k">擅长</span><span class="v">${p.strengths||'—'}</span></div>
-           ${p.weakness?`<div class="row"><span class="k">不擅长</span><span class="v">${p.weakness}</span></div>`:''}
-           <div class="row"><span class="k">主项目</span><span class="v">${p.project||'—'}</span></div>
-         </div>`;
-
-    card.innerHTML = `
-      <div class="card-head">
-        ${avatar}
-        <div class="head-text">
-          <div class="name">${p.cn_name||'(未命名)'}</div>
-          <div class="style-line">${p.style||'<span style="color:#A1A1A6">待编辑</span>'}</div>
-        </div>
-      </div>
-      <div class="tags">${tags}</div>
-      <div class="radar-wrap"><canvas id="radar-${p.id}"></canvas></div>
-      <div class="cap-row">
-        <div class="cap-label">满载度</div>
-        <div class="cap-bar"><div class="cap-fill" style="width:${cap}%;background:${capColor(cap)}"></div></div>
-        <div class="cap-pct" style="color:${capColor(cap)}">${cap}%</div>
-      </div>
-      <div class="bio">${p.bio||'<span style="color:#A1A1A6">待编辑</span>'}</div>
-      ${restoreUI}
-    `;
-    if (!p.deleted_at) card.onclick = () => openDrawer(p.id);
-    grid.appendChild(card);
-
-    setTimeout(()=>{
-      const ctx = document.getElementById(`radar-${p.id}`);
-      if (!ctx) return;
-      const skills = p.skills || {};
-      state.charts[p.id] = new Chart(ctx,{
-        type:'radar',
-        data:{
-          labels:SKILL_KEYS,
-          datasets:[{
-            data: SKILL_KEYS.map(k=>skills[k]??50),
-            backgroundColor:'rgba(0,113,227,0.12)',
-            borderColor:'#0071E3',borderWidth:1.6,
-            pointBackgroundColor:'#0071E3',pointRadius:2,pointHoverRadius:4
-          }]
-        },
-        options:{
-          responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{enabled:true,backgroundColor:'rgba(255,255,255,0.96)',titleColor:'#1D1D1F',bodyColor:'#1D1D1F',borderColor:'rgba(0,0,0,0.08)',borderWidth:1,padding:10,displayColors:false,callbacks:{title:i=>i[0].label,label:i=>`${i.parsed.r} / 100`}}},
-          scales:{r:{min:0,max:100,angleLines:{color:'rgba(0,0,0,0.06)',lineWidth:0.6},grid:{color:'rgba(0,0,0,0.05)',lineWidth:0.6},pointLabels:{color:'#86868B',font:{size:10,weight:'500'}},ticks:{display:false}}}
-        }
-      });
-    },10);
-  });
-}
-
-// ----- Nav -----
+// ============ Nav ============
 document.querySelectorAll('.nav a').forEach(a=>{
-  a.onclick = () => {
+  a.onclick = async () => {
     document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on'));
     a.classList.add('on');
     state.view = a.dataset.view;
-    load();
+    state.currentProj = null;
+    await routeRender();
   };
 });
 
-// ----- Drawer -----
-function openDrawer(id){
-  state.editing = id;
-  state.pendingFile = null;
-  const drawer = document.getElementById('drawer');
-  const mask = document.getElementById('mask');
-  const isNew = !id;
-  document.getElementById('drawer-title').textContent = isNew ? '新增成员' : '编辑成员';
-  document.getElementById('btn-delete').style.display = isNew ? 'none' : 'inline-flex';
+async function routeRender(){
+  ['characters','projects','detail','trash'].forEach(v=>document.getElementById('page-'+v).style.display='none');
+  if (state.view==='characters'){ document.getElementById('page-characters').style.display=''; await loadChars(); await loadProjects(); renderCharacters(); }
+  else if (state.view==='projects' && !state.currentProj){ document.getElementById('page-projects').style.display=''; await loadProjects(); await loadChars(); renderProjects(); }
+  else if (state.view==='projects' && state.currentProj){ document.getElementById('page-detail').style.display=''; await loadProjects(); await loadChars(); await loadTasks(state.currentProj); renderProjectDetail(); }
+  else if (state.view==='trash'){ document.getElementById('page-trash').style.display=''; await renderTrash(); }
+}
 
-  const p = isNew ? {
-    cn_name:'',en_name:'',func:'',years:'',avatar_url:'',tags:[],
-    skills:Object.fromEntries(SKILL_KEYS.map(k=>[k,50])),
-    bio:'',style:'',strengths:'',weakness:'',project:'',capacity:50
-  } : state.chars.find(x=>x.id===id);
+// ============ Characters page ============
+function capColor(p){if(p>=90)return'var(--bad)';if(p>=80)return'var(--warn)';return'var(--good)'}
 
-  document.getElementById('f-cn').value = p.cn_name||'';
-  document.getElementById('f-en').value = p.en_name||'';
-  document.getElementById('f-func').value = p.func||'';
-  document.getElementById('f-years').value = p.years||'';
-  document.getElementById('f-project').value = p.project||'';
+function renderCharacters(){
+  const root = document.getElementById('page-characters');
+  Object.values(state.charts).forEach(c=>c.destroy?.());
+  state.charts={};
+  root.innerHTML = `
+    <div class="section-head">
+      <div><h2>当前阵容 <span>· ${state.chars.length} 人</span></h2></div>
+      <div style="display:flex;gap:14px;align-items:center">
+        <div class="meta">点卡片编辑 · 满载度按项目自动计算</div>
+        <div class="actions"><button class="btn btn-primary" onclick="openCharDrawer(null)">+ 新增成员</button></div>
+      </div>
+    </div>
+    <div class="grid" id="cgrid"></div>
+  `;
+  const grid = document.getElementById('cgrid');
+  state.chars.forEach(p=>{
+    const tags = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+    const avatar = p.avatar_url ? `<img class="avatar" src="${p.avatar_url}" onerror="this.outerHTML='<div class=avatar>👤</div>'">` : `<div class="avatar">👤</div>`;
+    const computed = p.computed_capacity ?? p.capacity ?? 0;
+    const segs = (p.project_load||[]).map(pl=>`<div class="cap-seg" style="width:${pl.allocation}%;background:${pl.color}"></div>`).join('');
+    const projChips = (p.project_load||[]).map(pl=>`<span class="proj-chip" style="background:${pl.color}">${pl.is_lead?'★ ':''}${pl.project_name}<span class="alloc">${pl.allocation}%</span></span>`).join('') || '<span style="font-size:11px;color:var(--faint)">未加入任何项目</span>';
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML=`
+      <div class="card-head">${avatar}<div class="head-text"><div class="name">${p.cn_name||'(未命名)'}</div><div class="style-line">${p.style||'<span style="color:#A1A1A6">待编辑</span>'}</div></div></div>
+      <div class="tags">${tags}</div>
+      <div class="radar-wrap"><canvas id="r-${p.id}"></canvas></div>
+      <div class="cap-row"><div class="cap-label">满载度</div><div class="cap-bar">${segs||'<div class="cap-seg" style="width:0"></div>'}</div><div class="cap-pct" style="color:${capColor(computed)}">${computed}%</div></div>
+      <div class="proj-tags">${projChips}</div>
+      <div class="bio">${p.bio||'<span style="color:#A1A1A6">待编辑</span>'}</div>
+      <button class="more-btn" onclick="event.stopPropagation();const d=this.nextElementSibling;d.classList.toggle('open');this.textContent=d.classList.contains('open')?'收起':'更多'">更多</button>
+      <div class="more-detail">
+        <div class="row"><span class="k">职能</span><span class="v">${p.func||'—'}</span></div>
+        <div class="row"><span class="k">年限</span><span class="v">${p.years||'—'}</span></div>
+        <div class="row"><span class="k">擅长</span><span class="v">${p.strengths||'—'}</span></div>
+        ${p.weakness?`<div class="row"><span class="k">不擅长</span><span class="v">${p.weakness}</span></div>`:''}
+      </div>`;
+    card.onclick = () => openCharDrawer(p.id);
+    grid.appendChild(card);
+    setTimeout(()=>renderRadar(`r-${p.id}`, p.skills||{}), 10);
+  });
+}
+
+function renderRadar(id, skills){
+  const ctx = document.getElementById(id); if(!ctx) return;
+  state.charts[id] = new Chart(ctx,{type:'radar',data:{labels:SKILL_KEYS,datasets:[{
+    data:SKILL_KEYS.map(k=>skills[k]??50),
+    backgroundColor:'rgba(0,113,227,0.12)',borderColor:'#0071E3',borderWidth:1.6,
+    pointBackgroundColor:'#0071E3',pointRadius:2,pointHoverRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{enabled:true,backgroundColor:'rgba(255,255,255,0.96)',titleColor:'#1D1D1F',bodyColor:'#1D1D1F',borderColor:'rgba(0,0,0,0.08)',borderWidth:1,padding:10,displayColors:false,callbacks:{title:i=>i[0].label,label:i=>`${i.parsed.r} / 100`}}},
+      scales:{r:{min:0,max:100,angleLines:{color:'rgba(0,0,0,0.06)',lineWidth:0.6},grid:{color:'rgba(0,0,0,0.05)',lineWidth:0.6},pointLabels:{color:'#86868B',font:{size:10,weight:'500'}},ticks:{display:false}}}}});
+}
+
+// ============ Projects page ============
+function renderProjects(){
+  const root = document.getElementById('page-projects');
+  root.innerHTML = `
+    <div class="section-head">
+      <div><h2>项目矩阵 <span>· ${state.projects.length} 个</span></h2></div>
+      <div style="display:flex;gap:14px;align-items:center">
+        <div class="meta">点卡片进项目看板</div>
+        <div class="actions"><button class="btn btn-primary" onclick="openProjDrawer(null)">+ 新建项目</button></div>
+      </div>
+    </div>
+    <div class="pgrid" id="pgrid"></div>
+  `;
+  const grid = document.getElementById('pgrid');
+  if (!state.projects.length){
+    grid.outerHTML = '<div class="empty">还没有项目<br><br><button class="btn btn-primary" onclick="openProjDrawer(null)">+ 新建第一个</button></div>';
+    return;
+  }
+  state.projects.forEach(p=>{
+    const card = document.createElement('div');
+    card.className='pcard';
+    card.style.setProperty('--c', p.color);
+    const memberAvs = (p.members||[]).slice(0,5).map(m=>m.avatar_url?`<img class="av" src="${m.avatar_url}" title="${m.cn_name}">`:`<div class="av">${(m.cn_name||'?')[0]}</div>`).join('');
+    const more = (p.members||[]).length>5 ? `<div class="more-n">+${p.members.length-5}</div>` : '';
+    const statusLabel = {active:'进行中',paused:'暂停',archived:'已归档'}[p.status]||p.status;
+    card.innerHTML = `
+      <div class="pcard-head"><h3>${p.name}</h3><span class="pstatus ${p.status}">${statusLabel}</span></div>
+      <div class="goal">${p.goal||'<span style="color:var(--faint)">无目标描述</span>'}</div>
+      <div class="ddl">${p.deadline?'<b>截止</b> '+p.deadline:'<span style="color:var(--faint)">未设截止日期</span>'}</div>
+      <div class="stack">${memberAvs}${more}<span class="count">${(p.members||[]).length} 成员</span></div>
+      <div class="pstats" id="pstats-${p.id}">
+        <div class="pstat"><b>—</b><span>待办</span></div>
+        <div class="pstat"><b>—</b><span>进行中</span></div>
+        <div class="pstat"><b>—</b><span>已完成</span></div>
+      </div>
+    `;
+    card.onclick = (e) => {
+      if (e.target.closest('.edit-btn')) return;
+      state.currentProj = p.id;
+      routeRender();
+    };
+    grid.appendChild(card);
+    // load task stats async
+    api(`/tasks?project_id=${p.id}`).then(tks=>{
+      const cnt = {todo:0,doing:0,done:0};
+      tks.forEach(t=>{ if(t.status==='archived') cnt.done++; else cnt[t.status]=(cnt[t.status]||0)+1; });
+      const el = document.getElementById(`pstats-${p.id}`);
+      if (el) el.innerHTML = `
+        <div class="pstat"><b>${cnt.todo}</b><span>待办</span></div>
+        <div class="pstat"><b>${cnt.doing}</b><span>进行中</span></div>
+        <div class="pstat"><b>${cnt.done}</b><span>已完成</span></div>`;
+    });
+  });
+}
+
+// ============ Project detail (kanban) ============
+function renderProjectDetail(){
+  const p = state.projects.find(x=>x.id===state.currentProj);
+  if (!p){ state.currentProj=null; renderProjects(); return; }
+  const root = document.getElementById('page-detail');
+  const statusLabel = {active:'进行中',paused:'暂停',archived:'已归档'}[p.status]||p.status;
+  root.innerHTML = `
+    <div class="breadcrumb"><a onclick="state.currentProj=null;routeRender()">项目</a> <span>›</span> <span>${p.name}</span></div>
+    <div class="pdetail-head" style="--c:${p.color}">
+      <div class="pd-row">
+        <div class="pd-title">
+          <h2>${p.name}</h2>
+          <span class="pstatus ${p.status}">${statusLabel}</span>
+        </div>
+        <div class="pd-actions">
+          <button class="btn" onclick="openProjDrawer('${p.id}')">编辑项目</button>
+          <button class="btn btn-primary" onclick="quickAddTask('todo')">+ 新任务</button>
+        </div>
+      </div>
+      <div class="pd-meta">${p.goal||'<span style="color:var(--faint)">无目标</span>'} ${p.deadline?` · <b>截止</b> ${p.deadline}`:''}</div>
+    </div>
+
+    <div class="pmembers">
+      <h3>团队 · ${(p.members||[]).length} 成员</h3>
+      <div class="pm-list" id="pm-list"></div>
+    </div>
+
+    <div class="kanban">
+      <div class="klane" id="lane-todo"><h4>待办 <span class="badge" id="bg-todo">0</span></h4><button class="add-task" onclick="quickAddTask('todo')">+ 加任务</button></div>
+      <div class="klane" id="lane-doing"><h4>进行中 <span class="badge" id="bg-doing">0</span></h4><button class="add-task" onclick="quickAddTask('doing')">+ 加任务</button></div>
+      <div class="klane" id="lane-done"><h4>已完成 <span class="badge" id="bg-done">0</span></h4><button class="add-task" onclick="quickAddTask('done')">+ 加任务</button></div>
+    </div>
+  `;
+  // members
+  const pmList = document.getElementById('pm-list');
+  (p.members||[]).forEach(m=>{
+    const chip = document.createElement('div');
+    chip.className = 'pm-chip' + (m.is_lead?' lead':'');
+    const av = m.avatar_url?`<img src="${m.avatar_url}">`:`<div class="ph">${(m.cn_name||'?')[0]}</div>`;
+    chip.innerHTML = `${av}<span>${m.cn_name||m.character_id}</span>${m.role?`<span class="role">· ${m.role}</span>`:''}<span class="alloc">${m.allocation}%</span>${m.is_lead?'<span class="lead">★</span>':''}`;
+    chip.onclick = () => openMemberDrawer(p.id, m.character_id);
+    pmList.appendChild(chip);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className='pm-add';
+  addBtn.textContent='+ 加入成员';
+  addBtn.onclick = () => openMemberDrawer(p.id, null);
+  pmList.appendChild(addBtn);
+
+  // tasks
+  const cnt = {todo:0,doing:0,done:0};
+  state.tasks.forEach(t=>{
+    const lane = (t.status==='archived'||t.status==='done') ? 'done' : t.status;
+    cnt[lane] = (cnt[lane]||0)+1;
+    const card = document.createElement('div');
+    card.className = 'tcard' + (lane==='done'?' done':'');
+    const owner = state.chars.find(c=>c.id===t.owner_id);
+    const ownerHtml = owner ? `<div class="tleft">${owner.avatar_url?`<img class="av-mini" src="${owner.avatar_url}">`:`<div class="av-mini">${owner.cn_name[0]}</div>`}<span class="owner-name">${owner.cn_name}</span></div>` : `<div class="tleft" style="color:var(--faint)">未指派</div>`;
+    const ddlCls = ddlClass(t.deadline);
+    const ddlHtml = t.deadline ? `<div class="ddl ${ddlCls}">${t.deadline}</div>` : '';
+    const actions = lane==='todo' ? `<div class="tactions"><button onclick="event.stopPropagation();moveTask('${t.id}','doing')">→ 进行中</button></div>`
+      : lane==='doing' ? `<div class="tactions"><button onclick="event.stopPropagation();moveTask('${t.id}','done')">→ 完成</button><button onclick="event.stopPropagation();moveTask('${t.id}','todo')">← 待办</button></div>`
+      : `<div class="tactions"><button onclick="event.stopPropagation();moveTask('${t.id}','doing')">↩ 重新打开</button><button onclick="event.stopPropagation();moveTask('${t.id}','archived')">归档</button></div>`;
+    card.innerHTML = `<div class="ttitle">${t.title}</div><div class="tbot">${ownerHtml}${ddlHtml}</div>${actions}`;
+    card.onclick = () => openTaskDrawer(t.id);
+    document.getElementById('lane-'+lane).appendChild(card);
+  });
+  document.getElementById('bg-todo').textContent = cnt.todo;
+  document.getElementById('bg-doing').textContent = cnt.doing;
+  document.getElementById('bg-done').textContent = cnt.done;
+}
+
+function ddlClass(d){
+  if (!d) return '';
+  const days = (new Date(d) - new Date())/86400000;
+  if (days < 0) return 'urgent';
+  if (days < 3) return 'urgent';
+  if (days < 7) return 'soon';
+  return '';
+}
+
+async function moveTask(tid, newStatus){
+  await api(`/tasks/${tid}`, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:newStatus})});
+  await loadTasks(state.currentProj);
+  renderProjectDetail();
+  toast('已更新');
+}
+
+// ============ Trash page ============
+async function renderTrash(){
+  const root = document.getElementById('page-trash');
+  const [tch, tpj] = await Promise.all([api('/characters/trash'), api('/projects/trash')]);
+  root.innerHTML = `
+    <div class="section-head"><div><h2>回收站 <span>· ${tch.length+tpj.length} 项</span></h2></div></div>
+    ${tpj.length?'<div class="section-title">项目</div>':''}
+    <div class="pgrid">${tpj.map(p=>`
+      <div class="pcard" style="--c:${p.color};opacity:0.65;border-style:dashed">
+        <div class="pcard-head"><h3>${p.name}</h3><span class="pstatus archived">已删除</span></div>
+        <div class="goal">${p.goal||'—'}</div>
+        <div class="restore-row">
+          <button class="btn" onclick="restoreProj('${p.id}')">恢复</button>
+          <button class="btn btn-danger" onclick="confirmPurge('proj','${p.id}','${p.name}')">彻底删除</button>
+        </div>
+      </div>`).join('')}</div>
+    ${tch.length?'<div class="section-title" style="margin-top:30px">成员</div>':''}
+    <div class="grid">${tch.map(p=>`
+      <div class="card deleted">
+        <div class="card-head"><div class="avatar">${(p.cn_name||'?')[0]}</div><div class="head-text"><div class="name">${p.cn_name}</div><div class="style-line">${p.style||'—'}</div></div></div>
+        <div class="restore-row">
+          <button class="btn" onclick="restoreChar('${p.id}')">恢复</button>
+          <button class="btn btn-danger" onclick="confirmPurge('char','${p.id}','${p.cn_name}')">彻底删除</button>
+        </div>
+      </div>`).join('')}</div>
+    ${!tch.length && !tpj.length ? '<div class="empty">回收站是空的</div>' : ''}
+  `;
+}
+
+// ============ Drawers ============
+function openDrawer(which){
+  document.getElementById('mask').classList.add('open');
+  ['drawer-char','drawer-proj','drawer-task','drawer-member'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (id===which) el.classList.add('open');
+    else el.classList.remove('open');
+  });
+}
+function closeDrawer(){
+  document.getElementById('mask').classList.remove('open');
+  ['drawer-char','drawer-proj','drawer-task','drawer-member'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  state.editChar=state.editProj=state.editTask=state.editMember=null;
+  state.pendingFile=null;
+}
+document.getElementById('mask').onclick = closeDrawer;
+
+// --- Char drawer ---
+function openCharDrawer(id){
+  state.editChar=id;state.pendingFile=null;
+  const isNew=!id;
+  document.getElementById('ch-title').textContent = isNew?'新增成员':'编辑成员';
+  document.getElementById('btn-delete-char').style.display = isNew?'none':'inline-flex';
+  const p = isNew ? {cn_name:'',skills:Object.fromEntries(SKILL_KEYS.map(k=>[k,50]))} : state.chars.find(x=>x.id===id);
+  ['cn','en','func','years','project','style','bio','strengths','weakness'].forEach(k=>{
+    const el = document.getElementById('f-'+k);
+    if (el) el.value = p[{cn:'cn_name',en:'en_name'}[k]||k]||'';
+  });
   document.getElementById('f-tags').value = (p.tags||[]).join(', ');
-  document.getElementById('f-style').value = p.style||'';
-  document.getElementById('f-bio').value = p.bio||'';
-  document.getElementById('f-strengths').value = p.strengths||'';
-  document.getElementById('f-weakness').value = p.weakness||'';
-  document.getElementById('f-cap').value = p.capacity||50;
-  document.getElementById('f-cap-val').textContent = p.capacity||50;
-
   const ap = document.getElementById('avatar-preview');
-  if (p.avatar_url) ap.outerHTML = `<img id="avatar-preview" src="${p.avatar_url}" onerror="this.outerHTML='<div id=avatar-preview class=ph>👤</div>'">`;
+  if (p.avatar_url) ap.outerHTML = `<img id="avatar-preview" src="${p.avatar_url}">`;
   else ap.outerHTML = '<div id="avatar-preview" class="ph">👤</div>';
-
-  // skills grid
   const sg = document.getElementById('skills-grid');
   sg.innerHTML = SKILL_KEYS.map(k=>{
-    const v = p.skills?.[k] ?? 50;
-    return `<div class="skill-row">
-      <label>${k}</label>
-      <input type="range" min="0" max="100" step="5" value="${v}" data-skill="${k}"
-        oninput="this.nextElementSibling.textContent=this.value">
-      <span class="val">${v}</span>
-    </div>`;
+    const v = p.skills?.[k]??50;
+    return `<div class="skill-row"><label>${k}</label><input type="range" min="0" max="100" step="5" value="${v}" data-skill="${k}" oninput="this.nextElementSibling.textContent=this.value"><span class="val">${v}</span></div>`;
   }).join('');
   sg.classList.remove('open');
-  document.getElementById('skills-chev').textContent = '▾';
-
-  drawer.classList.add('open');
-  mask.classList.add('open');
+  document.getElementById('skills-chev').textContent='▾';
+  openDrawer('drawer-char');
 }
-
-function closeDrawer(){
-  document.getElementById('drawer').classList.remove('open');
-  document.getElementById('mask').classList.remove('open');
-  state.editing = null;
-  state.pendingFile = null;
-}
-
 document.getElementById('skills-toggle').onclick = () => {
-  const sg = document.getElementById('skills-grid');
-  sg.classList.toggle('open');
-  document.getElementById('skills-chev').textContent = sg.classList.contains('open') ? '▴' : '▾';
-};
-document.getElementById('f-cap').oninput = (e) => {
-  document.getElementById('f-cap-val').textContent = e.target.value;
+  const sg = document.getElementById('skills-grid'); sg.classList.toggle('open');
+  document.getElementById('skills-chev').textContent = sg.classList.contains('open')?'▴':'▾';
 };
 document.getElementById('avatar-input').onchange = (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  state.pendingFile = f;
-  const url = URL.createObjectURL(f);
-  document.getElementById('avatar-preview').outerHTML = `<img id="avatar-preview" src="${url}">`;
+  const f = e.target.files[0]; if(!f) return;
+  state.pendingFile=f;
+  const u = URL.createObjectURL(f);
+  document.getElementById('avatar-preview').outerHTML = `<img id="avatar-preview" src="${u}">`;
 };
 
 async function saveCharacter(){
   const cn = document.getElementById('f-cn').value.trim();
-  if (!cn) { toast('中文名不能为空'); return; }
+  if (!cn){ toast('中文名不能为空'); return; }
   const data = {
-    cn_name: cn,
-    en_name: document.getElementById('f-en').value.trim(),
-    func: document.getElementById('f-func').value.trim(),
-    years: document.getElementById('f-years').value.trim(),
-    project: document.getElementById('f-project').value.trim(),
-    tags: document.getElementById('f-tags').value.split(/[,，、]/).map(s=>s.trim()).filter(Boolean),
-    style: document.getElementById('f-style').value.trim(),
-    bio: document.getElementById('f-bio').value.trim(),
-    strengths: document.getElementById('f-strengths').value.trim(),
-    weakness: document.getElementById('f-weakness').value.trim(),
-    capacity: parseInt(document.getElementById('f-cap').value),
-    skills: Object.fromEntries(Array.from(document.querySelectorAll('#skills-grid input[type=range]')).map(i=>[i.dataset.skill, parseInt(i.value)]))
+    cn_name:cn, en_name:document.getElementById('f-en').value.trim(),
+    func:document.getElementById('f-func').value.trim(), years:document.getElementById('f-years').value.trim(),
+    project:document.getElementById('f-project').value.trim(),
+    tags:document.getElementById('f-tags').value.split(/[,，、]/).map(s=>s.trim()).filter(Boolean),
+    style:document.getElementById('f-style').value.trim(), bio:document.getElementById('f-bio').value.trim(),
+    strengths:document.getElementById('f-strengths').value.trim(), weakness:document.getElementById('f-weakness').value.trim(),
+    skills:Object.fromEntries(Array.from(document.querySelectorAll('#skills-grid input[type=range]')).map(i=>[i.dataset.skill,parseInt(i.value)]))
   };
-  try {
-    let id = state.editing;
-    if (id) {
-      const r = await fetch(`${API}/characters/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-      if (!r.ok) throw new Error(`save failed: ${r.status}`);
-    } else {
-      const r = await fetch(`${API}/characters`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-      if (!r.ok) throw new Error(`create failed: ${r.status}`);
-      const created = await r.json();
-      id = created.id;
-    }
-    if (state.pendingFile) {
-      const fd = new FormData(); fd.append('file', state.pendingFile);
-      await fetch(`${API}/characters/${id}/avatar`, {method:'POST', body:fd});
-    }
-    toast('已保存');
-    closeDrawer();
-    load();
-  } catch(e) { toast('保存失败：'+e.message); }
+  try{
+    let id = state.editChar;
+    if (id) await api(`/characters/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    else { const r = await api('/characters',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); id=r.id; }
+    if (state.pendingFile){ const fd=new FormData(); fd.append('file',state.pendingFile); await fetch(`${API}/characters/${id}/avatar`,{method:'POST',body:fd}); }
+    closeDrawer(); toast('已保存'); routeRender();
+  } catch(e){ toast('保存失败：'+e.message); }
 }
 
-// ----- Delete + restore -----
-let pendingDelete = null;
-let pendingPurge = null;
-function confirmDelete(){
-  if (!state.editing) return;
-  pendingDelete = state.editing;
-  pendingPurge = null;
-  const c = state.chars.find(x=>x.id===pendingDelete);
-  document.getElementById('modal-title').textContent = `删除 ${c?.cn_name || '该成员'}？`;
-  document.getElementById('modal-body').textContent = '删除后可在「回收站」恢复，不会立即丢失。';
-  document.getElementById('modal-ok').textContent = '删除';
-  document.getElementById('modal-mask').classList.add('open');
-}
-function confirmPurge(id, name){
-  pendingPurge = id;
-  pendingDelete = null;
-  document.getElementById('modal-title').textContent = `彻底删除 ${name}？`;
-  document.getElementById('modal-body').textContent = '此操作不可撤销，将从数据库永久移除。';
-  document.getElementById('modal-ok').textContent = '彻底删除';
-  document.getElementById('modal-mask').classList.add('open');
-}
-function closeModal(){
-  document.getElementById('modal-mask').classList.remove('open');
-  pendingDelete = pendingPurge = null;
-}
-document.getElementById('modal-ok').onclick = async () => {
-  if (pendingDelete){
-    const id = pendingDelete; const c = state.chars.find(x=>x.id===id);
-    closeModal();
-    await fetch(`${API}/characters/${id}`, {method:'DELETE'});
-    closeDrawer();
-    toast(`${c?.cn_name||''} 已移至回收站`, ()=>restoreChar(id), '撤销');
-    load();
-  } else if (pendingPurge){
-    const id = pendingPurge;
-    closeModal();
-    await fetch(`${API}/characters/${id}/purge`, {method:'DELETE'});
-    toast('已彻底删除');
-    load();
-  }
-};
-async function restoreChar(id){
-  await fetch(`${API}/characters/${id}/restore`, {method:'POST'});
-  toast('已恢复');
-  load();
+function confirmDeleteChar(){
+  const id = state.editChar; if(!id) return;
+  const c = state.chars.find(x=>x.id===id);
+  openModal(`删除 ${c?.cn_name}？`, '删除后可在「回收站」恢复。', async()=>{
+    await api(`/characters/${id}`,{method:'DELETE'});
+    closeDrawer(); toast(`${c?.cn_name} 已移至回收站`, async()=>{ await api(`/characters/${id}/restore`,{method:'POST'}); routeRender(); toast('已恢复'); }, '撤销');
+    routeRender();
+  });
 }
 
-// ----- Toast -----
+// --- Project drawer ---
+function openProjDrawer(id){
+  state.editProj = id;
+  const isNew = !id;
+  document.getElementById('pj-title').textContent = isNew?'新建项目':'编辑项目';
+  document.getElementById('btn-delete-proj').style.display = isNew?'none':'inline-flex';
+  const p = isNew ? {name:'',goal:'',status:'active',color:PROJ_COLORS[0],deadline:''} : state.projects.find(x=>x.id===id);
+  document.getElementById('pf-name').value = p.name||'';
+  document.getElementById('pf-goal').value = p.goal||'';
+  document.getElementById('pf-status').value = p.status||'active';
+  document.getElementById('pf-deadline').value = p.deadline||'';
+  const cr = document.getElementById('pf-colors');
+  cr.innerHTML = PROJ_COLORS.map(c=>`<div class="color-chip ${c===p.color?'on':''}" style="background:${c}" data-c="${c}"></div>`).join('');
+  cr.querySelectorAll('.color-chip').forEach(el=>el.onclick=()=>{cr.querySelectorAll('.color-chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');});
+  openDrawer('drawer-proj');
+}
+
+async function saveProject(){
+  const name = document.getElementById('pf-name').value.trim();
+  if (!name){ toast('项目名不能为空'); return; }
+  const data = {
+    name, goal:document.getElementById('pf-goal').value.trim(),
+    status:document.getElementById('pf-status').value,
+    deadline:document.getElementById('pf-deadline').value,
+    color:document.querySelector('#pf-colors .color-chip.on')?.dataset.c || PROJ_COLORS[0]
+  };
+  try{
+    if (state.editProj) await api(`/projects/${state.editProj}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    else await api('/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    closeDrawer(); toast('已保存'); routeRender();
+  } catch(e){ toast('保存失败：'+e.message); }
+}
+
+function confirmDeleteProj(){
+  const id = state.editProj; if(!id) return;
+  const p = state.projects.find(x=>x.id===id);
+  openModal(`删除项目「${p.name}」？`, '关联的任务也会被一起回收。可在「回收站」恢复。', async()=>{
+    await api(`/projects/${id}`,{method:'DELETE'});
+    closeDrawer(); toast(`${p.name} 已移至回收站`); 
+    state.currentProj=null;
+    routeRender();
+  });
+}
+
+async function restoreProj(id){ await api(`/projects/${id}/restore`,{method:'POST'}); toast('已恢复'); renderTrash(); }
+async function restoreChar(id){ await api(`/characters/${id}/restore`,{method:'POST'}); toast('已恢复'); renderTrash(); }
+
+// --- Task drawer ---
+function openTaskDrawer(id){
+  state.editTask = id;
+  const isNew = !id;
+  document.getElementById('tk-title').textContent = isNew?'新建任务':'编辑任务';
+  document.getElementById('btn-delete-task').style.display = isNew?'none':'inline-flex';
+  const t = isNew ? {title:'',descr:'',status:'todo',owner_id:'',deadline:'',estimate_hours:0} : state.tasks.find(x=>x.id===id);
+  document.getElementById('tf-title').value = t.title||'';
+  document.getElementById('tf-descr').value = t.descr||'';
+  document.getElementById('tf-status').value = t.status||'todo';
+  document.getElementById('tf-deadline').value = t.deadline||'';
+  document.getElementById('tf-est').value = t.estimate_hours||'';
+  // owner options = project members
+  const proj = state.projects.find(x=>x.id===state.currentProj);
+  const opts = ['<option value="">（未指派）</option>'].concat((proj?.members||[]).map(m=>`<option value="${m.character_id}" ${m.character_id===t.owner_id?'selected':''}>${m.cn_name}${m.role?' · '+m.role:''}</option>`));
+  document.getElementById('tf-owner').innerHTML = opts.join('');
+  openDrawer('drawer-task');
+}
+
+function quickAddTask(status){
+  state.editTask=null;
+  document.getElementById('tk-title').textContent='新建任务';
+  document.getElementById('btn-delete-task').style.display='none';
+  document.getElementById('tf-title').value='';
+  document.getElementById('tf-descr').value='';
+  document.getElementById('tf-status').value=status;
+  document.getElementById('tf-deadline').value='';
+  document.getElementById('tf-est').value='';
+  const proj = state.projects.find(x=>x.id===state.currentProj);
+  document.getElementById('tf-owner').innerHTML = ['<option value="">（未指派）</option>'].concat((proj?.members||[]).map(m=>`<option value="${m.character_id}">${m.cn_name}${m.role?' · '+m.role:''}</option>`)).join('');
+  openDrawer('drawer-task');
+}
+
+async function saveTask(){
+  const title = document.getElementById('tf-title').value.trim();
+  if (!title){ toast('任务标题不能为空'); return; }
+  const data = {
+    title, descr:document.getElementById('tf-descr').value.trim(),
+    status:document.getElementById('tf-status').value,
+    owner_id:document.getElementById('tf-owner').value,
+    deadline:document.getElementById('tf-deadline').value,
+    estimate_hours:parseFloat(document.getElementById('tf-est').value||0)
+  };
+  try{
+    if (state.editTask) await api(`/tasks/${state.editTask}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    else await api('/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:state.currentProj, ...data})});
+    closeDrawer(); toast('已保存'); await loadTasks(state.currentProj); renderProjectDetail();
+  } catch(e){ toast('保存失败：'+e.message); }
+}
+
+function confirmDeleteTask(){
+  const id = state.editTask; if(!id) return;
+  const t = state.tasks.find(x=>x.id===id);
+  openModal(`删除任务「${t.title}」？`, '此操作不可撤销。', async()=>{
+    await api(`/tasks/${id}`,{method:'DELETE'});
+    closeDrawer(); toast('已删除'); await loadTasks(state.currentProj); renderProjectDetail();
+  });
+}
+
+// --- Member drawer ---
+function openMemberDrawer(pid, cid){
+  state.editMember = {pid, cid};
+  const isNew = !cid;
+  document.getElementById('mb-title').textContent = isNew?'加入成员':'配置成员';
+  document.getElementById('btn-delete-member').style.display = isNew?'none':'inline-flex';
+  const sel = document.getElementById('mf-cid');
+  const proj = state.projects.find(x=>x.id===pid);
+  const existing = new Set((proj.members||[]).map(m=>m.character_id));
+  const opts = state.chars.filter(c=>!existing.has(c.id)||c.id===cid).map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${c.cn_name}</option>`);
+  sel.innerHTML = opts.join('');
+  sel.disabled = !isNew;
+  const m = (proj.members||[]).find(x=>x.character_id===cid) || {role:'',allocation:30,is_lead:false};
+  document.getElementById('mf-role').value = m.role||'';
+  document.getElementById('mf-alloc').value = m.allocation??30;
+  document.getElementById('mf-alloc-val').textContent = m.allocation??30;
+  document.getElementById('mf-lead').checked = !!m.is_lead;
+  openDrawer('drawer-member');
+}
+document.getElementById('mf-alloc').oninput = (e)=>document.getElementById('mf-alloc-val').textContent = e.target.value;
+
+async function saveMember(){
+  const {pid, cid} = state.editMember;
+  const data = {
+    role:document.getElementById('mf-role').value.trim(),
+    allocation:parseInt(document.getElementById('mf-alloc').value),
+    is_lead:document.getElementById('mf-lead').checked
+  };
+  try{
+    if (cid){ await api(`/projects/${pid}/members/${cid}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); }
+    else { const newCid = document.getElementById('mf-cid').value;
+      await api(`/projects/${pid}/members`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({character_id:newCid, ...data})}); }
+    closeDrawer(); toast('已保存'); routeRender();
+  } catch(e){ toast('保存失败：'+e.message); }
+}
+
+function confirmDeleteMember(){
+  const {pid, cid} = state.editMember;
+  const proj = state.projects.find(x=>x.id===pid);
+  const m = (proj.members||[]).find(x=>x.character_id===cid);
+  openModal(`从「${proj.name}」移除 ${m?.cn_name}？`, '不会删除成员本身，只是从项目里移除。', async()=>{
+    await api(`/projects/${pid}/members/${cid}`,{method:'DELETE'});
+    closeDrawer(); toast('已移除'); routeRender();
+  });
+}
+
+// --- Purge from trash ---
+function confirmPurge(kind, id, name){
+  openModal(`彻底删除${kind==='proj'?'项目':'成员'}「${name}」？`, '此操作不可撤销。', async()=>{
+    await api(`/${kind==='proj'?'projects':'characters'}/${id}/purge`,{method:'DELETE'});
+    toast('已彻底删除'); renderTrash();
+  });
+}
+
+// --- Modal ---
+function openModal(title, body, action){
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  state.modalAction = action;
+  document.getElementById('modal-mask').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-mask').classList.remove('open'); state.modalAction=null; }
+document.getElementById('modal-ok').onclick = async () => { const a=state.modalAction; closeModal(); if (a) await a(); };
+document.getElementById('modal-mask').onclick = (e)=>{ if(e.target.id==='modal-mask') closeModal(); };
+
+// --- Toast ---
 function toast(msg, action, actionLabel){
   const t = document.getElementById('toast');
-  t.innerHTML = msg + (action ? ` <a id="toast-action">${actionLabel||'撤销'}</a>` : '');
+  t.innerHTML = msg + (action?` <a id="ta">${actionLabel||'撤销'}</a>`:'');
   t.classList.add('show');
-  if (action) {
-    document.getElementById('toast-action').onclick = () => {
-      action();
-      t.classList.remove('show');
-    };
-  }
+  if (action) document.getElementById('ta').onclick = ()=>{ action(); t.classList.remove('show'); };
   clearTimeout(window._toast);
-  window._toast = setTimeout(()=>t.classList.remove('show'), action ? 6000 : 2400);
+  window._toast = setTimeout(()=>t.classList.remove('show'), action?6000:2400);
 }
 
-load();
+// Init
+routeRender();
 </script>
 </body>
 </html>

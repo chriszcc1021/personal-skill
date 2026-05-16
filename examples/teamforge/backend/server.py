@@ -42,6 +42,45 @@ def init_db():
             created_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL
         )""")
+        c.execute("""CREATE TABLE IF NOT EXISTS projects(
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            goal TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            color TEXT DEFAULT '#0071E3',
+            start_date TEXT DEFAULT '',
+            deadline TEXT DEFAULT '',
+            sort_order INTEGER DEFAULT 100,
+            deleted_at INTEGER DEFAULT NULL,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+        )""")
+        c.execute("""CREATE TABLE IF NOT EXISTS project_members(
+            project_id TEXT NOT NULL,
+            character_id TEXT NOT NULL,
+            role TEXT DEFAULT '',
+            allocation INTEGER DEFAULT 30,
+            is_lead INTEGER DEFAULT 0,
+            created_at INTEGER NOT NULL,
+            PRIMARY KEY(project_id, character_id)
+        )""")
+        c.execute("""CREATE TABLE IF NOT EXISTS tasks(
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            descr TEXT DEFAULT '',
+            status TEXT DEFAULT 'todo',
+            owner_id TEXT DEFAULT '',
+            collaborators_json TEXT DEFAULT '[]',
+            deadline TEXT DEFAULT '',
+            estimate_hours REAL DEFAULT 0,
+            actual_hours REAL DEFAULT 0,
+            ai_reason TEXT DEFAULT '',
+            sort_order INTEGER DEFAULT 100,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            completed_at INTEGER DEFAULT NULL
+        )""")
 
 SEED = [
   {"id":"pingfan","cn_name":"平凡","en_name":"Pingfan","func":"团队负责人","years":"8+ 年",
@@ -279,6 +318,262 @@ def get_avatar(name: str):
     p = AVATARS / name.split("?")[0]
     if not p.exists(): raise HTTPException(404)
     return FileResponse(p)
+
+# ============ PROJECTS ============
+def row_to_project(r, members=None):
+    return {
+        "id": r["id"], "name": r["name"], "goal": r["goal"],
+        "status": r["status"], "color": r["color"],
+        "start_date": r["start_date"], "deadline": r["deadline"],
+        "sort_order": r["sort_order"], "deleted_at": r["deleted_at"],
+        "created_at": r["created_at"], "updated_at": r["updated_at"],
+        "members": members or [],
+    }
+
+def project_members(c, pid):
+    rows = c.execute("""SELECT pm.*, ch.cn_name, ch.avatar_url FROM project_members pm
+                        LEFT JOIN characters ch ON ch.id = pm.character_id
+                        WHERE pm.project_id=? ORDER BY pm.is_lead DESC, pm.allocation DESC""", (pid,)).fetchall()
+    return [{"character_id": r["character_id"], "cn_name": r["cn_name"],
+             "avatar_url": r["avatar_url"], "role": r["role"],
+             "allocation": r["allocation"], "is_lead": bool(r["is_lead"])} for r in rows]
+
+class ProjectIn(BaseModel):
+    name: str
+    goal: Optional[str] = ""
+    status: Optional[str] = "active"
+    color: Optional[str] = "#0071E3"
+    start_date: Optional[str] = ""
+    deadline: Optional[str] = ""
+
+class ProjectPatch(BaseModel):
+    name: Optional[str] = None
+    goal: Optional[str] = None
+    status: Optional[str] = None
+    color: Optional[str] = None
+    start_date: Optional[str] = None
+    deadline: Optional[str] = None
+    sort_order: Optional[int] = None
+
+@app.get("/api/projects")
+def list_projects(include_deleted: int = 0):
+    with db() as c:
+        q = "SELECT * FROM projects"
+        if not include_deleted: q += " WHERE deleted_at IS NULL"
+        q += " ORDER BY sort_order ASC, created_at ASC"
+        rows = c.execute(q).fetchall()
+        return [row_to_project(r, project_members(c, r["id"])) for r in rows]
+
+@app.get("/api/projects/trash")
+def trash_projects():
+    with db() as c:
+        rows = c.execute("SELECT * FROM projects WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC").fetchall()
+        return [row_to_project(r, project_members(c, r["id"])) for r in rows]
+
+@app.get("/api/projects/{pid}")
+def get_project(pid: str):
+    with db() as c:
+        r = c.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+        if not r: raise HTTPException(404)
+        return row_to_project(r, project_members(c, pid))
+
+@app.post("/api/projects")
+def create_project(p: ProjectIn):
+    pid = uuid.uuid4().hex[:8]
+    now = int(time.time())
+    with db() as c:
+        max_sort = c.execute("SELECT MAX(sort_order) FROM projects").fetchone()[0] or 0
+        c.execute("""INSERT INTO projects(id,name,goal,status,color,start_date,deadline,sort_order,created_at,updated_at)
+                     VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                  (pid, p.name, p.goal, p.status, p.color, p.start_date, p.deadline, max_sort+10, now, now))
+        r = c.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+        return row_to_project(r, [])
+
+@app.patch("/api/projects/{pid}")
+def patch_project(pid: str, p: ProjectPatch):
+    with db() as c:
+        r = c.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+        if not r: raise HTTPException(404)
+        d = p.model_dump(exclude_none=True)
+        if not d: return row_to_project(r, project_members(c, pid))
+        sets = [f"{k}=?" for k in d.keys()]
+        vals = list(d.values()) + [int(time.time()), pid]
+        sets.append("updated_at=?")
+        c.execute(f"UPDATE projects SET {','.join(sets)} WHERE id=?", vals)
+        r2 = c.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+        return row_to_project(r2, project_members(c, pid))
+
+@app.delete("/api/projects/{pid}")
+def soft_delete_project(pid: str):
+    with db() as c:
+        r = c.execute("SELECT id FROM projects WHERE id=?", (pid,)).fetchone()
+        if not r: raise HTTPException(404)
+        now = int(time.time())
+        c.execute("UPDATE projects SET deleted_at=?, updated_at=? WHERE id=?", (now, now, pid))
+        return {"ok": True}
+
+@app.post("/api/projects/{pid}/restore")
+def restore_project(pid: str):
+    with db() as c:
+        c.execute("UPDATE projects SET deleted_at=NULL, updated_at=? WHERE id=?", (int(time.time()), pid))
+        return {"ok": True}
+
+@app.delete("/api/projects/{pid}/purge")
+def purge_project(pid: str):
+    with db() as c:
+        r = c.execute("SELECT id, deleted_at FROM projects WHERE id=?", (pid,)).fetchone()
+        if not r: raise HTTPException(404)
+        if r["deleted_at"] is None: raise HTTPException(400, "must soft-delete first")
+        c.execute("DELETE FROM project_members WHERE project_id=?", (pid,))
+        c.execute("DELETE FROM tasks WHERE project_id=?", (pid,))
+        c.execute("DELETE FROM projects WHERE id=?", (pid,))
+        return {"ok": True}
+
+class MemberIn(BaseModel):
+    character_id: str
+    role: Optional[str] = ""
+    allocation: Optional[int] = 30
+    is_lead: Optional[bool] = False
+
+@app.post("/api/projects/{pid}/members")
+def add_member(pid: str, m: MemberIn):
+    with db() as c:
+        if not c.execute("SELECT 1 FROM projects WHERE id=?", (pid,)).fetchone(): raise HTTPException(404)
+        if not c.execute("SELECT 1 FROM characters WHERE id=?", (m.character_id,)).fetchone(): raise HTTPException(404, "char not found")
+        c.execute("""INSERT OR REPLACE INTO project_members(project_id,character_id,role,allocation,is_lead,created_at)
+                     VALUES(?,?,?,?,?,?)""",
+                  (pid, m.character_id, m.role, m.allocation, int(bool(m.is_lead)), int(time.time())))
+        return {"ok": True, "members": project_members(c, pid)}
+
+class MemberPatch(BaseModel):
+    role: Optional[str] = None
+    allocation: Optional[int] = None
+    is_lead: Optional[bool] = None
+
+@app.patch("/api/projects/{pid}/members/{cid}")
+def patch_member(pid: str, cid: str, m: MemberPatch):
+    with db() as c:
+        d = m.model_dump(exclude_none=True)
+        if "is_lead" in d: d["is_lead"] = int(bool(d["is_lead"]))
+        if not d: return {"ok": True}
+        sets = [f"{k}=?" for k in d.keys()]
+        vals = list(d.values()) + [pid, cid]
+        c.execute(f"UPDATE project_members SET {','.join(sets)} WHERE project_id=? AND character_id=?", vals)
+        return {"ok": True}
+
+@app.delete("/api/projects/{pid}/members/{cid}")
+def del_member(pid: str, cid: str):
+    with db() as c:
+        c.execute("DELETE FROM project_members WHERE project_id=? AND character_id=?", (pid, cid))
+        return {"ok": True}
+
+# ============ TASKS ============
+def row_to_task(r):
+    return {
+        "id": r["id"], "project_id": r["project_id"], "title": r["title"],
+        "descr": r["descr"], "status": r["status"], "owner_id": r["owner_id"],
+        "collaborators": json.loads(r["collaborators_json"] or "[]"),
+        "deadline": r["deadline"], "estimate_hours": r["estimate_hours"],
+        "actual_hours": r["actual_hours"], "ai_reason": r["ai_reason"],
+        "sort_order": r["sort_order"],
+        "created_at": r["created_at"], "updated_at": r["updated_at"],
+        "completed_at": r["completed_at"],
+    }
+
+class TaskIn(BaseModel):
+    project_id: str
+    title: str
+    descr: Optional[str] = ""
+    status: Optional[str] = "todo"
+    owner_id: Optional[str] = ""
+    collaborators: Optional[list] = []
+    deadline: Optional[str] = ""
+    estimate_hours: Optional[float] = 0
+    ai_reason: Optional[str] = ""
+
+class TaskPatch(BaseModel):
+    title: Optional[str] = None
+    descr: Optional[str] = None
+    status: Optional[str] = None
+    owner_id: Optional[str] = None
+    collaborators: Optional[list] = None
+    deadline: Optional[str] = None
+    estimate_hours: Optional[float] = None
+    actual_hours: Optional[float] = None
+    sort_order: Optional[int] = None
+
+@app.get("/api/tasks")
+def list_tasks(project_id: Optional[str] = None, status: Optional[str] = None):
+    with db() as c:
+        q = "SELECT * FROM tasks WHERE 1=1"
+        args = []
+        if project_id: q += " AND project_id=?"; args.append(project_id)
+        if status: q += " AND status=?"; args.append(status)
+        q += " ORDER BY sort_order ASC, created_at ASC"
+        rows = c.execute(q, args).fetchall()
+        return [row_to_task(r) for r in rows]
+
+@app.post("/api/tasks")
+def create_task(p: TaskIn):
+    tid = uuid.uuid4().hex[:8]
+    now = int(time.time())
+    with db() as c:
+        max_sort = c.execute("SELECT MAX(sort_order) FROM tasks WHERE project_id=?", (p.project_id,)).fetchone()[0] or 0
+        c.execute("""INSERT INTO tasks(id,project_id,title,descr,status,owner_id,collaborators_json,
+                     deadline,estimate_hours,ai_reason,sort_order,created_at,updated_at)
+                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                  (tid, p.project_id, p.title, p.descr, p.status, p.owner_id,
+                   json.dumps(p.collaborators, ensure_ascii=False), p.deadline,
+                   p.estimate_hours, p.ai_reason, max_sort+10, now, now))
+        r = c.execute("SELECT * FROM tasks WHERE id=?", (tid,)).fetchone()
+        return row_to_task(r)
+
+@app.patch("/api/tasks/{tid}")
+def patch_task(tid: str, p: TaskPatch):
+    with db() as c:
+        r = c.execute("SELECT * FROM tasks WHERE id=?", (tid,)).fetchone()
+        if not r: raise HTTPException(404)
+        d = p.model_dump(exclude_none=True)
+        sets, vals = [], []
+        for k, v in d.items():
+            if k == "collaborators":
+                sets.append("collaborators_json=?"); vals.append(json.dumps(v, ensure_ascii=False))
+            else:
+                sets.append(f"{k}=?"); vals.append(v)
+        now = int(time.time())
+        # auto set completed_at when moving to done
+        if d.get("status") == "done" and r["status"] != "done":
+            sets.append("completed_at=?"); vals.append(now)
+        if d.get("status") and d.get("status") not in ("done","archived") and r["status"] in ("done","archived"):
+            sets.append("completed_at=NULL")
+        if not sets: return row_to_task(r)
+        sets.append("updated_at=?"); vals.append(now); vals.append(tid)
+        c.execute(f"UPDATE tasks SET {','.join(sets)} WHERE id=?", vals)
+        r2 = c.execute("SELECT * FROM tasks WHERE id=?", (tid,)).fetchone()
+        return row_to_task(r2)
+
+@app.delete("/api/tasks/{tid}")
+def delete_task(tid: str):
+    with db() as c:
+        c.execute("DELETE FROM tasks WHERE id=?", (tid,))
+        return {"ok": True}
+
+# ============ load summary on characters ============
+@app.get("/api/characters_with_load")
+def chars_with_load():
+    with db() as c:
+        rows = c.execute("SELECT * FROM characters WHERE deleted_at IS NULL ORDER BY sort_order").fetchall()
+        out = []
+        for r in rows:
+            ch = row_to_char(r)
+            loads = c.execute("""SELECT pm.allocation, pm.role, pm.is_lead, p.id pid, p.name pname, p.color
+                                 FROM project_members pm JOIN projects p ON p.id=pm.project_id
+                                 WHERE pm.character_id=? AND p.deleted_at IS NULL AND p.status!='archived'""", (r["id"],)).fetchall()
+            ch["project_load"] = [{"project_id": l["pid"], "project_name": l["pname"], "color": l["color"],
+                                    "allocation": l["allocation"], "role": l["role"], "is_lead": bool(l["is_lead"])} for l in loads]
+            ch["computed_capacity"] = sum(l["allocation"] for l in loads)
+            out.append(ch)
+        return out
 
 @app.get("/api/health")
 def health(): return {"ok": True}
