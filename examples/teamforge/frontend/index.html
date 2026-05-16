@@ -209,7 +209,48 @@
   .my-stat.bad b{color:var(--bad)}
   .my-stat.warn b{color:var(--warn)}
 
-  /* AI report */
+  /* Breakdown / Team eval modal */
+  .big-modal{background:var(--bg-card);border-radius:var(--r-lg);padding:28px 32px;width:min(880px,100%);box-shadow:0 30px 80px rgba(0,0,0,0.25);position:relative;max-height:88vh;display:flex;flex-direction:column}
+  .big-modal h3{font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+  .big-modal .sub{font-size:12px;color:var(--dim);margin-bottom:18px}
+  .big-modal .body{flex:1;overflow-y:auto;padding-right:6px}
+  .big-modal .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:14px;margin-top:14px;border-top:1px solid var(--line)}
+  .bd-input{display:flex;gap:8px;margin-bottom:14px}
+  .bd-input input{flex:1;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line2);border-radius:var(--r-sm);background:#fff}
+  .bd-list{display:flex;flex-direction:column;gap:8px}
+  .bd-row{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-md);background:#fff;cursor:pointer;transition:border-color 0.15s}
+  .bd-row:hover{border-color:var(--line3)}
+  .bd-row.on{border-color:var(--accent);background:var(--accent-bg)}
+  .bd-check{width:18px;height:18px;border:1.5px solid var(--line3);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+  .bd-row.on .bd-check{background:var(--accent);border-color:var(--accent)}
+  .bd-main{flex:1;min-width:0}
+  .bd-title{font-size:14px;font-weight:500;margin-bottom:3px}
+  .bd-meta{font-size:11.5px;color:var(--dim);line-height:1.45}
+  .bd-meta .reason{color:var(--text2);margin-left:8px;font-style:italic}
+  .bd-owner{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;background:var(--accent-bg);color:var(--accent);white-space:nowrap}
+  .bd-hours{font-size:11px;color:var(--dim);font-feature-settings:'tnum';white-space:nowrap}
+
+  .cov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:18px}
+  .cov-cell{padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff}
+  .cov-cell.green{border-left:4px solid var(--good)}
+  .cov-cell.yellow{border-left:4px solid var(--warn)}
+  .cov-cell.red{border-left:4px solid var(--bad)}
+  .cov-k{font-size:12px;font-weight:600;margin-bottom:4px}
+  .cov-v{font-size:11px;color:var(--dim)}
+  .cov-v b{color:var(--text);font-size:18px;font-weight:700;font-feature-settings:'tnum';margin-right:8px}
+  .cov-contrib{font-size:10.5px;color:var(--dim);margin-top:5px}
+
+  .risk-card{background:linear-gradient(135deg, rgba(175,82,222,0.06), rgba(90,200,250,0.06));border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 24px;margin-bottom:24px;box-shadow:var(--shadow)}
+  .risk-card .rh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .risk-card h3{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .risk-card .rsum{font-size:13.5px;color:var(--text2);line-height:1.55;margin-bottom:10px}
+  .risk-actions{display:flex;flex-direction:column;gap:5px}
+  .risk-actions div{font-size:12.5px;color:var(--text);padding:4px 0;border-left:2px solid var(--accent);padding-left:10px}
+  .risk-counts{display:flex;gap:14px;font-size:11.5px;color:var(--dim);margin-bottom:10px}
+  .risk-counts b{color:var(--text);font-weight:700;font-feature-settings:'tnum';margin-right:3px}
+  .risk-counts .bad b{color:var(--bad)}
+  .risk-counts .warn b{color:var(--warn)}
+
   .ai-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,0.42);backdrop-filter:blur(4px);z-index:150;display:none;align-items:flex-start;justify-content:center;padding:60px 20px;overflow-y:auto}
   .ai-modal-mask.open{display:flex}
   .ai-modal{background:var(--bg-card);border-radius:var(--r-lg);padding:28px 32px;width:min(680px,100%);box-shadow:0 30px 80px rgba(0,0,0,0.25);position:relative}
@@ -321,6 +362,33 @@
 
 </div>
 
+<!-- Breakdown modal -->
+<div class="ai-modal-mask" id="bd-mask">
+  <div class="big-modal">
+    <button class="close-x" onclick="document.getElementById('bd-mask').classList.remove('open')">✕</button>
+    <h3>⚡ AI 拆任务 <span class="ai-badge">CLAUDE</span></h3>
+    <div class="sub">输入项目目标，生成 10-20 条可执行任务（含建议负责人），取消勾不需要的后一键导入看板</div>
+    <div class="body">
+      <div class="bd-input">
+        <input id="bd-goal" placeholder="项目目标，如：上线 v2 收费改造 + 7 月周年活动">
+        <button class="btn btn-primary" onclick="runBreakdown()">生成</button>
+      </div>
+      <div id="bd-body"></div>
+    </div>
+    <div class="foot"><div id="bd-count" style="font-size:12px;color:var(--dim)"></div><div><button class="btn" onclick="document.getElementById('bd-mask').classList.remove('open')">取消</button><button class="btn btn-primary" onclick="importBreakdown()" id="bd-import" disabled>导入到看板</button></div></div>
+  </div>
+</div>
+
+<!-- Team Eval modal -->
+<div class="ai-modal-mask" id="te-mask">
+  <div class="big-modal">
+    <button class="close-x" onclick="document.getElementById('te-mask').classList.remove('open')">✕</button>
+    <h3>⚡ 团队评估 <span class="ai-badge">CLAUDE</span></h3>
+    <div class="sub" id="te-sub">12 维能力覆盖 + 招募建议</div>
+    <div class="body" id="te-body"></div>
+  </div>
+</div>
+
 <!-- AI report modal -->
 <div class="ai-modal-mask" id="ai-mask">
   <div class="ai-modal">
@@ -372,7 +440,8 @@
   <div class="drawer-body">
     <div class="field"><label>任务标题 *</label><input id="tf-title"></div>
     <div class="field"><label>描述</label><textarea id="tf-descr" rows="3"></textarea></div>
-    <div class="row2"><div class="field"><label>负责人</label><select id="tf-owner"><option value="">（未指派）</option></select></div><div class="field"><label>状态</label><select id="tf-status"><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option><option value="archived">已归档</option></select></div></div>
+    <div class="row2"><div class="field"><label>负责人</label><select id="tf-owner"><option value="">（未指派）</option></select><button type="button" class="btn btn-ai" style="margin-top:6px;font-size:11px;padding:5px 10px" onclick="suggestOwner()">⚡ AI 推荐</button></div><div class="field"><label>状态</label><select id="tf-status"><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option><option value="archived">已归档</option></select></div></div>
+    <div id="tf-suggest" style="display:none;background:#F5F5F7;padding:10px 12px;border-radius:9px;margin-bottom:10px;font-size:12px"></div>
     <div class="row2"><div class="field"><label>截止日期</label><input type="date" id="tf-deadline"></div><div class="field"><label>预估工时（小时）</label><input type="number" id="tf-est" min="0" step="0.5"></div></div>
   </div>
   <div class="drawer-foot"><button class="btn btn-danger" id="btn-delete-task" onclick="confirmDeleteTask()">删除</button><div style="display:flex;gap:8px"><button class="btn" onclick="closeDrawer()">取消</button><button class="btn btn-primary" onclick="saveTask()">保存</button></div></div>
@@ -497,6 +566,7 @@ async function renderMy(){
       <div class="my-stat"><b>${todoCnt}</b><span>待办任务</span></div>
       <div class="my-stat ${overdue?'bad':''}"><b>${overdue}</b><span>逾期</span></div>
     </div>
+    ${projCnt ? `<div class="risk-card" id="risk-scan-box"></div>` : ''}
     ${me.project_load?.length ? `
     <h3 class="section-title">我的项目</h3>
     <div class="pgrid" style="margin-bottom:30px">${me.project_load.map(pl=>{
@@ -524,6 +594,7 @@ async function renderMy(){
   document.querySelectorAll('#page-my .pcard').forEach(c=>{
     c.onclick = ()=>{ const pid=c.dataset.pid; state.currentProj=pid; document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on')); document.querySelector('.nav a[data-view=projects]').classList.add('on'); state.view='projects'; routeRender(); };
   });
+  if (document.getElementById('risk-scan-box')) loadRiskScan();
 }
 
 function projCardHtml(p, mineCtx){
@@ -660,7 +731,9 @@ function renderProjectDetail(){
       <div class="pd-row">
         <div class="pd-title"><h2>${p.name}</h2><span class="pstatus ${p.status}">${statusLabel}</span></div>
         <div class="pd-actions">
-          <button class="btn btn-ai" onclick="runAICheckup('${p.id}')">⚡ AI 健康巡检</button>
+          <button class="btn btn-ai" onclick="runAICheckup('${p.id}')">⚡ 健康巡检</button>
+          <button class="btn btn-ai" onclick="openBreakdown('${p.id}')">⚡ 拆任务</button>
+          <button class="btn btn-ai" onclick="openTeamEval('${p.id}')">⚡ 团队评估</button>
           <button class="btn" onclick="openProjDrawer('${p.id}')">编辑项目</button>
           <button class="btn btn-primary" onclick="quickAddTask('todo')">+ 新任务</button>
         </div>
@@ -772,6 +845,138 @@ async function runAICheckup(pid){
   }
 }
 document.getElementById('ai-mask').onclick = (e) => { if (e.target.id==='ai-mask') e.currentTarget.classList.remove('open'); };
+document.getElementById('bd-mask').onclick = (e) => { if (e.target.id==='bd-mask') e.currentTarget.classList.remove('open'); };
+document.getElementById('te-mask').onclick = (e) => { if (e.target.id==='te-mask') e.currentTarget.classList.remove('open'); };
+
+// ============ B-2 拆任务 ============
+let _bdTasks = [], _bdProjId = null;
+function openBreakdown(pid){
+  _bdProjId = pid; _bdTasks = [];
+  const p = state.projects.find(x=>x.id===pid);
+  document.getElementById('bd-goal').value = p?.goal || '';
+  document.getElementById('bd-body').innerHTML = '';
+  document.getElementById('bd-count').textContent = '';
+  document.getElementById('bd-import').disabled = true;
+  document.getElementById('bd-mask').classList.add('open');
+}
+async function runBreakdown(){
+  const goal = document.getElementById('bd-goal').value.trim();
+  if (!goal){ toast('请输入目标'); return; }
+  document.getElementById('bd-body').innerHTML = '<div class="ai-loading"><div class="spin"></div><div>Claude 拆解中，大约 30-50 秒...</div></div>';
+  document.getElementById('bd-count').textContent = '';
+  document.getElementById('bd-import').disabled = true;
+  try {
+    const data = await api(`/projects/${_bdProjId}/ai_breakdown`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal})});
+    _bdTasks = data.tasks.map((t,i)=>({...t, _sel:true, _idx:i}));
+    renderBdList();
+  } catch(e){
+    document.getElementById('bd-body').innerHTML = `<div style="color:var(--bad);padding:20px">生成失败：${e.message}</div>`;
+  }
+}
+function renderBdList(){
+  const proj = state.projects.find(x=>x.id===_bdProjId);
+  const html = `<div class="bd-list">` + _bdTasks.map(t=>{
+    const owner = proj?.members.find(m=>m.character_id===t.suggested_owner_id);
+    const ownerName = owner?.cn_name || t.suggested_owner_id || '未指派';
+    return `<div class="bd-row ${t._sel?'on':''}" onclick="bdToggle(${t._idx})">
+      <div class="bd-check">${t._sel?'✓':''}</div>
+      <div class="bd-main">
+        <div class="bd-title">${t.title}</div>
+        <div class="bd-meta">${t.descr||''}<span class="reason">${t.reason?'· '+t.reason:''}</span></div>
+      </div>
+      <div class="bd-owner">${ownerName}</div>
+      <div class="bd-hours">${t.estimate_hours||0}h</div>
+    </div>`;
+  }).join('') + `</div>`;
+  document.getElementById('bd-body').innerHTML = html;
+  updateBdCount();
+}
+function bdToggle(idx){ _bdTasks[idx]._sel = !_bdTasks[idx]._sel; renderBdList(); }
+function updateBdCount(){
+  const sel = _bdTasks.filter(t=>t._sel).length;
+  document.getElementById('bd-count').textContent = `已选 ${sel} / ${_bdTasks.length}`;
+  document.getElementById('bd-import').disabled = sel===0;
+}
+async function importBreakdown(){
+  const sel = _bdTasks.filter(t=>t._sel);
+  if (!sel.length) return;
+  document.getElementById('bd-import').disabled = true;
+  document.getElementById('bd-import').textContent = '导入中...';
+  for (const t of sel){
+    await api('/tasks', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      project_id:_bdProjId, title:t.title, descr:t.descr, status:'todo',
+      owner_id:t.suggested_owner_id||'', estimate_hours:t.estimate_hours||0
+    })});
+  }
+  document.getElementById('bd-mask').classList.remove('open');
+  document.getElementById('bd-import').textContent = '导入到看板';
+  toast(`已导入 ${sel.length} 条任务`);
+  state.currentProj = _bdProjId; state.view='projects';
+  await routeRender();
+}
+
+// ============ B-2 推荐负责人 ============
+async function suggestOwner(){
+  const title = document.getElementById('tf-title').value.trim();
+  if (!title){ toast('先写任务标题'); return; }
+  const box = document.getElementById('tf-suggest');
+  box.style.display = 'block';
+  box.innerHTML = '<span style="color:var(--dim)">Claude 推荐中...</span>';
+  try {
+    const data = await api('/tasks/ai_suggest_owner', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      project_id: state.currentProj, title, descr: document.getElementById('tf-descr').value,
+      deadline: document.getElementById('tf-deadline').value
+    })});
+    if (!data.candidates.length){ box.innerHTML = '<span style="color:var(--dim)">没有推荐</span>'; return; }
+    box.innerHTML = '<div style="font-weight:600;margin-bottom:6px;color:var(--text)">点择一个填入负责人</div>' + data.candidates.map(c=>`<div style="padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer" onclick="document.getElementById('tf-owner').value='${c.character_id}';this.parentElement.style.background='var(--accent-bg)';"><b>${c.name}</b> <span style="color:var(--accent);font-weight:600;margin-left:6px">${c.score}/100</span> <span style="color:var(--text2);margin-left:6px">${c.reason}</span></div>`).join('');
+  } catch(e){
+    box.innerHTML = `<span style="color:var(--bad)">推荐失败：${e.message}</span>`;
+  }
+}
+
+// ============ B-2 团队评估 ============
+async function openTeamEval(pid){
+  document.getElementById('te-body').innerHTML = '<div class="ai-loading"><div class="spin"></div><div>Claude 评估中...</div></div>';
+  document.getElementById('te-mask').classList.add('open');
+  try {
+    const data = await api(`/projects/${pid}/ai_team_eval`, {method:'POST'});
+    const cov = data.coverage; const ev = data.eval||{};
+    const lights = Object.entries(cov);
+    const html = `
+      <div style="padding:14px 16px;background:#F5F5F7;border-radius:9px;margin-bottom:18px;font-size:13.5px;line-height:1.6;color:var(--text)">${ev.summary||'暂无总评'}</div>
+      <div class="section-title">12 维能力覆盖图</div>
+      <div class="cov-grid">${lights.map(([k,v])=>`<div class="cov-cell ${v.light}"><div class="cov-k">${k}</div><div class="cov-v"><b>${v.score}</b>${v.light==='green'?'绿灯':v.light==='yellow'?'黄灯':'红灯'}</div><div class="cov-contrib">${v.contributors.map(c=>c.name+' '+c.skill).join(' · ')||'无人'}</div></div>`).join('')}</div>
+      ${ev.gaps?.length?`<div class="section-title">短板</div><ul style="margin-left:20px;color:var(--text2);font-size:13px;line-height:1.7">${ev.gaps.map(g=>`<li>${g}</li>`).join('')}</ul>`:''}
+      ${ev.recruit?.length?`<div class="section-title" style="margin-top:20px">招募建议</div><div style="display:flex;flex-direction:column;gap:8px">${ev.recruit.map(r=>`<div style="padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#fff"><div style="font-weight:600;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${r.role}<span class="pstatus ${r.priority==='high'?'paused':r.priority==='mid'||r.priority==='medium'?'active':'archived'}">${({high:'高优',mid:'中',medium:'中',low:'低'})[r.priority]||r.priority}</span></div><div style="font-size:12px;color:var(--text2)">${r.why}</div></div>`).join('')}</div>`:''}
+    `;
+    document.getElementById('te-body').innerHTML = html;
+  } catch(e){
+    document.getElementById('te-body').innerHTML = `<div style="color:var(--bad);padding:20px">评估失败：${e.message}</div>`;
+  }
+}
+
+// ============ B-2 风险扫描 ============
+async function loadRiskScan(){
+  const root = document.getElementById('risk-scan-box');
+  if (!root) return;
+  root.innerHTML = '<div class="ai-loading" style="padding:20px"><div class="spin"></div><div>扫描全局风险中...</div></div>';
+  try {
+    const data = await api('/ai_risk_scan', {method:'POST'});
+    const d = data.data; const ai = data.ai;
+    const overdueRows = d.overdue.slice(0,5).map(o=>`<div style="font-size:11.5px;color:var(--text2);padding:2px 0">· <span style="color:var(--bad);font-weight:600">[${o.project}]</span> ${o.title}　${o.owner||'未指派'}　<span style="color:var(--dim)">${o.deadline}</span></div>`).join('');
+    const overloadRows = d.overload.slice(0,5).map(o=>`<div style="font-size:11.5px;color:var(--text2);padding:2px 0">· ${o.name} 总分配 <b style="color:var(--bad)">${o.total}%</b>（${o.projects.join(', ')}）</div>`).join('');
+    root.innerHTML = `
+      <div class="rh"><h3>⚡ 全局风险扫描 <span class="ai-badge">CLAUDE</span></h3><button class="btn-ghost btn" onclick="loadRiskScan()" style="font-size:11px">重新扫描</button></div>
+      <div class="risk-counts"><span class="bad"><b>${d.overdue.length}</b>逾期</span><span class="warn"><b>${d.overload.length}</b>超载</span><span><b>${d.stale_no_owner.length}</b>无负责人</span><span><b>${d.project_count}</b>活跃项目</span></div>
+      ${ai.summary?`<div class="rsum">${ai.summary}</div>`:''}
+      ${(d.overdue.length||d.overload.length)?`<div style="margin-bottom:10px">${overdueRows}${overloadRows}</div>`:''}
+      ${ai.actions?.length?`<div class="risk-actions">${ai.actions.map(a=>`<div>${a}</div>`).join('')}</div>`:''}
+    `;
+  } catch(e){
+    root.innerHTML = `<div style="color:var(--bad);padding:14px">扫描失败：${e.message}</div>`;
+  }
+}
+
 
 // ============ Drawers ============
 function openDrawer(which){
@@ -912,6 +1117,7 @@ function openTaskDrawer(id){
   const proj = state.projects.find(x=>x.id===state.currentProj);
   const opts = ['<option value="">（未指派）</option>'].concat((proj?.members||[]).map(m=>`<option value="${m.character_id}" ${m.character_id===t.owner_id?'selected':''}>${m.cn_name}${m.role?' · '+m.role:''}${m.is_lead?' · LEAD':''}</option>`));
   document.getElementById('tf-owner').innerHTML = opts.join('');
+  document.getElementById('tf-suggest').style.display='none';
   openDrawer('drawer-task');
 }
 
@@ -928,6 +1134,7 @@ function quickAddTask(status){
   const lead = (proj?.members||[]).find(m=>m.is_lead);
   const defOwner = lead?.character_id || '';
   document.getElementById('tf-owner').innerHTML = ['<option value="">（未指派）</option>'].concat((proj?.members||[]).map(m=>`<option value="${m.character_id}" ${m.character_id===defOwner?'selected':''}>${m.cn_name}${m.role?' · '+m.role:''}${m.is_lead?' · LEAD':''}</option>`)).join('');
+  document.getElementById('tf-suggest').style.display='none';
   openDrawer('drawer-task');
 }
 

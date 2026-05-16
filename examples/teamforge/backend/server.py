@@ -2,7 +2,7 @@
 import os, json, sqlite3, time, uuid, shutil
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -669,6 +669,252 @@ def ai_checkup(pid: str):
     )
 
     return {"report": text, "generated_at": int(time.time())}
+
+def _repair_quotes(s):
+    """Escape unescaped inner double-quotes inside JSON string values."""
+    out = []
+    in_str = False
+    i = 0
+    n = len(s)
+    while i < n:
+        ch = s[i]
+        if not in_str:
+            out.append(ch)
+            if ch == '"':
+                in_str = True
+            i += 1
+            continue
+        # inside string
+        if ch == '\\':
+            out.append(ch)
+            if i+1 < n: out.append(s[i+1])
+            i += 2
+            continue
+        if ch == '"':
+            # peek ahead, skipping whitespace, to decide if this terminates the string
+            j = i + 1
+            while j < n and s[j] in ' \t\r\n': j += 1
+            nxt = s[j] if j < n else ''
+            if nxt in (',', ':', '}', ']', ''):
+                out.append('"')
+                in_str = False
+            else:
+                out.append('\\"')
+            i += 1
+            continue
+        out.append(ch)
+        i += 1
+    return ''.join(out)
+
+def _extract_json(text):
+    """Extract JSON object/array from LLM output even if wrapped in code fences or prose."""
+    import re
+    m = re.search(r"```(?:json)?\s*([\s\S]+?)```", text)
+    if m: text = m.group(1)
+    text = text.strip()
+    first_obj = text.find("{")
+    first_arr = text.find("[")
+    candidates = []
+    if first_arr != -1 and (first_obj == -1 or first_arr < first_obj):
+        candidates.append((first_arr, "]"))
+    if first_obj != -1:
+        candidates.append((first_obj, "}"))
+    if first_arr != -1 and first_arr >= (first_obj if first_obj!=-1 else 0):
+        candidates.append((first_arr, "]"))
+    for start, closer in candidates:
+        end = text.rfind(closer)
+        if end > start:
+            chunk = text[start:end+1]
+            try:
+                return json.loads(chunk)
+            except Exception:
+                try:
+                    return json.loads(_repair_quotes(chunk))
+                except Exception:
+                    continue
+    raise ValueError(f"could not parse JSON from: {text[:200]}")
+
+def _gather_team(c, pid):
+    members = project_members(c, pid)
+    out = []
+    for m in members:
+        ch = c.execute("SELECT cn_name, style, skills_json, strengths, weakness FROM characters WHERE id=?", (m["character_id"],)).fetchone()
+        if not ch: continue
+        out.append({
+            "id": m["character_id"], "name": ch["cn_name"], "role": m["role"],
+            "allocation": m["allocation"], "is_lead": bool(m["is_lead"]),
+            "style": ch["style"], "skills": json.loads(ch["skills_json"] or "{}"),
+            "strengths": ch["strengths"], "weakness": ch["weakness"]
+        })
+    return out
+
+# ---- B-2.1 任务自动拆解 ----
+@app.post("/api/projects/{pid}/ai_breakdown")
+def ai_breakdown(pid: str, body: dict = Body(...)):
+    goal = (body.get("goal") or "").strip()
+    extra = (body.get("context") or "").strip()
+    with db() as c:
+        p = c.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+        if not p: raise HTTPException(404)
+        if not goal: goal = p["goal"] or ""
+        team = _gather_team(c, pid)
+    system = ("你是资深项目经理。把项目目标拆成 10-16 条可执行任务。只输出 JSON 数组，其他都不要（不要 markdown、不要 ```、不要解释、不要 emoji）。")
+    fewshot_user = '示例：\ngoal="上线新手引导"\nteam=[{"id":"a","name":"小明"}]\n输出：'
+    fewshot_out = '[\n  {"title":"梳理新手引导需求文档","descr":"明确目标人群和关键路径","estimate_hours":4,"suggested_owner_id":"a","reason":"他熟悉产品"},\n  {"title":"设计引导流程线框图","descr":"交互路径 + 奖励点","estimate_hours":8,"suggested_owner_id":"a","reason":"需要创意能力"}\n]'
+    user_payload = {"goal": goal, "context": extra, "team": [{"id":t["id"],"name":t["name"],"role":t["role"],"allocation":t["allocation"],"is_lead":t["is_lead"],"strengths":t["strengths"],"skills":t["skills"]} for t in team]}
+    text = ai_chat(
+        messages=[
+            {"role":"user","content": fewshot_user + "\n" + fewshot_out + "\n\n现在拆这个项目，只输出 JSON 数组，schema 跟示例一样（title/descr/estimate_hours/suggested_owner_id/reason）：\n\n"+json.dumps(user_payload, ensure_ascii=False, indent=2)}
+        ],
+        system=system, max_tokens=3500, temperature=0.5
+    )
+    try:
+        tasks = _extract_json(text)
+        if not isinstance(tasks, list): raise ValueError("not a list")
+    except Exception as e:
+        raise HTTPException(502, f"AI 输出解析失败：{e}")
+    valid_ids = {t["id"] for t in team}
+    cleaned = []
+    for t in tasks[:20]:
+        if not isinstance(t, dict) or not t.get("title"): continue
+        owner = t.get("suggested_owner_id")
+        if owner not in valid_ids: owner = None
+        cleaned.append({
+            "title": str(t.get("title","")).strip()[:80],
+            "descr": str(t.get("descr","")).strip()[:200],
+            "estimate_hours": float(t.get("estimate_hours") or 0),
+            "suggested_owner_id": owner,
+            "reason": str(t.get("reason","")).strip()[:60]
+        })
+    return {"tasks": cleaned, "generated_at": int(time.time())}
+
+# ---- B-2.2 推荐负责人 ----
+@app.post("/api/tasks/ai_suggest_owner")
+def ai_suggest_owner(body: dict = Body(...)):
+    pid = body.get("project_id")
+    title = (body.get("title") or "").strip()
+    descr = (body.get("descr") or "").strip()
+    deadline = body.get("deadline") or ""
+    if not pid or not title: raise HTTPException(400, "project_id + title 必填")
+    with db() as c:
+        team = _gather_team(c, pid)
+        # current loads
+        load_map = {}
+        for t in team:
+            rows = c.execute("SELECT status FROM tasks WHERE owner_id=? AND status IN ('todo','doing')", (t["id"],)).fetchall()
+            load_map[t["id"]] = len(rows)
+    enriched = [{**t, "current_open_tasks": load_map.get(t["id"],0)} for t in team]
+    system = ("你是项目经理。只输出 JSON 数组（3 条），其他都不要（不要 markdown、不要 emoji、不要表格、不要标题、不要解释）。评分综合技能匹配 / 项目内角色 / 当前任务负载 / allocation。")
+    fewshot_out = '[{"character_id":"a","score":92,"reason":"本地化主力且任务轻"},{"character_id":"b","score":78,"reason":"沟通强但偏满"},{"character_id":"c","score":65,"reason":"技能偏弱中选手"}]'
+    text = ai_chat(
+        messages=[
+            {"role":"user","content":"示例输出格式（只要 JSON，别的都不要）：\n"+fewshot_out+"\n\n现在推荐这条任务的负责人，同样 schema：\n"+json.dumps({"task":{"title":title,"descr":descr,"deadline":deadline},"team":enriched}, ensure_ascii=False, indent=2)}
+        ],
+        system=system, max_tokens=800, temperature=0.4
+    )
+    try:
+        arr = _extract_json(text)
+        if not isinstance(arr, list): raise ValueError("not a list")
+    except Exception as e:
+        raise HTTPException(502, f"AI 输出解析失败：{e}")
+    valid_ids = {t["id"] for t in team}
+    name_map = {t["id"]: t["name"] for t in team}
+    out = []
+    for c0 in arr[:3]:
+        if not isinstance(c0, dict): continue
+        cid = c0.get("character_id")
+        if cid not in valid_ids: continue
+        out.append({
+            "character_id": cid, "name": name_map.get(cid),
+            "score": int(c0.get("score") or 0),
+            "reason": str(c0.get("reason","")).strip()[:40]
+        })
+    return {"candidates": out, "generated_at": int(time.time())}
+
+# ---- B-2.3 团队评估 ----
+@app.post("/api/projects/{pid}/ai_team_eval")
+def ai_team_eval(pid: str):
+    with db() as c:
+        p = c.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+        if not p: raise HTTPException(404)
+        team = _gather_team(c, pid)
+    # compute coverage server-side (deterministic). 使用 raw skill max（能力天花板），不要 weight by allocation 免得全红。
+    skill_keys = ["项目管理","战略大局","沟通协调","数据分析","商业化","用户运营","市场推广","本地化","创意策划","审美","执行力","抗压"]
+    coverage = {}
+    for k in skill_keys:
+        top_skill = 0
+        contributors = []
+        for t in team:
+            v = (t["skills"] or {}).get(k, 0)
+            if v >= 70:
+                contributors.append({"name": t["name"], "skill": v, "alloc": t["allocation"]})
+            if v > top_skill: top_skill = v
+        contributors.sort(key=lambda x: x["skill"], reverse=True)
+        # green ≥80 top 且有人投入足够, yellow 65-79 或 top高但投入低, red <65
+        max_alloc_contrib = max([c["alloc"] for c in contributors], default=0)
+        if top_skill >= 80 and max_alloc_contrib >= 50:
+            light = "green"
+        elif top_skill >= 65 or (top_skill >= 80 and max_alloc_contrib < 50):
+            light = "yellow"
+        else:
+            light = "red"
+        coverage[k] = {"score": top_skill, "light": light, "contributors": contributors[:3], "max_alloc": max_alloc_contrib}
+
+    system = ("你是 HR 顾问。只输出 JSON 对象，别的都不要（不要 markdown、不要 emoji、不要解释）。")
+    fewshot_out = '{"summary":"团队执行强但创意偷弱","gaps":["创意策划","商业化"],"recruit":[{"role":"创意策划","why":"补足创意发散能力","priority":"high"}]}'
+    text = ai_chat(
+        messages=[{"role":"user","content":"示例（只 JSON）：\n"+fewshot_out+"\n\n现在评估下面这个项目团队，同样 schema（summary/gaps/recruit）：\n"+json.dumps({"project":{"name":p["name"],"goal":p["goal"]},"team":team,"coverage":coverage}, ensure_ascii=False, indent=2)}],
+        system=system, max_tokens=800, temperature=0.4
+    )
+    try:
+        ev = _extract_json(text)
+    except Exception as e:
+        ev = {"summary":"AI 解析失败，仅显示覆盖图","gaps":[],"recruit":[]}
+    return {"coverage": coverage, "eval": ev, "generated_at": int(time.time())}
+
+# ---- B-2.4 全局风险扫描 ----
+@app.post("/api/ai_risk_scan")
+def ai_risk_scan():
+    today = time.strftime("%Y-%m-%d")
+    with db() as c:
+        projects = c.execute("SELECT id,name,goal,deadline,color FROM projects WHERE deleted_at IS NULL AND status!='archived'").fetchall()
+        chars = c.execute("SELECT id,cn_name FROM characters WHERE deleted_at IS NULL").fetchall()
+        # overload: sum allocation across active projects
+        overload = []
+        for ch in chars:
+            rows = c.execute("SELECT pm.allocation, p.name FROM project_members pm JOIN projects p ON pm.project_id=p.id WHERE pm.character_id=? AND p.deleted_at IS NULL AND p.status!='archived'", (ch["id"],)).fetchall()
+            total = sum(r["allocation"] for r in rows)
+            if total > 100:
+                overload.append({"name": ch["cn_name"], "total": total, "projects":[r["name"] for r in rows]})
+        # overdue
+        overdue = []
+        for p in projects:
+            rows = c.execute("SELECT title, deadline, owner_id, status FROM tasks WHERE project_id=? AND deadline<? AND status IN ('todo','doing')", (p["id"], today)).fetchall()
+            for r in rows:
+                owner = ""
+                if r["owner_id"]:
+                    o = c.execute("SELECT cn_name FROM characters WHERE id=?", (r["owner_id"],)).fetchone()
+                    if o: owner = o["cn_name"]
+                overdue.append({"project":p["name"],"title":r["title"],"deadline":r["deadline"],"owner":owner})
+        # stale: doing tasks with no DDL or DDL very far + no owner
+        stale = []
+        for p in projects:
+            rows = c.execute("SELECT title, deadline, owner_id FROM tasks WHERE project_id=? AND status='doing' AND (owner_id IS NULL OR owner_id='') ", (p["id"],)).fetchall()
+            for r in rows:
+                stale.append({"project":p["name"],"title":r["title"],"deadline":r["deadline"]})
+    # AI summary
+    payload = {"date": today, "overload": overload, "overdue": overdue[:30], "stale_no_owner": stale[:20], "project_count": len(projects)}
+    system = ("你是公司 PMO。只输出 JSON 对象，别的都不要（不要 markdown、不要 emoji、不要解释）。如需在字符串里提任务名或专有名词，用中文《》或「」，不要用英文双引号以免破坏 JSON。")
+    fewshot_out = '{"summary":"三个项目报黄灯，其中 AAA 项目偏严重。建议本周介入。","actions":["今天找 XXX 聊 30 分钟拆 AAA 项目任务","本周被谁接手 YYY 项目的逾期项","拉一个周会只看逾期项"]}'
+    try:
+        text = ai_chat(
+            messages=[{"role":"user","content":"示例输出（只 JSON）：\n"+fewshot_out+"\n\n现在扫一遍这些数据，同样 schema：\n"+json.dumps(payload, ensure_ascii=False, indent=2)}],
+            system=system, max_tokens=600, temperature=0.4
+        )
+        ai = _extract_json(text)
+    except Exception:
+        ai = {"summary":"AI 不可用，仅展示原始数据","actions":[]}
+    return {"data": payload, "ai": ai, "generated_at": int(time.time())}
 
 @app.get("/api/health")
 def health(): return {"ok": True}
