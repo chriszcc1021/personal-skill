@@ -14,7 +14,7 @@ Endpoints:
   GET  /media/images/{name}
 """
 from __future__ import annotations
-import os, sqlite3, uuid, json, re, time, datetime as dt
+import os, sqlite3, uuid, json, re, time, asyncio, datetime as dt
 from pathlib import Path
 from typing import Optional
 import httpx
@@ -31,7 +31,7 @@ DB_PATH = DATA_ROOT / "db.sqlite"
 AI_BASE = os.environ.get("WHYSPER_AI_BASE", "https://new-api.openclaw.ingarena.net")
 AI_KEY = os.environ.get("WHYSPER_AI_KEY", "")
 AI_MODEL = os.environ.get("WHYSPER_AI_MODEL", "claude-sonnet-4-6")
-WHISPER_MODEL = os.environ.get("WHYSPER_WHISPER_MODEL", "whisper-1")
+WHISPER_MODEL = os.environ.get("WHYSPER_WHISPER_MODEL", "gpt-4o-transcribe")
 
 app = FastAPI(title="Whysper")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -107,23 +107,36 @@ async def ai_chat(messages, max_tokens=900, temperature=0.4) -> str:
         return j["choices"][0]["message"]["content"]
 
 async def transcribe(audio_path: Path) -> str:
-    """Use gateway-compatible whisper endpoint if available."""
+    """Use gateway-compatible whisper endpoint if available. Retry on 5xx."""
     if not AI_KEY:
         return ""
     url = AI_BASE.rstrip("/") + "/v1/audio/transcriptions"
     headers = {"Authorization": f"Bearer {AI_KEY}"}
-    try:
-        async with httpx.AsyncClient(timeout=120) as cli:
-            with open(audio_path, "rb") as f:
-                files = {"file": (audio_path.name, f, "audio/webm")}
-                data = {"model": WHISPER_MODEL}
-                r = await cli.post(url, headers=headers, files=files, data=data)
-                r.raise_for_status()
-                j = r.json()
-                return j.get("text", "")
-    except Exception as e:
-        print(f"[transcribe] {e}")
-        return ""
+    last_err = None
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=180) as cli:
+                with open(audio_path, "rb") as f:
+                    files = {"file": (audio_path.name, f, "audio/webm")}
+                    data = {
+                        "model": WHISPER_MODEL,
+                        "language": "zh",
+                        "prompt": "中文语音笔记，可能包含人名、品牌名、代码片段、中英文混合。",
+                        "temperature": "0",
+                    }
+                    r = await cli.post(url, headers=headers, files=files, data=data)
+                    if r.status_code >= 500:
+                        last_err = f"{r.status_code} {r.text[:120]}"
+                        await asyncio.sleep(1.5 * (attempt+1))
+                        continue
+                    r.raise_for_status()
+                    j = r.json()
+                    return j.get("text", "") or ""
+        except Exception as e:
+            last_err = str(e)
+            await asyncio.sleep(1.5 * (attempt+1))
+    print(f"[transcribe] failed after retry: {last_err}")
+    return ""
 
 def _extract_json(text: str):
     if not text: return None
@@ -156,10 +169,10 @@ async def create_entry(
         audio_name = f"{eid}{ext}"
         ap = DATA_ROOT / "audio" / audio_name
         ap.write_bytes(await audio.read())
-        # server-side transcribe
+        # server-side transcribe (preferred over browser draft)
         tx = await transcribe(ap)
-        if tx and len(tx) > len(final_text):
-            final_text = tx
+        if tx and tx.strip():
+            final_text = tx.strip()
 
     if image is not None:
         ext = ".jpg"
