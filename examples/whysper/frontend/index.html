@@ -65,7 +65,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-btn.recording{border-color:var(--red);animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,21,30,0.4)}50%{box-shadow:0 0 0 20px rgba(214,21,30,0)}}
 .rec-dot-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:80px;height:80px}
-.rec-dot-grid b{background:var(--fg);border-radius:50%;opacity:0.3;transition:opacity 0.2s}
+.rec-dot-grid b{background:var(--fg);border-radius:50%;opacity:1;transition:background 0.2s}
 .rec-btn.recording .rec-dot-grid b{opacity:1;background:var(--red)}
 .rec-label{margin-top:24px;font-size:12px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
 .rec-time{margin-top:8px;font-size:24px;color:var(--fg);letter-spacing:0.1em;font-variant-numeric:tabular-nums;min-height:32px}
