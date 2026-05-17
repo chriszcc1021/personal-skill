@@ -402,6 +402,12 @@ function stopRec(){
     try{media.stop()}catch(_){}
   }
   if(liveSR){try{liveSR.stop()}catch(_){};liveSR=null}
+  // release microphone so iOS status bar dot goes away.
+  // Safari caches the permission for the page, so next startRec() won't re-prompt.
+  if(micStream){
+    try{ micStream.getTracks().forEach(t=>t.stop()); }catch(_){}
+    micStream = null;
+  }
 }
 
 // press-and-hold
