@@ -64,9 +64,10 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-btn:active{transform:scale(0.96)}
 .rec-btn.recording{border-color:var(--red);animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,21,30,0.4)}50%{box-shadow:0 0 0 20px rgba(214,21,30,0)}}
-.rec-dot-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:80px;height:80px}
-.rec-dot-grid b{background:var(--fg);border-radius:50%;opacity:1;transition:background 0.2s}
-.rec-btn.recording .rec-dot-grid b{opacity:1;background:var(--red)}
+.rec-dot-grid{display:none}
+.rec-viz{width:140px;height:140px;display:block}
+.rec-btn .rec-viz{filter:drop-shadow(0 0 6px rgba(255,255,255,0.25))}
+.rec-btn.recording .rec-viz{filter:drop-shadow(0 0 14px rgba(214,21,30,0.55))}
 .rec-label{margin-top:24px;font-size:12px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
 .rec-time{margin-top:8px;font-size:24px;color:var(--fg);letter-spacing:0.1em;font-variant-numeric:tabular-nums;min-height:32px}
 .rec-live{margin-top:16px;padding:16px;border:1px solid var(--dim2);min-height:96px;max-width:92%;width:360px;font-size:14px;color:#ccc;line-height:1.6;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
@@ -185,9 +186,9 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
   <div class="rec-bottom">
     <div class="rec-time" id="recTime"></div>
     <div class="rec-btn" id="recBtn">
-      <div class="rec-dot-grid" id="recDotGrid"></div>
+      <canvas class="rec-viz" id="recViz" width="280" height="280"></canvas>
     </div>
-    <div class="rec-label">长按 / 按住录音</div>
+    <div class="rec-label">长按 / 按住录音 · <a href="./3d.html" style="color:var(--dim);text-decoration:underline">3D 视图</a></div>
   </div>
   <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="onImg(event)"/>
   <input type="file" id="imgCamInput" accept="image/*" capture="environment" style="display:none" onchange="onImg(event)"/>
@@ -286,11 +287,101 @@ function renderBrandIcon(){
   grid.innerHTML = html;
 }
 renderBrandIcon();
-// fill record dot grid (5x5)
-(function(){
-  const g=document.getElementById('recDotGrid');
-  g.innerHTML = Array.from({length:25}).map(()=>'<b></b>').join('');
-})();
+// === Siri-style audio visualizer ===
+const vizCanvas = document.getElementById('recViz');
+const vizCtx = vizCanvas.getContext('2d');
+let audioCtx=null, analyser=null, vizSource=null, vizRunning=false;
+function ensureAnalyser(stream){
+  if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  if(vizSource) try{ vizSource.disconnect(); }catch(_){}
+  vizSource = audioCtx.createMediaStreamSource(stream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.7;
+  vizSource.connect(analyser);
+}
+function startViz(){ vizRunning=true; loopViz(); }
+function stopViz(){ vizRunning=false; }
+
+function loopViz(){
+  if(!vizRunning) { drawIdle(performance.now()/1000); requestAnimationFrame(loopViz); return; }
+  const t = performance.now()/1000;
+  const live = !!(media && media.state==='recording');
+  if(live && analyser){
+    drawBlob(t, live);
+  } else {
+    drawIdle(t);
+  }
+  requestAnimationFrame(loopViz);
+}
+
+function drawIdle(t){
+  const w=vizCanvas.width,h=vizCanvas.height,cx=w/2,cy=h/2;
+  vizCtx.clearRect(0,0,w,h);
+  // 3 breathing rings
+  for(let i=0;i<3;i++){
+    const phase = t*0.5 + i*0.6;
+    const r = 36 + i*14 + Math.sin(phase)*4;
+    vizCtx.beginPath();
+    vizCtx.arc(cx,cy,r,0,Math.PI*2);
+    vizCtx.strokeStyle = `rgba(255,255,255,${0.18 - i*0.04})`;
+    vizCtx.lineWidth = 1;
+    vizCtx.stroke();
+  }
+  // center dot
+  vizCtx.beginPath();
+  vizCtx.arc(cx,cy,4 + Math.sin(t*1.4)*0.8,0,Math.PI*2);
+  vizCtx.fillStyle = '#fff';
+  vizCtx.fill();
+}
+
+function drawBlob(t, live){
+  const w=vizCanvas.width,h=vizCanvas.height,cx=w/2,cy=h/2;
+  vizCtx.clearRect(0,0,w,h);
+  const N = 64;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  // overall level
+  let sum=0; for(let i=0;i<data.length;i++) sum+=data[i];
+  const avg = sum / (data.length*255);
+  const baseR = 50 + avg*30;
+  // draw 3 layered blobs with different frequency bands
+  const layers = [
+    {hue:'rgba(214,21,30,0.18)', band:[0, 24], scale:1.25},
+    {hue:'rgba(214,21,30,0.45)', band:[20, 60], scale:1.08},
+    {hue:'rgba(255,255,255,0.95)', band:[40, 90], scale:0.92},
+  ];
+  for(const L of layers){
+    vizCtx.beginPath();
+    for(let i=0;i<=N;i++){
+      const a = (i/N)*Math.PI*2;
+      const bandIdx = Math.floor(L.band[0] + (i/N)*(L.band[1]-L.band[0]));
+      const v = (data[bandIdx]||0)/255;
+      const wob = Math.sin(t*2 + i*0.4)*2;
+      const r = baseR*L.scale + v*40 + wob;
+      const x = cx + Math.cos(a)*r;
+      const y = cy + Math.sin(a)*r;
+      if(i===0) vizCtx.moveTo(x,y); else vizCtx.lineTo(x,y);
+    }
+    vizCtx.closePath();
+    if(L === layers[layers.length-1]){
+      vizCtx.strokeStyle = L.hue;
+      vizCtx.lineWidth = 1.5;
+      vizCtx.stroke();
+    } else {
+      vizCtx.fillStyle = L.hue;
+      vizCtx.fill();
+    }
+  }
+  // center pulsing core
+  const coreR = 5 + avg*10;
+  vizCtx.beginPath();
+  vizCtx.arc(cx,cy,coreR,0,Math.PI*2);
+  vizCtx.fillStyle = '#fff';
+  vizCtx.fill();
+}
+startViz();
 
 // ===== api =====
 const API = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
@@ -327,6 +418,7 @@ async function startRec(){
       micStream = await navigator.mediaDevices.getUserMedia({audio:true});
     }
     const stream = micStream;
+    try{ ensureAnalyser(stream); }catch(_){}
     media = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4'});
     // 续录：如果上一段不是空（pendingBlob 有货 或 liveText 有字），保留 chunks/liveText。
     const resuming = !!(pendingBlob || liveText);

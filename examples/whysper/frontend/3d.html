@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Whysper · 3D</title>
+<style>
+:root{--bg:#000;--fg:#fff;--dim:#888;--dim2:#333;--red:#D6151E}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;font-family:-apple-system,system-ui,sans-serif;touch-action:none}
+#stage{position:fixed;inset:0}
+.hud{position:fixed;top:env(safe-area-inset-top,16px);left:16px;right:16px;z-index:10;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.hud .ttl{font-family:'Space Grotesk',sans-serif;font-size:13px;letter-spacing:0.3em;text-transform:uppercase;color:var(--dim)}
+.hud .tip{font-size:10px;letter-spacing:0.25em;color:var(--dim);text-transform:uppercase}
+.hud .back{pointer-events:auto;background:transparent;color:var(--fg);border:1px solid var(--dim2);padding:6px 12px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;font-family:inherit}
+.hud .back:hover{border-color:var(--fg)}
+
+/* 3D cards */
+.card3d{
+  width:300px;min-height:160px;background:rgba(10,10,10,0.92);
+  border:1px solid rgba(255,255,255,0.18);
+  padding:20px 22px;color:#eee;font-size:14px;line-height:1.6;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.04), 0 30px 80px -20px rgba(0,0,0,0.9);
+  border-radius:2px;letter-spacing:0;
+}
+.card3d .cmeta{font-size:10px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase;margin-bottom:10px;display:flex;justify-content:space-between}
+.card3d .ctitle{font-family:'Space Grotesk',sans-serif;font-size:15px;color:var(--fg);margin-bottom:8px;font-weight:600;letter-spacing:0.02em}
+.card3d .ctext{font-size:13px;color:#bbb;line-height:1.55;max-height:120px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical}
+.card3d .ctags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.card3d .ctag{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--red);border:1px solid rgba(214,21,30,0.4);padding:3px 8px}
+.card3d.empty{color:var(--dim);text-align:center;justify-content:center;display:flex;align-items:center;font-size:11px;letter-spacing:0.2em;text-transform:uppercase}
+
+/* mic / record card variant */
+.card3d.rec{
+  width:280px;height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 40%, #181818 0%, #050505 75%);
+  border:1.5px solid var(--fg);border-radius:50%;
+  position:relative;cursor:pointer;
+}
+.card3d.rec::before{content:"";position:absolute;inset:18px;border:1px dashed rgba(255,255,255,0.18);border-radius:50%;animation:spin 24s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.card3d.rec .lbl{font-size:10px;letter-spacing:0.4em;color:var(--dim);text-transform:uppercase;margin-top:14px}
+.card3d.rec .core{width:14px;height:14px;border-radius:50%;background:var(--fg);box-shadow:0 0 18px rgba(255,255,255,0.4)}
+.card3d.rec.live{border-color:var(--red)}
+.card3d.rec.live .core{background:var(--red);box-shadow:0 0 24px var(--red);animation:beat 0.9s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+
+.dot-ring{width:120px;height:120px;position:relative}
+.dot-ring b{position:absolute;width:5px;height:5px;background:var(--fg);border-radius:50%;left:50%;top:50%}
+.card3d.rec.live .dot-ring b{background:var(--red)}
+
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:11px;letter-spacing:0.3em;text-transform:uppercase;z-index:5}
+</style>
+</head>
+<body>
+
+<div class="hud">
+  <button class="back" onclick="history.length>1?history.back():location.href='./'">← 返回</button>
+  <div class="ttl">Whysper · 3D</div>
+  <div class="tip">拖拽 / 滑动</div>
+</div>
+
+<div id="loading">载入中…</div>
+<div id="stage"></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+
+const API_BASE = location.pathname.replace(/\/[^/]*$/,'').replace(/\/3d$/,'').replace(/\/$/,'') + '-api';
+const stage = document.getElementById('stage');
+const W = ()=>window.innerWidth, H = ()=>window.innerHeight;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, W()/H(), 1, 5000);
+camera.position.set(0, 50, 1100);
+
+const renderer = new CSS3DRenderer();
+renderer.setSize(W(), H());
+renderer.domElement.style.position='absolute';
+renderer.domElement.style.inset='0';
+stage.appendChild(renderer.domElement);
+
+function esc(s){return (s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}
+
+function makeRecCard(){
+  const el = document.createElement('div');
+  el.className='card3d rec';
+  el.innerHTML = `
+    <div class="dot-ring"></div>
+    <div class="core" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"></div>
+    <div class="lbl">点击录音</div>
+  `;
+  // build 24-dot ring
+  const ring = el.querySelector('.dot-ring');
+  const N=24, R=53;
+  for(let i=0;i<N;i++){
+    const a=(i/N)*Math.PI*2 - Math.PI/2;
+    const x=Math.cos(a)*R, y=Math.sin(a)*R;
+    const b=document.createElement('b');
+    b.style.transform=`translate(${x-2.5}px,${y-2.5}px)`;
+    ring.appendChild(b);
+  }
+  let rec=false;
+  el.addEventListener('click', e=>{ rec=!rec; el.classList.toggle('live', rec); });
+  return el;
+}
+
+function makeEntryCard(e){
+  const el = document.createElement('div');
+  el.className='card3d';
+  const t = new Date(e.created_at*1000);
+  const hm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+  const tags = (e.tags||[]).slice(0,3).map(t=>`<span class="ctag">${esc(t)}</span>`).join('');
+  el.innerHTML = `
+    <div class="cmeta"><span>${esc(e.local_date)} · ${hm}</span><span>${e.organized?'整理':'原始'}</span></div>
+    ${e.title?`<div class="ctitle">${esc(e.title)}</div>`:''}
+    <div class="ctext">${esc(e.final_text||e.draft_text||'(无文字)')}</div>
+    ${tags?`<div class="ctags">${tags}</div>`:''}
+  `;
+  return el;
+}
+
+const cards = [];
+
+function addCard(el, x, y, z, ry=0, rx=0){
+  const obj = new CSS3DObject(el);
+  obj.position.set(x,y,z);
+  obj.rotation.y = ry;
+  obj.rotation.x = rx;
+  obj.userData.baseX = x;
+  obj.userData.baseY = y;
+  obj.userData.baseZ = z;
+  obj.userData.baseRY = ry;
+  scene.add(obj);
+  cards.push(obj);
+  return obj;
+}
+
+async function build(){
+  // central recording card
+  const recEl = makeRecCard();
+  addCard(recEl, 0, 0, 0);
+
+  // fetch recent entries
+  let entries = [];
+  try{
+    const r = await fetch(API_BASE + '/entries?limit=10');
+    if(r.ok){ const j = await r.json(); entries = j.entries || []; }
+  }catch(_){}
+
+  // floating ring of entry cards
+  if(!entries.length){
+    const el = document.createElement('div');
+    el.className='card3d empty';
+    el.style.height='160px';
+    el.textContent='还没有笔记';
+    addCard(el, 0, -260, -120);
+  } else {
+    const n = Math.min(8, entries.length);
+    const R = 750;
+    for(let i=0;i<n;i++){
+      const e = entries[i];
+      const a = (i/n)*Math.PI*2;
+      const x = Math.cos(a)*R;
+      const z = -Math.sin(a)*R;
+      const y = (i%2?-1:1) * 60 + (Math.sin(i*1.7)*40);
+      // billboard: face center (origin)
+      const ry = Math.atan2(x, z);
+      const el = makeEntryCard(e);
+      addCard(el, x, y, z, ry);
+    }
+  }
+
+  document.getElementById('loading').style.display='none';
+}
+
+// drag to orbit
+let drag=false, lx=0, ly=0, ty=0, tx=0;
+let camYaw=0, camPitch=0;
+const onDown = e => {
+  drag = true;
+  const p = e.touches?e.touches[0]:e;
+  lx = p.clientX; ly = p.clientY;
+};
+const onMove = e => {
+  if(!drag) return;
+  const p = e.touches?e.touches[0]:e;
+  const dx = p.clientX - lx, dy = p.clientY - ly;
+  lx = p.clientX; ly = p.clientY;
+  ty += dx * 0.005;
+  tx += dy * 0.003;
+  tx = Math.max(-0.7, Math.min(0.7, tx));
+};
+const onUp = ()=>{ drag=false; };
+window.addEventListener('mousedown', onDown);
+window.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup', onUp);
+window.addEventListener('touchstart', onDown, {passive:true});
+window.addEventListener('touchmove', onMove, {passive:true});
+window.addEventListener('touchend', onUp);
+
+// device orientation (optional, iOS)
+window.addEventListener('deviceorientation', e=>{
+  if(drag) return;
+  if(e.gamma!=null) ty += (e.gamma*Math.PI/180*0.02 - ty*0.05);
+  if(e.beta!=null)  tx += ((e.beta-30)*Math.PI/180*0.01 - tx*0.05);
+}, true);
+
+function tick(){
+  requestAnimationFrame(tick);
+  // smooth camera orbit
+  camYaw += (ty - camYaw) * 0.08;
+  camPitch += (tx - camPitch) * 0.08;
+  const r = 1100;
+  camera.position.x = Math.sin(camYaw) * r * Math.cos(camPitch);
+  camera.position.z = Math.cos(camYaw) * r * Math.cos(camPitch);
+  camera.position.y = Math.sin(camPitch) * r;
+  camera.lookAt(0,0,0);
+
+  // subtle float per card
+  const t = performance.now()/1000;
+  cards.forEach((c,i)=>{
+    c.position.y = c.userData.baseY + Math.sin(t*0.6 + i)*8;
+  });
+
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = W()/H();
+  camera.updateProjectionMatrix();
+  renderer.setSize(W(), H());
+});
+
+build().then(tick);
+</script>
+</body>
+</html>
