@@ -33,7 +33,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
   display:flex;align-items:center;justify-content:space-between;
 }
 .brand{display:flex;align-items:center;gap:10px}
-.brand-icon{width:28px;height:28px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:2px}
+.brand-icon{width:32px;height:32px;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(7,1fr);gap:1.5px}
 .brand-icon i{background:var(--fg);border-radius:1px}
 .brand-icon i.off{background:transparent}
 .brand-name{font-size:14px;letter-spacing:0.3em;font-weight:600;text-transform:uppercase}
@@ -49,7 +49,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .view.active{display:block}
 
 /* record view */
-#view-rec.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-top:12px;padding-bottom:64px;min-height:calc(100vh - 180px)}
+#view-rec.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-top:12px;padding-bottom:120px;min-height:calc(100vh - 180px)}
 .rec-top{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:8px}
 .rec-mid{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;margin-bottom:24px}
 .rec-bottom{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
@@ -70,7 +70,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-btn.recording .rec-dot-grid b{opacity:1;background:var(--red)}
 .rec-label{margin-top:24px;font-size:12px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
 .rec-time{margin-top:8px;font-size:24px;color:var(--fg);letter-spacing:0.1em;font-variant-numeric:tabular-nums;min-height:32px}
-.rec-live{margin-top:16px;padding:12px;border:1px solid var(--dim2);min-height:60px;max-width:90%;width:340px;font-size:13px;color:#ccc;line-height:1.5;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
+.rec-live{margin-top:16px;padding:16px;border:1px solid var(--dim2);min-height:96px;max-width:92%;width:360px;font-size:14px;color:#ccc;line-height:1.6;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
 .rec-live:empty::before{content:'松开停止 · 文字会出现在这里';color:var(--dim);font-size:11px;letter-spacing:0.2em;text-transform:uppercase}
 .rec-actions{display:flex;gap:12px;margin-top:20px}
 .rec-actions button{padding:10px 18px;border:1px solid var(--dim2);font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
@@ -271,8 +271,16 @@ const ICON_PATTERN = [
 ]; // W in 5x4 → padded
 function renderBrandIcon(){
   const grid = document.getElementById('brandIcon');
-  // 4x4 W-ish pattern
-  const pat=[1,0,0,1, 1,0,0,1, 1,1,1,1, 0,1,1,0];
+  // 7x7 puzzle silhouette: top knob, left knob, right socket, bottom socket
+  const pat = [
+    0,0,1,1,1,0,0,
+    0,0,1,1,1,0,0,
+    1,1,1,1,1,1,1,
+    1,1,1,0,0,1,1,
+    1,1,1,1,1,1,1,
+    0,0,1,0,1,0,0,
+    0,0,1,0,1,0,0,
+  ];
   grid.innerHTML = pat.map(v=>'<i class="'+(v?'':'off')+'"></i>').join('');
 }
 renderBrandIcon();
