@@ -64,10 +64,9 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-btn:active{transform:scale(0.96)}
 .rec-btn.recording{border-color:var(--red);animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,21,30,0.4)}50%{box-shadow:0 0 0 20px rgba(214,21,30,0)}}
-.rec-dot-grid{display:none}
-.rec-viz{width:170px;height:170px;display:block}
-.rec-btn .rec-viz{filter:drop-shadow(0 0 6px rgba(255,255,255,0.25))}
-.rec-btn.recording .rec-viz{filter:drop-shadow(0 0 14px rgba(214,21,30,0.55))}
+.rec-dot-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:80px;height:80px}
+.rec-dot-grid b{background:var(--fg);border-radius:50%;opacity:1;transition:background 0.2s}
+.rec-btn.recording .rec-dot-grid b{opacity:1;background:var(--red)}
 .rec-label{margin-top:24px;font-size:12px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
 .rec-time{margin-top:8px;font-size:24px;color:var(--fg);letter-spacing:0.1em;font-variant-numeric:tabular-nums;min-height:32px}
 .rec-live{margin-top:16px;padding:16px;border:1px solid var(--dim2);min-height:96px;max-width:92%;width:360px;font-size:14px;color:#ccc;line-height:1.6;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
@@ -186,9 +185,9 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
   <div class="rec-bottom">
     <div class="rec-time" id="recTime"></div>
     <div class="rec-btn" id="recBtn">
-      <canvas class="rec-viz" id="recViz" width="280" height="280"></canvas>
+      <div class="rec-dot-grid" id="recDotGrid"></div>
     </div>
-    <div class="rec-label">长按 / 按住录音 · <a href="./3d.html" style="color:var(--dim);text-decoration:underline">3D 视图</a></div>
+    <div class="rec-label">长按 / 按住录音</div>
   </div>
   <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="onImg(event)"/>
   <input type="file" id="imgCamInput" accept="image/*" capture="environment" style="display:none" onchange="onImg(event)"/>
@@ -287,108 +286,11 @@ function renderBrandIcon(){
   grid.innerHTML = html;
 }
 renderBrandIcon();
-// === Siri-style audio visualizer ===
-const vizCanvas = document.getElementById('recViz');
-const vizCtx = vizCanvas.getContext('2d');
-let audioCtx=null, analyser=null, vizSource=null, vizRunning=false;
-function ensureAnalyser(stream){
-  if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
-  if(audioCtx.state==='suspended') audioCtx.resume();
-  if(vizSource) try{ vizSource.disconnect(); }catch(_){}
-  vizSource = audioCtx.createMediaStreamSource(stream);
-  analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 256;
-  analyser.smoothingTimeConstant = 0.7;
-  vizSource.connect(analyser);
-}
-function startViz(){ vizRunning=true; loopViz(); }
-function stopViz(){ vizRunning=false; }
-// fallback ticker (in case rAF is throttled)
-setInterval(()=>{
-  if(!vizRunning) return;
-  const t = performance.now()/1000;
-  const live = !!(media && media.state==='recording');
-  if(live && analyser) drawBlob(t, live); else drawIdle(t);
-}, 50);
-
-function loopViz(){
-  if(!vizRunning) { drawIdle(performance.now()/1000); requestAnimationFrame(loopViz); return; }
-  const t = performance.now()/1000;
-  const live = !!(media && media.state==='recording');
-  if(live && analyser){
-    drawBlob(t, live);
-  } else {
-    drawIdle(t);
-  }
-  requestAnimationFrame(loopViz);
-}
-
-function drawIdle(t){
-  const w=vizCanvas.width,h=vizCanvas.height,cx=w/2,cy=h/2;
-  vizCtx.clearRect(0,0,w,h);
-  // 4 breathing rings
-  for(let i=0;i<4;i++){
-    const phase = t*0.5 + i*0.5;
-    const r = 60 + i*22 + Math.sin(phase)*6;
-    vizCtx.beginPath();
-    vizCtx.arc(cx,cy,r,0,Math.PI*2);
-    vizCtx.strokeStyle = `rgba(255,255,255,${0.30 - i*0.06})`;
-    vizCtx.lineWidth = 1.2;
-    vizCtx.stroke();
-  }
-  // center dot
-  vizCtx.beginPath();
-  vizCtx.arc(cx,cy,6 + Math.sin(t*1.4)*1.2,0,Math.PI*2);
-  vizCtx.fillStyle = '#fff';
-  vizCtx.fill();
-}
-
-function drawBlob(t, live){
-  const w=vizCanvas.width,h=vizCanvas.height,cx=w/2,cy=h/2;
-  vizCtx.clearRect(0,0,w,h);
-  const N = 64;
-  const data = new Uint8Array(analyser.frequencyBinCount);
-  analyser.getByteFrequencyData(data);
-  // overall level
-  let sum=0; for(let i=0;i<data.length;i++) sum+=data[i];
-  const avg = sum / (data.length*255);
-  const baseR = 50 + avg*30;
-  // draw 3 layered blobs with different frequency bands
-  const layers = [
-    {hue:'rgba(214,21,30,0.18)', band:[0, 24], scale:1.25},
-    {hue:'rgba(214,21,30,0.45)', band:[20, 60], scale:1.08},
-    {hue:'rgba(255,255,255,0.95)', band:[40, 90], scale:0.92},
-  ];
-  for(const L of layers){
-    vizCtx.beginPath();
-    for(let i=0;i<=N;i++){
-      const a = (i/N)*Math.PI*2;
-      const bandIdx = Math.floor(L.band[0] + (i/N)*(L.band[1]-L.band[0]));
-      const v = (data[bandIdx]||0)/255;
-      const wob = Math.sin(t*2 + i*0.4)*2;
-      const r = baseR*L.scale + v*40 + wob;
-      const x = cx + Math.cos(a)*r;
-      const y = cy + Math.sin(a)*r;
-      if(i===0) vizCtx.moveTo(x,y); else vizCtx.lineTo(x,y);
-    }
-    vizCtx.closePath();
-    if(L === layers[layers.length-1]){
-      vizCtx.strokeStyle = L.hue;
-      vizCtx.lineWidth = 1.5;
-      vizCtx.stroke();
-    } else {
-      vizCtx.fillStyle = L.hue;
-      vizCtx.fill();
-    }
-  }
-  // center pulsing core
-  const coreR = 5 + avg*10;
-  vizCtx.beginPath();
-  vizCtx.arc(cx,cy,coreR,0,Math.PI*2);
-  vizCtx.fillStyle = '#fff';
-  vizCtx.fill();
-}
-startViz();
+// fill record dot grid (5x5)
+(function(){
+  const g=document.getElementById('recDotGrid');
+  g.innerHTML = Array.from({length:25}).map(()=>'<b></b>').join('');
+})();
 
 // ===== api =====
 const API = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
@@ -400,25 +302,6 @@ async function api(path, opts={}){
 }
 
 // ===== tabs =====
-// SWR cache: instant render from memory while a fresh fetch updates in background.
-const cache = { list:null, tags:null, cal:{}, stats:null };
-const inflight = {};
-async function swr(key, fetcher, render){
-  // 1) instant paint if cached
-  if(cache[key] != null) render(cache[key], /*stale=*/true);
-  // 2) dedupe in-flight
-  if(inflight[key]) return inflight[key];
-  inflight[key] = (async()=>{
-    try{
-      const j = await fetcher();
-      cache[key] = j;
-      render(j, /*stale=*/false);
-      return j;
-    } finally { inflight[key] = null; }
-  })();
-  return inflight[key];
-}
-
 function switchTab(t){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.bnav button').forEach(b=>b.classList.remove('active'));
@@ -426,12 +309,6 @@ function switchTab(t){
   document.querySelector('.bnav button[data-tab="'+t+'"]').classList.add('active');
   if(t==='list'){loadList(); loadTags();}
   if(t==='cal') loadCal();
-}
-
-// prefetch list+tags+cal+stats shortly after first paint so future tab switches are instant
-function prefetchAll(){
-  setTimeout(()=>{ loadList(); loadTags(); loadStats(); }, 300);
-  setTimeout(()=>{ try{ loadCal(); }catch(_){} }, 600);
 }
 
 // ===== recording =====
@@ -450,7 +327,6 @@ async function startRec(){
       micStream = await navigator.mediaDevices.getUserMedia({audio:true});
     }
     const stream = micStream;
-    try{ ensureAnalyser(stream); }catch(_){}
     media = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4'});
     // 续录：如果上一段不是空（pendingBlob 有货 或 liveText 有字），保留 chunks/liveText。
     const resuming = !!(pendingBlob || liveText);
@@ -574,9 +450,7 @@ async function saveEntry(){
     setTimeout(()=>{ prog.classList.remove('show'); }, 400);
     toast('上传成功 · '+(j.final_text||liveText||'(无文字)').slice(0,16));
     cancelEntry();
-    // invalidate caches so next switch fetches fresh; also kick a background prefetch
-    cache.list = null; cache.tags = null; cache.stats = null; cache.cal = {};
-    loadStats(); loadList(); loadTags();
+    loadStats();
   }catch(e){
     clearInterval(progTimer);
     prog.classList.remove('show');
@@ -588,9 +462,10 @@ async function saveEntry(){
 }
 
 // ===== list view =====
-function renderList(j){
+async function loadList(){
+  const j = await api('/entries?limit=200');
   const box = document.getElementById('listBox');
-  if(!j || !j.entries || !j.entries.length){box.innerHTML='<div class="empty">还没有笔记 · 去录一条</div>';return}
+  if(!j.entries.length){box.innerHTML='<div class="empty">还没有笔记 · 去录一条</div>';return}
   let html='';
   let curDate='';
   j.entries.forEach(e=>{
@@ -620,9 +495,6 @@ function renderList(j){
     clearInterval(window._txPoll); window._txPoll=null;
   }
 }
-async function loadList(){
-  return swr('list', ()=>api('/entries?limit=200'), renderList);
-}
 
 function esc(s){return (s||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}
 
@@ -648,14 +520,15 @@ async function deleteEntry(){
   if(!curEntry) return;
   if(!confirm('删除这条？')) return;
   await api('/entries/'+curEntry.id, {method:'DELETE'});
-  closeModal(); cache.list=null; cache.tags=null; cache.stats=null; cache.cal={}; loadList(); loadStats();
+  closeModal(); loadList(); loadStats();
 }
 
 // ===== calendar =====
 let calCur = new Date();
-function renderCal(data){
+async function loadCal(){
   const y=calCur.getFullYear(),m=calCur.getMonth()+1;
   document.getElementById('calTitle').textContent = y+' · '+String(m).padStart(2,'0');
+  const data = await api('/calendar?year='+y+'&month='+m);
   const g = document.getElementById('calGrid');
   const weeks=['日','一','二','三','四','五','六'];
   let html = weeks.map(w=>'<div class="cal-week">'+w+'</div>').join('');
@@ -666,7 +539,7 @@ function renderCal(data){
   const today=new Date();const tStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   for(let d=1;d<=days;d++){
     const ds = y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const n = (data||{})[ds]||0;
+    const n = data[ds]||0;
     let lv='';
     if(n>=8) lv='lv3'; else if(n>=4) lv='lv2'; else if(n>=1) lv='lv1';
     const isToday = ds===tStr?'today':'';
@@ -676,21 +549,6 @@ function renderCal(data){
   }
   g.innerHTML = html;
   document.getElementById('calDayList').innerHTML='';
-}
-async function loadCal(){
-  const y=calCur.getFullYear(),m=calCur.getMonth()+1;
-  const key = 'cal:'+y+'-'+m;
-  // separate cache slot per month
-  if(cache.cal[key] != null) renderCal(cache.cal[key]);
-  if(inflight[key]) return inflight[key];
-  inflight[key] = (async()=>{
-    try{
-      const data = await api('/calendar?year='+y+'&month='+m);
-      cache.cal[key] = data;
-      renderCal(data);
-    } finally { inflight[key]=null; }
-  })();
-  return inflight[key];
 }
 function calMove(dir){
   if(dir===0) calCur=new Date();
@@ -740,13 +598,11 @@ async function doOrganize(){
     toast('整理失败：'+e.message);
   }
 }
-function renderTags(tags){
-  const box = document.getElementById('tagCloud');
-  if(!tags || !tags.length){box.innerHTML='<div class="empty" style="padding:20px;width:100%">还没有标签 · 先记几条再整理</div>';return}
-  box.innerHTML = tags.slice(0,30).map(t=>'<span class="tag" onclick="filterTag(\''+t.tag+'\')">'+esc(t.tag)+' · '+t.count+'</span>').join('');
-}
 async function loadTags(){
-  return swr('tags', ()=>api('/tags'), renderTags);
+  const tags = await api('/tags');
+  const box = document.getElementById('tagCloud');
+  if(!tags.length){box.innerHTML='<div class="empty" style="padding:20px;width:100%">还没有标签 · 先记几条再整理</div>';return}
+  box.innerHTML = tags.slice(0,30).map(t=>'<span class="tag" onclick="filterTag(\''+t.tag+'\')">'+esc(t.tag)+' · '+t.count+'</span>').join('');
 }
 function filterTag(t){
   switchTab('list');
@@ -769,9 +625,10 @@ function filterTag(t){
 
 // ===== stats =====
 async function loadStats(){
-  return swr('stats', ()=>api('/stats'), s=>{
-    if(s) document.getElementById('statsBar').textContent = (s.today_count||0)+' 今日 · '+(s.streak||0)+' 连击';
-  });
+  try{
+    const s = await api('/stats');
+    document.getElementById('statsBar').textContent = s.today_count+' 今日 · '+s.streak+' 连击';
+  }catch(_){}
 }
 
 // ===== toast =====
@@ -784,7 +641,8 @@ function toast(msg){
 }
 
 loadStats();
-prefetchAll();
+
+// ===== ask voice button =====
 let askSR=null,askListening=false;
 const askMicBtn=document.getElementById('askMicBtn');
 if(askMicBtn){
