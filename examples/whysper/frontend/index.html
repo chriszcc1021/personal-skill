@@ -214,9 +214,9 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 
 <section class="view" id="view-list">
   <div class="ask-box" style="margin-bottom:12px">
-    <input type="text" id="askInput" placeholder="问你的笔记 · 按住麦克说话"/>
-    <button id="askMicBtn" title="按住说话"><span class="ask-mic-grid"><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b></span></button>
-    <button onclick="doAsk()">问</button>
+    <input type="text" id="askInput" placeholder="问你的笔记 · 点麦克开始 / 停止"/>
+    <button id="askMicBtn" title="点击开始录音"><span class="ask-mic-grid"><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b></span></button>
+    <button id="askGoBtn" onclick="doAsk()" style="display:none">问</button>
   </div>
   <div class="ask-result" id="askResult" style="display:none"></div>
   <div class="list-toolbar">
@@ -708,35 +708,54 @@ function toast(msg){
 
 loadStats();
 
-// ===== ask voice button =====
+// ===== ask voice button (click to start, click to stop; show 问 button after) =====
 let askSR=null,askListening=false;
 const askMicBtn=document.getElementById('askMicBtn');
-if(askMicBtn){
-  const startAskListen=()=>{
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SR){toast('浏览器不支持语音输入');return}
-    askSR = new SR();
-    askSR.lang='zh-CN'; askSR.interimResults=true; askSR.continuous=false;
-    askSR.onresult=e=>{
-      let txt='';
-      for(let i=0;i<e.results.length;i++) txt += e.results[i][0].transcript;
-      document.getElementById('askInput').value = txt;
-    };
-    askSR.onend=()=>{
-      askListening=false; askMicBtn.classList.remove('listening');
-      const v = document.getElementById('askInput').value.trim();
-      if(v) doAsk();
-    };
-    askSR.onerror=()=>{askListening=false; askMicBtn.classList.remove('listening');};
-    try{askSR.start(); askListening=true; askMicBtn.classList.add('listening');}catch(_){}
-  };
-  const stopAskListen=()=>{if(askSR){try{askSR.stop()}catch(_){}}};
-  askMicBtn.addEventListener('mousedown',e=>{e.preventDefault(); startAskListen();});
-  askMicBtn.addEventListener('mouseup',()=>stopAskListen());
-  askMicBtn.addEventListener('mouseleave',()=>{if(askListening) stopAskListen();});
-  askMicBtn.addEventListener('touchstart',e=>{e.preventDefault(); startAskListen();},{passive:false});
-  askMicBtn.addEventListener('touchend',e=>{e.preventDefault(); stopAskListen();});
+const askGoBtn=document.getElementById('askGoBtn');
+const askInputEl=document.getElementById('askInput');
+function updateAskGo(){
+  if(!askGoBtn) return;
+  const has = !!(askInputEl && askInputEl.value.trim());
+  askGoBtn.style.display = has && !askListening ? 'inline-block' : 'none';
 }
+if(askInputEl){
+  askInputEl.addEventListener('input', updateAskGo);
+}
+function askStart(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ toast('浏览器不支持语音输入'); return; }
+  askSR = new SR();
+  askSR.lang='zh-CN'; askSR.interimResults=true; askSR.continuous=true;
+  askSR.onresult = e => {
+    let txt='';
+    for(let i=0;i<e.results.length;i++) txt += e.results[i][0].transcript;
+    askInputEl.value = txt;
+  };
+  askSR.onend = () => {
+    askListening=false;
+    askMicBtn.classList.remove('listening');
+    updateAskGo();
+  };
+  askSR.onerror = () => {
+    askListening=false;
+    askMicBtn.classList.remove('listening');
+    updateAskGo();
+  };
+  try{
+    askSR.start();
+    askListening=true;
+    askMicBtn.classList.add('listening');
+    updateAskGo();
+  }catch(_){}
+}
+function askStop(){ if(askSR){ try{askSR.stop();}catch(_){} } }
+if(askMicBtn){
+  askMicBtn.addEventListener('click', e=>{
+    e.preventDefault();
+    if(askListening) askStop(); else askStart();
+  });
+}
+updateAskGo();
 
 // register sw
 if('serviceWorker' in navigator){
