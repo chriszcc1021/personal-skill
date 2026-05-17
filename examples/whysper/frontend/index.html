@@ -748,7 +748,16 @@ function askStart(){
     updateAskGo();
   }catch(_){}
 }
-function askStop(){ if(askSR){ try{askSR.stop();}catch(_){} } }
+function askStop(){
+  // immediately flip UI; don't wait for onend (iOS Safari often skips it)
+  askListening=false;
+  askMicBtn.classList.remove('listening');
+  updateAskGo();
+  if(askSR){
+    try{askSR.stop();}catch(_){}
+    try{askSR.abort();}catch(_){}
+  }
+}
 if(askMicBtn){
   askMicBtn.addEventListener('click', e=>{
     e.preventDefault();
