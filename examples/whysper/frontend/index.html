@@ -476,7 +476,7 @@ async function loadList(){
     const t = new Date(e.created_at*1000);
     const hm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
     html += '<div class="entry" onclick="openEntry(\''+e.id+'\')">'+
-      '<div class="entry-meta"><span>'+hm+'</span><span>'+(e.organized?'整理':'原始')+'</span></div>'+
+      '<div class="entry-meta"><span>'+hm+'</span><span>'+(e.transcribing?'转写中…':(e.organized?'整理':'原始'))+'</span></div>'+
       (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
       '<div class="entry-text">'+esc(e.final_text||e.draft_text||'(无文字)')+'</div>'+
       (e.tags && e.tags.length?'<div class="entry-tags">'+e.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>':'')+
@@ -484,6 +484,16 @@ async function loadList(){
     '</div>';
   });
   box.innerHTML = html;
+  // poll while any entry is transcribing
+  const pending = j.entries.filter(e=>e.transcribing);
+  if(pending.length && !window._txPoll){
+    window._txPoll = setInterval(()=>{
+      if(document.querySelector('#view-list.active')) loadList();
+      else { clearInterval(window._txPoll); window._txPoll=null; }
+    }, 8000);
+  } else if(!pending.length && window._txPoll){
+    clearInterval(window._txPoll); window._txPoll=null;
+  }
 }
 
 function esc(s){return (s||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}

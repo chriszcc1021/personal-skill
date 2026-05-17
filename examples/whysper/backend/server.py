@@ -32,6 +32,9 @@ AI_BASE = os.environ.get("WHYSPER_AI_BASE", "https://new-api.openclaw.ingarena.n
 AI_KEY = os.environ.get("WHYSPER_AI_KEY", "")
 AI_MODEL = os.environ.get("WHYSPER_AI_MODEL", "claude-sonnet-4-6")
 WHISPER_MODEL = os.environ.get("WHYSPER_WHISPER_MODEL", "gpt-4o-transcribe")
+WHISPER_CLI = os.environ.get("WHYSPER_WHISPER_CLI", "/opt/whisper.cpp/build/bin/whisper-cli")
+WHISPER_MODEL_PATH = os.environ.get("WHYSPER_WHISPER_MODEL_PATH", "/opt/whisper.cpp/models/ggml-medium-q5_0.bin")
+WHISPER_THREADS = int(os.environ.get("WHYSPER_WHISPER_THREADS", "4"))
 
 app = FastAPI(title="Whysper")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -57,11 +60,19 @@ def init_db():
           tags TEXT,
           summary TEXT,
           organized INTEGER DEFAULT 0,
+          transcribing INTEGER DEFAULT 0,
           lat REAL,
           lng REAL
         );
         CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(local_date);
         CREATE INDEX IF NOT EXISTS idx_entries_created ON entries(created_at);
+        """)
+        # add transcribing column if missing (migration)
+        cols = [r[1] for r in c.execute("PRAGMA table_info(entries)")]
+        if "transcribing" not in cols:
+            try: c.execute("ALTER TABLE entries ADD COLUMN transcribing INTEGER DEFAULT 0")
+            except Exception: pass
+        c.executescript("""
         CREATE TABLE IF NOT EXISTS organize_runs(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           ran_at INTEGER NOT NULL,
@@ -107,36 +118,42 @@ async def ai_chat(messages, max_tokens=900, temperature=0.4) -> str:
         return j["choices"][0]["message"]["content"]
 
 async def transcribe(audio_path: Path) -> str:
-    """Use gateway-compatible whisper endpoint if available. Retry on 5xx."""
-    if not AI_KEY:
+    """Local whisper.cpp transcription. Returns text or ''."""
+    cli = Path(WHISPER_CLI)
+    mdl = Path(WHISPER_MODEL_PATH)
+    if not cli.exists() or not mdl.exists():
+        print(f"[transcribe] whisper-cli or model missing: {cli} / {mdl}")
         return ""
-    url = AI_BASE.rstrip("/") + "/v1/audio/transcriptions"
-    headers = {"Authorization": f"Bearer {AI_KEY}"}
-    last_err = None
-    for attempt in range(3):
+    # convert to 16k mono wav (use a tmp path different from source)
+    import tempfile
+    wav_fd, wav_str = tempfile.mkstemp(suffix=".wav", prefix="whysper_tx_")
+    os.close(wav_fd)
+    wav_path = Path(wav_str)
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-y", "-i", str(audio_path), "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", str(wav_path),
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )
+        await proc.wait()
+        if proc.returncode != 0 or not wav_path.exists():
+            print(f"[transcribe] ffmpeg failed")
+            return ""
+        # whisper-cli with zh
+        p = await asyncio.create_subprocess_exec(
+            str(cli), "-m", str(mdl), "-l", "zh", "-f", str(wav_path),
+            "-np", "-nt", "-t", str(WHISPER_THREADS),
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+        )
+        out, _ = await p.communicate()
+        txt = (out or b"").decode("utf-8", errors="ignore").strip()
+        return txt
+    except Exception as e:
+        print(f"[transcribe] error: {e}")
+        return ""
+    finally:
         try:
-            async with httpx.AsyncClient(timeout=180) as cli:
-                with open(audio_path, "rb") as f:
-                    files = {"file": (audio_path.name, f, "audio/webm")}
-                    data = {
-                        "model": WHISPER_MODEL,
-                        "language": "zh",
-                        "prompt": "中文语音笔记，可能包含人名、品牌名、代码片段、中英文混合。",
-                        "temperature": "0",
-                    }
-                    r = await cli.post(url, headers=headers, files=files, data=data)
-                    if r.status_code >= 500:
-                        last_err = f"{r.status_code} {r.text[:120]}"
-                        await asyncio.sleep(1.5 * (attempt+1))
-                        continue
-                    r.raise_for_status()
-                    j = r.json()
-                    return j.get("text", "") or ""
-        except Exception as e:
-            last_err = str(e)
-            await asyncio.sleep(1.5 * (attempt+1))
-    print(f"[transcribe] failed after retry: {last_err}")
-    return ""
+            if wav_path.exists(): wav_path.unlink()
+        except Exception: pass
 
 def _extract_json(text: str):
     if not text: return None
@@ -146,6 +163,25 @@ def _extract_json(text: str):
         return json.loads(m.group(0))
     except Exception:
         return None
+
+async def _transcribe_and_update(eid: str, audio_path: Path):
+    """Background task: run whisper.cpp, update entry on success."""
+    try:
+        with db() as c:
+            c.execute("UPDATE entries SET transcribing=1 WHERE id=?", (eid,))
+        tx = await transcribe(audio_path)
+        if tx and tx.strip():
+            with db() as c:
+                c.execute("UPDATE entries SET final_text=?, transcribing=0 WHERE id=?", (tx.strip(), eid))
+            print(f"[transcribe] {eid} done: {tx[:40]}")
+        else:
+            with db() as c:
+                c.execute("UPDATE entries SET transcribing=0 WHERE id=?", (eid,))
+            print(f"[transcribe] {eid} empty result")
+    except Exception as e:
+        with db() as c:
+            c.execute("UPDATE entries SET transcribing=0 WHERE id=?", (eid,))
+        print(f"[transcribe] {eid} error: {e}")
 
 # ---------- endpoints ----------
 @app.post("/api/entries")
@@ -169,10 +205,8 @@ async def create_entry(
         audio_name = f"{eid}{ext}"
         ap = DATA_ROOT / "audio" / audio_name
         ap.write_bytes(await audio.read())
-        # server-side transcribe (preferred over browser draft)
-        tx = await transcribe(ap)
-        if tx and tx.strip():
-            final_text = tx.strip()
+        # server-side transcribe (async — return entry with draft immediately, update later)
+        asyncio.create_task(_transcribe_and_update(eid, ap))
 
     if image is not None:
         ext = ".jpg"
@@ -187,7 +221,7 @@ async def create_entry(
         c.execute("""INSERT INTO entries(id,created_at,local_date,audio_file,image_file,draft_text,final_text,lat,lng)
                      VALUES(?,?,?,?,?,?,?,?,?)""",
                   (eid, ts, ts_to_local_date(ts), audio_name, image_name, draft_text, final_text, lat, lng))
-    return {"id": eid, "final_text": final_text, "audio_file": audio_name, "image_file": image_name, "created_at": ts}
+    return {"id": eid, "final_text": final_text, "audio_file": audio_name, "image_file": image_name, "created_at": ts, "transcribing": 1 if audio_name else 0}
 
 @app.get("/api/entries")
 def list_entries(date: Optional[str] = None, tag: Optional[str] = None, q: Optional[str] = None,
