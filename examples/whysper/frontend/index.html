@@ -124,6 +124,25 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .ask-box input{flex:1;padding:12px;background:transparent;color:var(--fg);border:1px solid var(--dim2);font-family:-apple-system,system-ui,sans-serif;font-size:14px;letter-spacing:0}
 .ask-box button{padding:12px 14px;border:1px solid var(--dim2);font-size:13px;min-width:46px}
 .ask-box button:last-child{border-color:var(--fg);font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
+/* ask mic dot grid (mirrors rec button) */
+.ask-mic-grid{display:inline-grid;grid-template-columns:repeat(5,1fr);gap:2px;width:22px;height:22px;pointer-events:none}
+.ask-mic-grid b{background:var(--fg);border-radius:50%;display:block}
+#askMicBtn{display:flex;align-items:center;justify-content:center;padding:10px 12px}
+#askMicBtn.listening{border-color:var(--red);animation:pulse 1.2s infinite}
+#askMicBtn.listening .ask-mic-grid b{background:var(--red)}
+/* select mode */
+.list-toolbar{display:flex;gap:8px;margin-bottom:16px}
+.list-toolbar button{flex:1;padding:10px;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;border:1px solid var(--dim2);color:var(--fg)}
+.list-toolbar button.primary{border-color:var(--red);color:var(--red)}
+.entry-select{position:absolute;top:10px;right:10px;display:inline-grid;grid-template-columns:repeat(3,1fr);gap:2px;width:14px;height:14px;pointer-events:none}
+.entry-select b{background:var(--dim);border-radius:50%;display:block}
+.entry.selected .entry-select b{background:var(--red)}
+.entry.selected{border-color:var(--red)}
+.entry{position:relative}
+.select-bar{position:fixed;bottom:56px;left:0;right:0;background:#000;border-top:1px solid var(--dim2);padding:12px 16px;display:none;gap:8px;z-index:65}
+.select-bar.show{display:flex}
+.select-bar button{flex:1;padding:12px;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;border:1px solid var(--dim2);color:var(--fg)}
+.select-bar button.danger{border-color:var(--red);color:var(--red)}
 .ask-result{white-space:pre-wrap;font-family:-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.6;color:#ccc;letter-spacing:0;padding:14px;border:1px solid var(--dim2);min-height:80px}
 .ask-result:empty::before{content:'问个问题，比如：上周关于 vlog 的想法';color:var(--dim);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font)}
 .organize-btn{display:block;margin:20px auto 0;padding:14px 28px;border:1px solid var(--red);color:var(--red);font-size:11px;letter-spacing:0.3em;text-transform:uppercase}
@@ -196,12 +215,13 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 <section class="view" id="view-list">
   <div class="ask-box" style="margin-bottom:12px">
     <input type="text" id="askInput" placeholder="问你的笔记 · 按住麦克说话"/>
-    <button id="askMicBtn" title="按住说话">🎤</button>
+    <button id="askMicBtn" title="按住说话"><span class="ask-mic-grid"><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b></b><b></b><b></b><b></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b><b style="opacity:0.3"></b></span></button>
     <button onclick="doAsk()">问</button>
   </div>
   <div class="ask-result" id="askResult" style="display:none"></div>
-  <div style="display:flex;gap:8px;margin-bottom:16px">
+  <div class="list-toolbar">
     <button class="organize-btn" style="margin:0;flex:1;padding:10px" onclick="doOrganize()">立刻整理今天</button>
+    <button id="selectBtn" onclick="toggleSelectMode()">选择</button>
   </div>
   <div class="tag-cloud" id="tagCloud"></div>
   <div id="listBox"></div>
@@ -244,10 +264,16 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
     <span>理</span>
   </button>
   <button data-tab="cal" onclick="switchTab('cal')">
-    <span class="ic"><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b><b></b><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b><b style="opacity:1"></b></span>
+    <span class="ic"><b style="opacity:1"></b><b></b><b style="opacity:1"></b><b></b><b></b><b></b><b style="opacity:1"></b><b></b><b style="opacity:1"></b></span>
     <span>历</span>
   </button>
 </nav>
+
+<!-- batch select bar (above bnav) -->
+<div class="select-bar" id="selectBar">
+  <button onclick="cancelSelect()">取消</button>
+  <button class="danger" id="selectDelBtn" onclick="doBulkDelete()">删除 0</button>
+</div>
 
 <!-- detail modal -->
 <div class="modal" id="modal">
@@ -462,6 +488,43 @@ async function saveEntry(){
 }
 
 // ===== list view =====
+// ===== select mode =====
+let selectMode = false;
+const selectedIds = new Set();
+function toggleSelectMode(){
+  selectMode = !selectMode;
+  selectedIds.clear();
+  document.getElementById('selectBtn').textContent = selectMode ? '退出' : '选择';
+  document.getElementById('selectBar').classList.toggle('show', selectMode);
+  updateBulkBar();
+  loadList();
+}
+function cancelSelect(){ selectMode=false; selectedIds.clear(); document.getElementById('selectBtn').textContent='选择'; document.getElementById('selectBar').classList.remove('show'); loadList(); }
+function toggleEntrySel(id){
+  if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+  const el = document.querySelector('.entry[data-eid="'+id+'"]');
+  if(el) el.classList.toggle('selected', selectedIds.has(id));
+  updateBulkBar();
+}
+function updateBulkBar(){
+  document.getElementById('selectDelBtn').textContent = '删除 ' + selectedIds.size;
+}
+async function doBulkDelete(){
+  if(!selectedIds.size) return;
+  if(!confirm('删除选中 '+selectedIds.size+' 条？不可恢复。')) return;
+  const ids = [...selectedIds];
+  let ok=0, fail=0;
+  for(const id of ids){
+    try{ await api('/entries/'+id, {method:'DELETE'}); ok++; }catch(_){ fail++; }
+  }
+  toast('已删除 '+ok+(fail?(' · 失败 '+fail):''));
+  selectedIds.clear();
+  selectMode = false;
+  document.getElementById('selectBtn').textContent='选择';
+  document.getElementById('selectBar').classList.remove('show');
+  loadList(); loadStats();
+}
+
 async function loadList(){
   const j = await api('/entries?limit=200');
   const box = document.getElementById('listBox');
@@ -475,7 +538,10 @@ async function loadList(){
     }
     const t = new Date(e.created_at*1000);
     const hm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
-    html += '<div class="entry" onclick="openEntry(\''+e.id+'\')">'+
+    const sel = selectedIds.has(e.id);
+    const clickFn = selectMode ? 'toggleEntrySel(\''+e.id+'\')' : 'openEntry(\''+e.id+'\')';
+    html += '<div class="entry'+(sel?' selected':'')+'" data-eid="'+e.id+'" onclick="'+clickFn+'">'+
+      (selectMode?'<span class="entry-select"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>':'')+
       '<div class="entry-meta"><span>'+hm+'</span><span>'+(e.transcribing?'转写中…':(e.organized?'整理':'原始'))+'</span></div>'+
       (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
       '<div class="entry-text">'+esc(e.final_text||e.draft_text||'(无文字)')+'</div>'+
@@ -657,12 +723,12 @@ if(askMicBtn){
       document.getElementById('askInput').value = txt;
     };
     askSR.onend=()=>{
-      askListening=false; askMicBtn.style.background='transparent'; askMicBtn.style.color='';
+      askListening=false; askMicBtn.classList.remove('listening');
       const v = document.getElementById('askInput').value.trim();
       if(v) doAsk();
     };
-    askSR.onerror=()=>{askListening=false; askMicBtn.style.background='transparent';};
-    try{askSR.start(); askListening=true; askMicBtn.style.background='#D6151E'; askMicBtn.style.color='#fff';}catch(_){}
+    askSR.onerror=()=>{askListening=false; askMicBtn.classList.remove('listening');};
+    try{askSR.start(); askListening=true; askMicBtn.classList.add('listening');}catch(_){}
   };
   const stopAskListen=()=>{if(askSR){try{askSR.stop()}catch(_){}}};
   askMicBtn.addEventListener('mousedown',e=>{e.preventDefault(); startAskListen();});
