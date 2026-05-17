@@ -49,8 +49,9 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .view.active{display:block}
 
 /* record view */
-#view-rec.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-top:12px;padding-bottom:32px;min-height:calc(100vh - 180px)}
+#view-rec.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-top:12px;padding-bottom:64px;min-height:calc(100vh - 180px)}
 .rec-top{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:8px}
+.rec-mid{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;margin-bottom:24px}
 .rec-bottom{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
 .rec-status{font-size:11px;color:var(--dim);letter-spacing:0.3em;text-transform:uppercase;margin-bottom:24px;height:14px}
 .rec-status.live{color:var(--red)}
@@ -170,19 +171,22 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
     <div class="rec-live" id="recLive"></div>
     <img class="img-preview" id="imgPreview" style="display:none"/>
   </div>
+  <div class="rec-mid">
+    <div class="rec-actions">
+      <button id="imgPickBtn" onclick="pickImage()">＋ 图片</button>
+      <button id="saveBtn" class="primary" style="display:none" onclick="saveEntry()">保存</button>
+      <button id="cancelBtn" class="danger" style="display:none" onclick="cancelEntry()">丢弃</button>
+    </div>
+  </div>
   <div class="rec-bottom">
     <div class="rec-time" id="recTime"></div>
     <div class="rec-btn" id="recBtn">
       <div class="rec-dot-grid" id="recDotGrid"></div>
     </div>
     <div class="rec-label">长按 / 按住录音</div>
-    <div class="rec-actions">
-      <button onclick="document.getElementById('imgInput').click()">＋ 图片</button>
-      <button id="saveBtn" class="primary" style="display:none" onclick="saveEntry()">保存</button>
-      <button id="cancelBtn" class="danger" style="display:none" onclick="cancelEntry()">丢弃</button>
-    </div>
   </div>
-  <input type="file" id="imgInput" accept="image/*" capture="environment" style="display:none" onchange="onImg(event)"/>
+  <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="onImg(event)"/>
+  <input type="file" id="imgCamInput" accept="image/*" capture="environment" style="display:none" onchange="onImg(event)"/>
 </section>
 
 <section class="view" id="view-list">
@@ -366,6 +370,15 @@ recBtn.addEventListener('mouseleave', e=>{if(media) stopRec();});
 recBtn.addEventListener('touchstart', e=>{e.preventDefault(); startRec();}, {passive:false});
 recBtn.addEventListener('touchend', e=>{e.preventDefault(); stopRec();});
 recBtn.addEventListener('touchcancel', e=>{stopRec();});
+
+function pickImage(){
+  // 已有预览 → 拍照；无 → 相册
+  if(pendingImg){
+    document.getElementById('imgCamInput').click();
+  }else{
+    document.getElementById('imgInput').click();
+  }
+}
 
 function onImg(e){
   const f = e.target.files[0]; if(!f) return;
