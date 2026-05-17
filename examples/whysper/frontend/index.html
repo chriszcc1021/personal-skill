@@ -312,7 +312,7 @@ function switchTab(t){
 }
 
 // ===== recording =====
-let media=null,chunks=[],recStart=0,recTimer=null,recElapsed=0,liveSR=null,liveText='',pendingBlob=null,pendingImg=null;
+let media=null,chunks=[],recStart=0,recTimer=null,recElapsed=0,liveSR=null,liveText='',pendingBlob=null,pendingImg=null,micStream=null;
 const recBtn=document.getElementById('recBtn');
 const recStatus=document.getElementById('recStatus');
 const recTime=document.getElementById('recTime');
@@ -323,7 +323,10 @@ function fmtTime(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 async function startRec(){
   if(media) return;
   try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    if(!micStream){
+      micStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    }
+    const stream = micStream;
     media = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4'});
     // 续录：如果上一段不是空（pendingBlob 有货 或 liveText 有字），保留 chunks/liveText。
     const resuming = !!(pendingBlob || liveText);
@@ -332,7 +335,7 @@ async function startRec(){
     media.ondataavailable=e=>{if(e.data.size>0) chunks.push(e.data)};
     media.onstop=()=>{
       pendingBlob = new Blob(chunks, {type: media.mimeType});
-      stream.getTracks().forEach(t=>t.stop());
+      // 不释放 mic stream，避免 iOS 每次重谈权限
       media=null;
       recBtn.classList.remove('recording');
       recStatus.textContent='松开 · 可续录 · 检查后保存';
@@ -409,6 +412,13 @@ function cancelEntry(){
   recStatus.textContent='按住下方按钮开始';
   recTime.textContent='';
 }
+
+// 页面隐藏/退出时释放 mic，避免后台继续占用
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden && micStream && !media){
+    micStream.getTracks().forEach(t=>t.stop()); micStream=null;
+  }
+});
 
 async function saveEntry(){
   if(!pendingBlob && !pendingImg && !liveText){toast('没东西可存');return}
