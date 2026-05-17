@@ -65,7 +65,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-btn.recording{border-color:var(--red);animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,21,30,0.4)}50%{box-shadow:0 0 0 20px rgba(214,21,30,0)}}
 .rec-dot-grid{display:none}
-.rec-viz{width:140px;height:140px;display:block}
+.rec-viz{width:170px;height:170px;display:block}
 .rec-btn .rec-viz{filter:drop-shadow(0 0 6px rgba(255,255,255,0.25))}
 .rec-btn.recording .rec-viz{filter:drop-shadow(0 0 14px rgba(214,21,30,0.55))}
 .rec-label{margin-top:24px;font-size:12px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
@@ -319,19 +319,19 @@ function loopViz(){
 function drawIdle(t){
   const w=vizCanvas.width,h=vizCanvas.height,cx=w/2,cy=h/2;
   vizCtx.clearRect(0,0,w,h);
-  // 3 breathing rings
-  for(let i=0;i<3;i++){
-    const phase = t*0.5 + i*0.6;
-    const r = 36 + i*14 + Math.sin(phase)*4;
+  // 4 breathing rings
+  for(let i=0;i<4;i++){
+    const phase = t*0.5 + i*0.5;
+    const r = 60 + i*22 + Math.sin(phase)*6;
     vizCtx.beginPath();
     vizCtx.arc(cx,cy,r,0,Math.PI*2);
-    vizCtx.strokeStyle = `rgba(255,255,255,${0.18 - i*0.04})`;
-    vizCtx.lineWidth = 1;
+    vizCtx.strokeStyle = `rgba(255,255,255,${0.30 - i*0.06})`;
+    vizCtx.lineWidth = 1.2;
     vizCtx.stroke();
   }
   // center dot
   vizCtx.beginPath();
-  vizCtx.arc(cx,cy,4 + Math.sin(t*1.4)*0.8,0,Math.PI*2);
+  vizCtx.arc(cx,cy,6 + Math.sin(t*1.4)*1.2,0,Math.PI*2);
   vizCtx.fillStyle = '#fff';
   vizCtx.fill();
 }
