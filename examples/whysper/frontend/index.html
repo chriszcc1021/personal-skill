@@ -408,9 +408,11 @@ async function saveEntry(){
     const r = await fetch(API+'/entries', {method:'POST', body:fd});
     if(!r.ok) throw new Error(await r.text());
     const j = await r.json();
-    toast('已存档 · '+(j.final_text||liveText||'(无文字)').slice(0,20));
+    toast('已存 · '+(j.final_text||liveText||'(无文字)').slice(0,16));
     cancelEntry();
     loadStats();
+    // 跳到「理」看到刚存的条目
+    switchTab('list');
   }catch(e){
     toast('上传失败：'+e.message);
     recStatus.textContent='上传失败 · 重试或丢弃';
