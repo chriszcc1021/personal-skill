@@ -75,6 +75,10 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-live:empty::before{content:'松开停止 · 文字会出现在这里';color:var(--dim);font-size:11px;letter-spacing:0.2em;text-transform:uppercase}
 .rec-actions{display:flex;gap:12px;margin-top:20px}
 .rec-actions button{padding:10px 18px;border:1px solid var(--dim2);font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
+.rec-progress{display:none;grid-template-columns:repeat(20,1fr);gap:3px;width:280px;max-width:80%;margin-top:14px}
+.rec-progress.show{display:grid}
+.rec-progress b{height:6px;background:var(--dim);transition:background 0.15s}
+.rec-progress b.lit{background:var(--red)}
 .rec-actions button.primary{border-color:var(--fg)}
 .rec-actions button.danger{border-color:var(--red);color:var(--red)}
 .img-preview{margin-top:12px;width:120px;height:120px;border:1px solid var(--dim2);object-fit:cover}
@@ -178,6 +182,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
       <button id="saveBtn" class="primary" style="display:none" onclick="saveEntry()">保存</button>
       <button id="cancelBtn" class="danger" style="display:none" onclick="cancelEntry()">丢弃</button>
     </div>
+    <div class="rec-progress" id="recProgress"></div>
   </div>
   <div class="rec-bottom">
     <div class="rec-time" id="recTime"></div>
@@ -302,7 +307,7 @@ function switchTab(t){
 }
 
 // ===== recording =====
-let media=null,chunks=[],recStart=0,recTimer=null,liveSR=null,liveText='',pendingBlob=null,pendingImg=null;
+let media=null,chunks=[],recStart=0,recTimer=null,recElapsed=0,liveSR=null,liveText='',pendingBlob=null,pendingImg=null;
 const recBtn=document.getElementById('recBtn');
 const recStatus=document.getElementById('recStatus');
 const recTime=document.getElementById('recTime');
@@ -315,38 +320,41 @@ async function startRec(){
   try{
     const stream = await navigator.mediaDevices.getUserMedia({audio:true});
     media = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4'});
-    chunks=[]; liveText='';
+    // 续录：如果上一段不是空（pendingBlob 有货 或 liveText 有字），保留 chunks/liveText。
+    const resuming = !!(pendingBlob || liveText);
+    if(!resuming){ chunks=[]; liveText=''; recLive.textContent=''; recTime.textContent='0:00'; pendingBlob=null; }
+    // 在续录模式下，原 pendingBlob 丢弃，使用之前收集的 chunks 续加（同一 mimeType）
     media.ondataavailable=e=>{if(e.data.size>0) chunks.push(e.data)};
     media.onstop=()=>{
       pendingBlob = new Blob(chunks, {type: media.mimeType});
       stream.getTracks().forEach(t=>t.stop());
       media=null;
       recBtn.classList.remove('recording');
-      recStatus.textContent='松开 · 文字已捕获 · 检查后保存';
+      recStatus.textContent='松开 · 可续录 · 检查后保存';
       recStatus.classList.remove('live');
       clearInterval(recTimer);
       document.getElementById('saveBtn').style.display='inline-block';
       document.getElementById('cancelBtn').style.display='inline-block';
     };
     media.start();
-    recStart = Date.now();
+    recStart = Date.now() - (resuming ? (recElapsed||0)*1000 : 0);
     recBtn.classList.add('recording');
-    recStatus.textContent='录音中';
+    recStatus.textContent= resuming ? '继续录音' : '录音中';
     recStatus.classList.add('live');
-    recTime.textContent='0:00';
-    recLive.textContent='';
     recTimer=setInterval(()=>{
-      recTime.textContent=fmtTime(Math.floor((Date.now()-recStart)/1000));
+      recElapsed = Math.floor((Date.now()-recStart)/1000);
+      recTime.textContent=fmtTime(recElapsed);
     },200);
     // start local speech recognition for live preview
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(SR){
+      const baseText = resuming ? (liveText ? liveText + ' ' : '') : '';
       liveSR = new SR();
       liveSR.lang='zh-CN'; liveSR.interimResults=true; liveSR.continuous=true;
       liveSR.onresult=e=>{
         let txt='';
         for(let i=0;i<e.results.length;i++) txt += e.results[i][0].transcript;
-        liveText=txt; recLive.textContent=txt;
+        liveText= baseText + txt; recLive.textContent=liveText;
       };
       liveSR.onerror=()=>{};
       try{liveSR.start();}catch(_){}
@@ -389,7 +397,7 @@ function onImg(e){
 }
 
 function cancelEntry(){
-  pendingBlob=null; pendingImg=null; liveText=''; recLive.textContent='';
+  pendingBlob=null; pendingImg=null; liveText=''; chunks=[]; recElapsed=0; recLive.textContent='';
   document.getElementById('imgPreview').style.display='none';
   document.getElementById('saveBtn').style.display='none';
   document.getElementById('cancelBtn').style.display='none';
@@ -399,7 +407,20 @@ function cancelEntry(){
 
 async function saveEntry(){
   if(!pendingBlob && !pendingImg && !liveText){toast('没东西可存');return}
-  recStatus.textContent='上传中...';
+  // 点阵进度条
+  const prog = document.getElementById('recProgress');
+  prog.innerHTML = Array.from({length:20}).map(()=>'<b></b>').join('');
+  prog.classList.add('show');
+  document.getElementById('saveBtn').style.display='none';
+  document.getElementById('cancelBtn').style.display='none';
+  recStatus.textContent='上传中';
+  let progStep=0; const progTotal=20;
+  const progTimer = setInterval(()=>{
+    if(progStep<progTotal){
+      prog.children[progStep].classList.add('lit');
+      progStep++;
+    }
+  }, 120);
   const fd = new FormData();
   if(pendingBlob) fd.append('audio', pendingBlob, 'rec.webm');
   if(pendingImg) fd.append('image', pendingImg);
@@ -408,14 +429,20 @@ async function saveEntry(){
     const r = await fetch(API+'/entries', {method:'POST', body:fd});
     if(!r.ok) throw new Error(await r.text());
     const j = await r.json();
-    toast('已存 · '+(j.final_text||liveText||'(无文字)').slice(0,16));
+    // 凑满进度
+    while(progStep<progTotal){ prog.children[progStep].classList.add('lit'); progStep++; }
+    clearInterval(progTimer);
+    setTimeout(()=>{ prog.classList.remove('show'); }, 400);
+    toast('上传成功 · '+(j.final_text||liveText||'(无文字)').slice(0,16));
     cancelEntry();
     loadStats();
-    // 跳到「理」看到刚存的条目
-    switchTab('list');
   }catch(e){
+    clearInterval(progTimer);
+    prog.classList.remove('show');
     toast('上传失败：'+e.message);
     recStatus.textContent='上传失败 · 重试或丢弃';
+    document.getElementById('saveBtn').style.display='inline-block';
+    document.getElementById('cancelBtn').style.display='inline-block';
   }
 }
 
