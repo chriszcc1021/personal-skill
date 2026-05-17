@@ -55,26 +55,18 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-status{font-size:11px;color:var(--dim);letter-spacing:0.3em;text-transform:uppercase;margin-bottom:24px;height:14px}
 .rec-status.live{color:var(--red)}
 .rec-btn{
-  width:260px;height:260px;border-radius:50%;
-  background:radial-gradient(circle at 50% 50%, #181818 0%, #000 75%);
-  border:1.5px solid var(--fg);
+  width:200px;height:200px;border-radius:50%;
+  background:var(--bg);border:1px solid var(--dim2);
   display:flex;align-items:center;justify-content:center;
-  position:relative;transition:transform 0.12s,border-color 0.2s,box-shadow 0.3s;
+  position:relative;transition:transform 0.1s,border-color 0.2s;
   user-select:none;-webkit-user-select:none;
-  box-shadow:0 0 0 1px rgba(255,255,255,0.04), 0 24px 60px -20px rgba(0,0,0,0.8);
 }
-.rec-btn::before{content:"";position:absolute;inset:14px;border:1px dashed var(--dim2);border-radius:50%;opacity:0.4;pointer-events:none}
-.rec-btn:active{transform:scale(0.95)}
+.rec-btn:active{transform:scale(0.96)}
 .rec-btn.recording{border-color:var(--red);animation:pulse 1.2s infinite}
-.rec-btn.recording::before{border-color:var(--red);opacity:0.6;animation:spin 6s linear infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,21,30,0.55), 0 24px 60px -20px rgba(214,21,30,0.4)}50%{box-shadow:0 0 0 28px rgba(214,21,30,0), 0 24px 60px -20px rgba(214,21,30,0.2)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-.rec-dot-ring{position:relative;width:140px;height:140px}
-.rec-dot-ring b{position:absolute;width:6px;height:6px;background:var(--fg);border-radius:50%;left:50%;top:50%;transform-origin:0 0;opacity:0.85;transition:background 0.2s,transform 0.2s}
-.rec-btn.recording .rec-dot-ring b{background:var(--red);opacity:1}
-.rec-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:var(--fg);opacity:0;transition:opacity 0.2s,transform 0.2s}
-.rec-btn.recording .rec-core{opacity:1;background:var(--red);box-shadow:0 0 12px var(--red);animation:beat 0.9s ease-in-out infinite}
-@keyframes beat{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.4)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,21,30,0.4)}50%{box-shadow:0 0 0 20px rgba(214,21,30,0)}}
+.rec-dot-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:80px;height:80px}
+.rec-dot-grid b{background:var(--fg);border-radius:50%;opacity:0.3;transition:opacity 0.2s}
+.rec-btn.recording .rec-dot-grid b{opacity:1;background:var(--red)}
 .rec-label{margin-top:24px;font-size:12px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
 .rec-time{margin-top:8px;font-size:24px;color:var(--fg);letter-spacing:0.1em;font-variant-numeric:tabular-nums;min-height:32px}
 .rec-live{margin-top:16px;padding:16px;border:1px solid var(--dim2);min-height:96px;max-width:92%;width:360px;font-size:14px;color:#ccc;line-height:1.6;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
@@ -193,8 +185,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
   <div class="rec-bottom">
     <div class="rec-time" id="recTime"></div>
     <div class="rec-btn" id="recBtn">
-      <div class="rec-dot-ring" id="recDotRing"></div>
-      <div class="rec-core"></div>
+      <div class="rec-dot-grid" id="recDotGrid"></div>
     </div>
     <div class="rec-label">长按 / 按住录音</div>
   </div>
@@ -295,19 +286,10 @@ function renderBrandIcon(){
   grid.innerHTML = html;
 }
 renderBrandIcon();
-// build record dot ring (24 dots evenly spaced)
+// fill record dot grid (5x5)
 (function(){
-  const g=document.getElementById('recDotRing');
-  if(!g) return;
-  const N=24, R=62; // radius in px (rec-dot-ring is 140x140, center=70)
-  let h='';
-  for(let i=0;i<N;i++){
-    const a = (i/N)*Math.PI*2 - Math.PI/2;
-    const x = Math.cos(a)*R, y = Math.sin(a)*R;
-    // dot is 6x6, half=3; offset from center(0,0) since transform-origin already 0,0
-    h += '<b style="transform:translate('+(x-3).toFixed(2)+'px,'+(y-3).toFixed(2)+'px)"></b>';
-  }
-  g.innerHTML = h;
+  const g=document.getElementById('recDotGrid');
+  g.innerHTML = Array.from({length:25}).map(()=>'<b></b>').join('');
 })();
 
 // ===== api =====
