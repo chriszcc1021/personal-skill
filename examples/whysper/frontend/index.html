@@ -33,8 +33,8 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
   display:flex;align-items:center;justify-content:space-between;
 }
 .brand{display:flex;align-items:center;gap:10px}
-.brand-icon{width:28px;height:28px;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:2px;border:1px solid var(--red);border-radius:50%;padding:4px;box-sizing:border-box}
-.brand-icon i{background:var(--red);border-radius:50%}
+.brand-icon{width:28px;height:28px;position:relative}
+.brand-icon i{position:absolute;width:2px;height:2px;background:var(--fg);border-radius:50%;left:50%;top:50%;margin-left:-1px;margin-top:-1px}
 .brand-icon i{background:var(--fg);border-radius:1px}
 .brand-icon i.off{display:none}
 .brand-name{font-size:14px;letter-spacing:0.3em;font-weight:600;text-transform:uppercase}
@@ -277,8 +277,15 @@ const ICON_PATTERN = [
 ]; // W in 5x4 → padded
 function renderBrandIcon(){
   const grid = document.getElementById('brandIcon');
-  // 5x5 all-on red dots (matches app icon: recording active)
-  grid.innerHTML = Array.from({length:25}).map(()=>'<i></i>').join('');
+  // 24-dot white ring, matches app icon
+  const N=24, R=12;
+  let html='';
+  for(let i=0;i<N;i++){
+    const a = -Math.PI/2 + 2*Math.PI*i/N;
+    const x = R*Math.cos(a), y = R*Math.sin(a);
+    html += `<i style="transform:translate(${x}px,${y}px)"></i>`;
+  }
+  grid.innerHTML = html;
 }
 renderBrandIcon();
 // fill record dot grid (5x5)
