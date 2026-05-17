@@ -9,8 +9,8 @@ LIMIT_MB=10240   # 10G
 usage_mb() { du -sm "$1" 2>/dev/null | awk '{print $1}'; }
 
 prune_whysper() {
-  # 删 90 天前的音频（保留 db 文本永久）
-  find "$WHYSPER_DATA/audio" -type f -mtime +90 -delete 2>/dev/null
+  # 删 14 天前的音频（保留 db 文本永久）
+  find "$WHYSPER_DATA/audio" -type f -mtime +14 -delete 2>/dev/null
   # 若仍超限，按时间从旧到新删
   while [ "$(usage_mb $WHYSPER_DATA)" -gt $LIMIT_MB ]; do
     OLDEST=$(find "$WHYSPER_DATA/audio" "$WHYSPER_DATA/images" -type f -printf '%T@ %p\n' 2>/dev/null | sort -n | head -1 | awk '{print $2}')
