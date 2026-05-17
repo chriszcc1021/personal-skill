@@ -303,6 +303,13 @@ function ensureAnalyser(stream){
 }
 function startViz(){ vizRunning=true; loopViz(); }
 function stopViz(){ vizRunning=false; }
+// fallback ticker (in case rAF is throttled)
+setInterval(()=>{
+  if(!vizRunning) return;
+  const t = performance.now()/1000;
+  const live = !!(media && media.state==='recording');
+  if(live && analyser) drawBlob(t, live); else drawIdle(t);
+}, 50);
 
 function loopViz(){
   if(!vizRunning) { drawIdle(performance.now()/1000); requestAnimationFrame(loopViz); return; }
@@ -393,6 +400,25 @@ async function api(path, opts={}){
 }
 
 // ===== tabs =====
+// SWR cache: instant render from memory while a fresh fetch updates in background.
+const cache = { list:null, tags:null, cal:{}, stats:null };
+const inflight = {};
+async function swr(key, fetcher, render){
+  // 1) instant paint if cached
+  if(cache[key] != null) render(cache[key], /*stale=*/true);
+  // 2) dedupe in-flight
+  if(inflight[key]) return inflight[key];
+  inflight[key] = (async()=>{
+    try{
+      const j = await fetcher();
+      cache[key] = j;
+      render(j, /*stale=*/false);
+      return j;
+    } finally { inflight[key] = null; }
+  })();
+  return inflight[key];
+}
+
 function switchTab(t){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.bnav button').forEach(b=>b.classList.remove('active'));
@@ -400,6 +426,12 @@ function switchTab(t){
   document.querySelector('.bnav button[data-tab="'+t+'"]').classList.add('active');
   if(t==='list'){loadList(); loadTags();}
   if(t==='cal') loadCal();
+}
+
+// prefetch list+tags+cal+stats shortly after first paint so future tab switches are instant
+function prefetchAll(){
+  setTimeout(()=>{ loadList(); loadTags(); loadStats(); }, 300);
+  setTimeout(()=>{ try{ loadCal(); }catch(_){} }, 600);
 }
 
 // ===== recording =====
@@ -542,7 +574,9 @@ async function saveEntry(){
     setTimeout(()=>{ prog.classList.remove('show'); }, 400);
     toast('上传成功 · '+(j.final_text||liveText||'(无文字)').slice(0,16));
     cancelEntry();
-    loadStats();
+    // invalidate caches so next switch fetches fresh; also kick a background prefetch
+    cache.list = null; cache.tags = null; cache.stats = null; cache.cal = {};
+    loadStats(); loadList(); loadTags();
   }catch(e){
     clearInterval(progTimer);
     prog.classList.remove('show');
@@ -554,10 +588,9 @@ async function saveEntry(){
 }
 
 // ===== list view =====
-async function loadList(){
-  const j = await api('/entries?limit=200');
+function renderList(j){
   const box = document.getElementById('listBox');
-  if(!j.entries.length){box.innerHTML='<div class="empty">还没有笔记 · 去录一条</div>';return}
+  if(!j || !j.entries || !j.entries.length){box.innerHTML='<div class="empty">还没有笔记 · 去录一条</div>';return}
   let html='';
   let curDate='';
   j.entries.forEach(e=>{
@@ -587,6 +620,9 @@ async function loadList(){
     clearInterval(window._txPoll); window._txPoll=null;
   }
 }
+async function loadList(){
+  return swr('list', ()=>api('/entries?limit=200'), renderList);
+}
 
 function esc(s){return (s||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}
 
@@ -612,15 +648,14 @@ async function deleteEntry(){
   if(!curEntry) return;
   if(!confirm('删除这条？')) return;
   await api('/entries/'+curEntry.id, {method:'DELETE'});
-  closeModal(); loadList(); loadStats();
+  closeModal(); cache.list=null; cache.tags=null; cache.stats=null; cache.cal={}; loadList(); loadStats();
 }
 
 // ===== calendar =====
 let calCur = new Date();
-async function loadCal(){
+function renderCal(data){
   const y=calCur.getFullYear(),m=calCur.getMonth()+1;
   document.getElementById('calTitle').textContent = y+' · '+String(m).padStart(2,'0');
-  const data = await api('/calendar?year='+y+'&month='+m);
   const g = document.getElementById('calGrid');
   const weeks=['日','一','二','三','四','五','六'];
   let html = weeks.map(w=>'<div class="cal-week">'+w+'</div>').join('');
@@ -631,7 +666,7 @@ async function loadCal(){
   const today=new Date();const tStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   for(let d=1;d<=days;d++){
     const ds = y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const n = data[ds]||0;
+    const n = (data||{})[ds]||0;
     let lv='';
     if(n>=8) lv='lv3'; else if(n>=4) lv='lv2'; else if(n>=1) lv='lv1';
     const isToday = ds===tStr?'today':'';
@@ -641,6 +676,21 @@ async function loadCal(){
   }
   g.innerHTML = html;
   document.getElementById('calDayList').innerHTML='';
+}
+async function loadCal(){
+  const y=calCur.getFullYear(),m=calCur.getMonth()+1;
+  const key = 'cal:'+y+'-'+m;
+  // separate cache slot per month
+  if(cache.cal[key] != null) renderCal(cache.cal[key]);
+  if(inflight[key]) return inflight[key];
+  inflight[key] = (async()=>{
+    try{
+      const data = await api('/calendar?year='+y+'&month='+m);
+      cache.cal[key] = data;
+      renderCal(data);
+    } finally { inflight[key]=null; }
+  })();
+  return inflight[key];
 }
 function calMove(dir){
   if(dir===0) calCur=new Date();
@@ -690,11 +740,13 @@ async function doOrganize(){
     toast('整理失败：'+e.message);
   }
 }
-async function loadTags(){
-  const tags = await api('/tags');
+function renderTags(tags){
   const box = document.getElementById('tagCloud');
-  if(!tags.length){box.innerHTML='<div class="empty" style="padding:20px;width:100%">还没有标签 · 先记几条再整理</div>';return}
+  if(!tags || !tags.length){box.innerHTML='<div class="empty" style="padding:20px;width:100%">还没有标签 · 先记几条再整理</div>';return}
   box.innerHTML = tags.slice(0,30).map(t=>'<span class="tag" onclick="filterTag(\''+t.tag+'\')">'+esc(t.tag)+' · '+t.count+'</span>').join('');
+}
+async function loadTags(){
+  return swr('tags', ()=>api('/tags'), renderTags);
 }
 function filterTag(t){
   switchTab('list');
@@ -717,10 +769,9 @@ function filterTag(t){
 
 // ===== stats =====
 async function loadStats(){
-  try{
-    const s = await api('/stats');
-    document.getElementById('statsBar').textContent = s.today_count+' 今日 · '+s.streak+' 连击';
-  }catch(_){}
+  return swr('stats', ()=>api('/stats'), s=>{
+    if(s) document.getElementById('statsBar').textContent = (s.today_count||0)+' 今日 · '+(s.streak||0)+' 连击';
+  });
 }
 
 // ===== toast =====
@@ -733,8 +784,7 @@ function toast(msg){
 }
 
 loadStats();
-
-// ===== ask voice button =====
+prefetchAll();
 let askSR=null,askListening=false;
 const askMicBtn=document.getElementById('askMicBtn');
 if(askMicBtn){
