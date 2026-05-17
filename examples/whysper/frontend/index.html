@@ -118,6 +118,12 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .cal-legend i{display:inline-block;width:10px;height:10px;border-radius:50%}
 .cal-day-list{margin-top:24px}
 .cal-day-title{font-size:11px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--dim2);margin-bottom:12px}
+.storage-card{margin-top:32px;padding-top:16px;border-top:1px dashed var(--dim2);font-size:11px;color:var(--dim);letter-spacing:0.15em;text-transform:uppercase}
+.storage-card .row{display:flex;justify-content:space-between;margin:6px 0}
+.storage-card .bar{height:6px;background:var(--dim2);margin:8px 0;position:relative;overflow:hidden}
+.storage-card .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--fg);transition:width 0.4s}
+.storage-card .bar.warn i{background:var(--red)}
+.storage-card .num{color:var(--fg);font-variant-numeric:tabular-nums}
 .day-summary{font-size:14px;color:var(--fg);line-height:1.7;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif;padding:4px 0 12px}
 .day-summary.muted{color:var(--dim);font-size:12px;letter-spacing:0.15em;text-transform:uppercase}
 
@@ -170,6 +176,20 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .modal-body p{font-size:15px;line-height:1.7;color:#ddd;white-space:pre-wrap;margin:0 0 16px;letter-spacing:0}
 .modal-body audio{width:100%;margin:12px 0;filter:invert(0.85) hue-rotate(180deg)}
 .modal-body img.full{max-width:100%;border:1px solid var(--dim2);margin-top:12px}
+.event-card{border:1px solid var(--dim2);padding:12px;margin:8px 0;font-family:-apple-system,system-ui,sans-serif}
+.event-card .ev-title{font-size:14px;color:var(--fg);font-weight:600;margin-bottom:4px}
+.event-card .ev-meta{font-size:12px;color:var(--dim);letter-spacing:0}
+.event-card .ev-notes{font-size:12px;color:#aaa;margin-top:6px;letter-spacing:0}
+.btn-ics{display:block;text-align:center;padding:14px;border:1px solid var(--red);color:var(--red);margin-top:12px;font-size:12px;letter-spacing:0.3em;text-transform:uppercase;text-decoration:none}
+.btn-ics:active{background:var(--red);color:#fff}
+.code-card{border:1px solid var(--dim2);padding:12px;margin:8px 0;display:flex;align-items:center;gap:12px}
+.code-card .code-val{font-size:22px;letter-spacing:0.2em;color:var(--fg);font-variant-numeric:tabular-nums;cursor:pointer;padding:6px 10px;border:1px dashed var(--dim2)}
+.code-card .code-kind{font-size:11px;color:var(--dim);letter-spacing:0.2em;text-transform:uppercase}
+.task-row{padding:8px 0;font-size:14px;color:var(--fg);font-family:-apple-system,system-ui,sans-serif;letter-spacing:0}
+.kp-list{margin:0;padding-left:18px;color:#ccc;font-family:-apple-system,system-ui,sans-serif;font-size:13px;line-height:1.7;letter-spacing:0}
+.kp-list li{margin:4px 0}
+.src-badge{font-size:9px;border:1px solid var(--dim2);padding:1px 5px;letter-spacing:0.15em;color:var(--dim);margin-left:6px;text-transform:uppercase}
+.src-badge.shortcut{border-color:var(--red);color:var(--red)}
 .modal-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--dim2)}
 .modal-actions button{flex:1;padding:12px;border:1px solid var(--dim2);font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
 .modal-actions button.danger{border-color:var(--red);color:var(--red)}
@@ -240,6 +260,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
   </div>
   <div class="cal-grid" id="calGrid"></div>
   <div class="cal-day-list" id="calDayList"></div>
+  <div class="storage-card" id="storageCard"></div>
 </section>
 
 <section class="view" id="view-ask-deprecated" style="display:none">
@@ -330,7 +351,7 @@ function switchTab(t){
   document.getElementById('view-'+t).classList.add('active');
   document.querySelector('.bnav button[data-tab="'+t+'"]').classList.add('active');
   if(t==='list'){loadList(); loadTags();}
-  if(t==='cal') loadCal();
+  if(t==='cal'){ loadCal(); loadStorage(); }
 }
 
 // ===== recording =====
@@ -544,7 +565,7 @@ async function loadList(){
     const clickFn = selectMode ? 'toggleEntrySel(\''+e.id+'\')' : 'openEntry(\''+e.id+'\')';
     html += '<div class="entry'+(sel?' selected':'')+'" data-eid="'+e.id+'" onclick="'+clickFn+'">'+
       (selectMode?'<span class="entry-select"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>':'')+
-      '<div class="entry-meta"><span>'+hm+'</span><span>'+(e.transcribing?'转写中…':(e.organized?'整理':'原始'))+'</span></div>'+
+      '<div class="entry-meta"><span>'+hm+(e.source==='shortcut'?'<span class="src-badge shortcut">快捷</span>':'')+'</span><span>'+(e.transcribing?'转写中…':(e.organized?'整理':'原始'))+'</span></div>'+
       (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
       '<div class="entry-text">'+esc(e.final_text||e.draft_text||'(无文字)')+'</div>'+
       (e.tags && e.tags.length?'<div class="entry-tags">'+e.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>':'')+
@@ -572,16 +593,63 @@ async function openEntry(id){
   const e = await api('/entries/'+id);
   curEntry=e;
   const t = new Date(e.created_at*1000);
-  const dt = t.toLocaleString('zh-CN',{hour12:false});
+  const dtStr = t.toLocaleString('zh-CN',{hour12:false});
+  const meta = e.meta || {};
+  const events = meta.events||[];
+  const codes = meta.codes||[];
+  const tasks = meta.tasks||[];
+  const kps = meta.key_points||[];
+  const apiBase = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
+  let extras = '';
+  if(events.length){
+    extras += '<div class="meta" style="margin-top:16px">日程</div>';
+    extras += events.map(ev=>{
+      const t = ev.start_iso ? new Date(ev.start_iso).toLocaleString('zh-CN',{hour12:false}) : '';
+      return '<div class="event-card"><div class="ev-title">'+esc(ev.title||'')+'</div>'+
+        '<div class="ev-meta">'+esc(t)+(ev.location?' · '+esc(ev.location):'')+'</div>'+
+        (ev.notes?'<div class="ev-notes">'+esc(ev.notes)+'</div>':'')+'</div>';
+    }).join('');
+    extras += '<a class="btn-ics" href="'+apiBase+'/entries/'+e.id+'/ics">📅 加入日历</a>';
+  }
+  if(codes.length){
+    extras += '<div class="meta" style="margin-top:16px">码</div>';
+    extras += codes.map(c=>'<div class="code-card"><div class="code-val" onclick="copyCode(\''+(c.value||'')+'\')">'+esc(c.value||'')+'</div>'+
+      '<div class="code-kind">'+esc(c.kind||'')+(c.expire_iso?' · 过期 '+esc(c.expire_iso):'')+'</div></div>').join('');
+  }
+  if(tasks.length){
+    extras += '<div class="meta" style="margin-top:16px">待办</div>';
+    extras += tasks.map(t=>'<div class="task-row">□ '+esc(t.text||'')+(t.due_iso?' · '+esc(t.due_iso):'')+'</div>').join('');
+  }
+  if(kps.length){
+    extras += '<div class="meta" style="margin-top:16px">要点</div>';
+    extras += '<ul class="kp-list">'+kps.map(k=>'<li>'+esc(k)+'</li>').join('')+'</ul>';
+  }
   document.getElementById('modalBody').innerHTML =
-    '<div class="meta">'+dt+(e.organized?' · 已整理':' · 原始')+'</div>'+
+    '<div class="meta">'+dtStr+(e.organized?' · 已整理':' · 原始')+(e.source && e.source!=='app'?' · '+esc(e.source==='shortcut'?'快捷指令':e.source):'')+'</div>'+
     (e.title?'<h2>'+esc(e.title)+'</h2>':'')+
     (e.audio_file?'<audio controls src="'+MEDIA+'/audio/'+e.audio_file+'"></audio>':'')+
     '<p>'+esc(e.final_text||e.draft_text||'(无文字)')+'</p>'+
     (e.tags && e.tags.length?'<div class="entry-tags">'+e.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>':'')+
     (e.summary?'<div class="meta" style="margin-top:16px">今日小结</div><p style="font-size:13px;color:#aaa">'+esc(e.summary)+'</p>':'')+
+    extras+
     (e.image_file?'<img class="full" src="'+MEDIA+'/images/'+e.image_file+'"/>':'');
   document.getElementById('modal').classList.add('show');
+}
+function copyCode(v){ navigator.clipboard.writeText(v).then(()=>toast('已复制 '+v)).catch(()=>toast('复制失败')); }
+async function loadStorage(){
+  try{
+    const s = await api('/storage');
+    const pct = s.pct||0;
+    const warn = pct >= 80 ? ' warn' : '';
+    document.getElementById('storageCard').innerHTML =
+      '<div class="row"><span>占用</span><span class="num">'+s.total_mb+' / '+s.limit_mb+' MB · '+pct+'%</span></div>'+
+      '<div class="bar'+warn+'"><i style="width:'+Math.min(100,pct)+'%"></i></div>'+
+      '<div class="row"><span>音频</span><span class="num">'+s.audio_mb+' MB</span></div>'+
+      '<div class="row"><span>图片</span><span class="num">'+s.images_mb+' MB</span></div>'+
+      '<div class="row"><span>数据库</span><span class="num">'+s.db_mb+' MB</span></div>'+
+      (s.vlog_mb?'<div class="row"><span>VLOG 占同盘</span><span class="num">'+s.vlog_mb+' MB</span></div>':'')+
+      '<div class="row" style="margin-top:8px;font-size:9px;letter-spacing:0.2em"><span>14天自清 · 超限删最旧</span><span></span></div>';
+  }catch(_){}
 }
 function closeModal(){document.getElementById('modal').classList.remove('show');curEntry=null}
 async function deleteEntry(){

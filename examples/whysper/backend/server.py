@@ -14,12 +14,12 @@ Endpoints:
   GET  /media/images/{name}
 """
 from __future__ import annotations
-import os, sqlite3, uuid, json, re, time, asyncio, datetime as dt
+import os, sqlite3, uuid, json, re, time, asyncio, base64, datetime as dt
 from pathlib import Path
 from typing import Optional
 import httpx
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 DATA_ROOT = Path(os.environ.get("WHYSPER_DATA", "/var/whysper-data"))
@@ -72,6 +72,12 @@ def init_db():
         if "transcribing" not in cols:
             try: c.execute("ALTER TABLE entries ADD COLUMN transcribing INTEGER DEFAULT 0")
             except Exception: pass
+        if "meta" not in cols:
+            try: c.execute("ALTER TABLE entries ADD COLUMN meta TEXT")
+            except Exception: pass
+        if "source" not in cols:
+            try: c.execute("ALTER TABLE entries ADD COLUMN source TEXT DEFAULT 'app'")
+            except Exception: pass
         c.executescript("""
         CREATE TABLE IF NOT EXISTS organize_runs(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,6 +108,11 @@ def row_to_dict(r):
         except Exception: d["tags"] = []
     else:
         d["tags"] = []
+    if d.get("meta"):
+        try: d["meta"] = json.loads(d["meta"])
+        except Exception: d["meta"] = {}
+    else:
+        d["meta"] = {}
     return d
 
 # ---------- AI ----------
@@ -111,7 +122,7 @@ async def ai_chat(messages, max_tokens=900, temperature=0.4) -> str:
     url = AI_BASE.rstrip("/") + "/v1/chat/completions"
     headers = {"Authorization": f"Bearer {AI_KEY}", "Content-Type": "application/json"}
     payload = {"model": AI_MODEL, "messages": messages, "max_tokens": max_tokens, "temperature": temperature}
-    async with httpx.AsyncClient(timeout=90) as cli:
+    async with httpx.AsyncClient(timeout=180) as cli:
         r = await cli.post(url, headers=headers, json=payload)
         r.raise_for_status()
         j = r.json()
@@ -183,6 +194,71 @@ async def _transcribe_and_update(eid: str, audio_path: Path):
             c.execute("UPDATE entries SET transcribing=0 WHERE id=?", (eid,))
         print(f"[transcribe] {eid} error: {e}")
 
+
+VISION_PROMPT = """你是个个人外挂大脑。看这张截图，抽取用户应该记住、提醒、或收藏的结构化信息。
+今天是 {today} (Asia/Singapore)。以下是输出格式，严格 JSON，不要任何解释：
+
+{{
+  "summary": "一句话总结这张图是什么 (不超 50 字)",
+  "title": "一句话标题 (不超 18 字)",
+  "text": "图里的关键文本内容提取 (OCR + 理解后的难表述，完整 250 字以内)",
+  "tags": ["..."],
+  "events": [{{"title":"...", "start_iso":"2026-05-18T14:00:00+08:00", "end_iso":"2026-05-18T15:00:00+08:00", "location":"...", "notes":"...", "alert_min":30}}],
+  "codes": [{{"kind":"取件码/兑换码/取餐号", "value":"1234", "expire_iso":null}}],
+  "tasks": [{{"text":"...", "due_iso":null}}],
+  "key_points": ["..."]
+}}
+
+规则：
+- 推断时间时遵照当地 +08:00。“明天”就是 {today}+1。
+- 有明确时间 + 事件 才填 events，否则留空数组。
+- 机票/火车票 alert_min 设 120，其他默认 30。
+- codes 只抽实际可复制使用的短码（取件码、核销码、热锁、取餐号）。
+- tasks 限明确“我”需要完成的事项。
+- 如果是文章/帖子，重点摆 key_points，不产生 events/codes。
+- 不要手动转义引号，在 JSON 里用双引号即可。
+"""
+
+async def _vision_extract_and_update(eid: str, image_path: Path):
+    """Background task: send image to multimodal Claude, store structured meta."""
+    if not AI_KEY or not image_path.exists():
+        return
+    try:
+        with db() as c:
+            c.execute("UPDATE entries SET transcribing=1 WHERE id=?", (eid,))
+        b64 = base64.b64encode(image_path.read_bytes()).decode()
+        ext = image_path.suffix.lstrip('.').lower()
+        mime = {"jpg":"image/jpeg","jpeg":"image/jpeg","png":"image/png","webp":"image/webp","heic":"image/heic"}.get(ext, "image/jpeg")
+        today = ts_to_local_date(now_ts())
+        prompt = VISION_PROMPT.format(today=today)
+        msg = [{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}},
+                {"type": "text", "text": prompt},
+            ],
+        }]
+        raw = await ai_chat(msg, max_tokens=1800, temperature=0.2)
+        data = _extract_json(raw) or {}
+        text = (data.get("text") or "").strip()
+        title = (data.get("title") or "").strip()
+        summary = (data.get("summary") or "").strip()
+        tags = data.get("tags") or []
+        meta = {
+            "events": data.get("events") or [],
+            "codes": data.get("codes") or [],
+            "tasks": data.get("tasks") or [],
+            "key_points": data.get("key_points") or [],
+        }
+        with db() as c:
+            c.execute("""UPDATE entries SET final_text=?, title=?, summary=?, tags=?, meta=?, transcribing=0, organized=1 WHERE id=?""",
+                      (text or summary or "", title, summary, json.dumps(tags, ensure_ascii=False), json.dumps(meta, ensure_ascii=False), eid))
+        print(f"[vision] {eid} done: {title}")
+    except Exception as e:
+        with db() as c:
+            c.execute("UPDATE entries SET transcribing=0 WHERE id=?", (eid,))
+        print(f"[vision] {eid} error: {e}")
+
 # ---------- endpoints ----------
 @app.post("/api/entries")
 async def create_entry(
@@ -191,6 +267,7 @@ async def create_entry(
     draft_text: str = Form(""),
     lat: Optional[float] = Form(None),
     lng: Optional[float] = Form(None),
+    source: str = Form("app"),
 ):
     eid = uuid.uuid4().hex[:12]
     audio_name = None
@@ -218,10 +295,13 @@ async def create_entry(
 
     ts = now_ts()
     with db() as c:
-        c.execute("""INSERT INTO entries(id,created_at,local_date,audio_file,image_file,draft_text,final_text,lat,lng)
-                     VALUES(?,?,?,?,?,?,?,?,?)""",
-                  (eid, ts, ts_to_local_date(ts), audio_name, image_name, draft_text, final_text, lat, lng))
-    return {"id": eid, "final_text": final_text, "audio_file": audio_name, "image_file": image_name, "created_at": ts, "transcribing": 1 if audio_name else 0}
+        c.execute("""INSERT INTO entries(id,created_at,local_date,audio_file,image_file,draft_text,final_text,lat,lng,source)
+                     VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                  (eid, ts, ts_to_local_date(ts), audio_name, image_name, draft_text, final_text, lat, lng, source))
+    # if image present, fire vision extraction in background
+    if image_name:
+        asyncio.create_task(_vision_extract_and_update(eid, DATA_ROOT / "images" / image_name))
+    return {"id": eid, "final_text": final_text, "audio_file": audio_name, "image_file": image_name, "created_at": ts, "transcribing": 1 if (audio_name or image_name) else 0, "source": source}
 
 @app.get("/api/entries")
 def list_entries(date: Optional[str] = None, tag: Optional[str] = None, q: Optional[str] = None,
@@ -414,6 +494,90 @@ def get_image(name: str):
     p = DATA_ROOT / "images" / name
     if not p.exists(): raise HTTPException(404)
     return FileResponse(str(p))
+
+def _ics_escape(s: str) -> str:
+    return (s or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+def _ics_dt(iso: str) -> str:
+    """Convert ISO 8601 with offset to ICS UTC stamp YYYYMMDDTHHMMSSZ."""
+    try:
+        d = dt.datetime.fromisoformat(iso)
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=dt.timezone(dt.timedelta(hours=8)))
+        d = d.astimezone(dt.timezone.utc)
+        return d.strftime("%Y%m%dT%H%M%SZ")
+    except Exception:
+        return ""
+
+@app.get("/api/entries/{eid}/ics")
+def entry_ics(eid: str):
+    with db() as c:
+        r = c.execute("SELECT * FROM entries WHERE id=?", (eid,)).fetchone()
+    if not r: raise HTTPException(404)
+    e = row_to_dict(r)
+    events = (e.get("meta") or {}).get("events") or []
+    if not events: raise HTTPException(404, "no events on this entry")
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Whysper//Whysper//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"]
+    now_utc = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    for i, ev in enumerate(events):
+        dtstart = _ics_dt(ev.get("start_iso") or "")
+        if not dtstart: continue
+        dtend = _ics_dt(ev.get("end_iso") or "") or dtstart
+        uid = f"{eid}-{i}@whysper"
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{now_utc}",
+            f"DTSTART:{dtstart}",
+            f"DTEND:{dtend}",
+            f"SUMMARY:{_ics_escape(ev.get('title') or e.get('title') or 'Whysper')}",
+        ]
+        if ev.get("location"):
+            lines.append(f"LOCATION:{_ics_escape(ev['location'])}")
+        if ev.get("notes"):
+            lines.append(f"DESCRIPTION:{_ics_escape(ev['notes'])}")
+        alert_min = ev.get("alert_min")
+        if alert_min is None: alert_min = 30
+        try: alert_min = int(alert_min)
+        except Exception: alert_min = 30
+        lines += [
+            "BEGIN:VALARM",
+            "ACTION:DISPLAY",
+            f"DESCRIPTION:{_ics_escape(ev.get('title') or 'Whysper')}",
+            f"TRIGGER:-PT{alert_min}M",
+            "END:VALARM",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    body = "\r\n".join(lines) + "\r\n"
+    return Response(content=body, media_type="text/calendar; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="whysper-{eid}.ics"'})
+
+@app.get("/api/storage")
+def storage_info():
+    def dir_size_mb(p: Path) -> float:
+        if not p.exists(): return 0.0
+        total = 0
+        for f in p.rglob("*"):
+            if f.is_file():
+                try: total += f.stat().st_size
+                except Exception: pass
+        return round(total / (1024*1024), 2)
+    audio_mb = dir_size_mb(DATA_ROOT/"audio")
+    images_mb = dir_size_mb(DATA_ROOT/"images")
+    db_mb = round(DB_PATH.stat().st_size / (1024*1024), 2) if DB_PATH.exists() else 0.0
+    total_mb = round(audio_mb + images_mb + db_mb, 2)
+    limit_mb = int(os.environ.get("WHYSPER_DISK_LIMIT_MB", "10240"))  # shared with disk-quota cron (10G)
+    pct = round(total_mb / limit_mb * 100, 1) if limit_mb else 0
+    # rough vlog co-tenant usage (best effort)
+    vlog_path = Path("/var/vlog-data")
+    vlog_mb = dir_size_mb(vlog_path)
+    return {
+        "audio_mb": audio_mb, "images_mb": images_mb, "db_mb": db_mb,
+        "total_mb": total_mb, "limit_mb": limit_mb, "pct": pct,
+        "vlog_mb": vlog_mb,
+        "note": "limit shared across whysper+vlog by /usr/local/bin/whysper-disk-quota.sh"
+    }
 
 @app.get("/api/health")
 def health():
