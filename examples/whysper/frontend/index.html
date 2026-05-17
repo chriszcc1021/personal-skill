@@ -607,7 +607,7 @@ async function loadCal(){
     const ds = y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const n = data[ds]||0;
     let lv='';
-    if(n>=8) lv='lv3'; else if(n>=4) lv='lv2'; else if(n>=1) lv='lv1';
+    if(n>=6) lv='lv3'; else if(n>=1) lv='lv1';
     const isToday = ds===tStr?'today':'';
     html += '<div class="cal-cell '+lv+' '+isToday+'" onclick="showCalDay(\''+ds+'\')"><div class="num">'+d+'</div>'+
       (n>0?'<div class="dots">'+Array.from({length:9}).map(()=>'<b></b>').join('')+'</div>':'')+
