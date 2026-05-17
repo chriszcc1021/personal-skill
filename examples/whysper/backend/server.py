@@ -275,6 +275,29 @@ def delete_entry(eid: str):
         c.execute("DELETE FROM entries WHERE id=?", (eid,))
     return {"ok": True}
 
+@app.get("/api/day-summary")
+def day_summary(date: str):
+    with db() as c:
+        rows = [row_to_dict(r) for r in c.execute(
+            "SELECT * FROM entries WHERE local_date=? ORDER BY created_at ASC", (date,))]
+    if not rows:
+        return {"ok": True, "date": date, "count": 0, "summary": "", "organized": False, "titles": [], "tags": []}
+    # any non-empty summary from organized entries
+    summary = ""
+    for r in rows:
+        if r.get("summary"):
+            summary = r["summary"]; break
+    organized = all(r.get("organized") for r in rows) and bool(summary)
+    titles = [r["title"] for r in rows if r.get("title")]
+    tag_set = []
+    for r in rows:
+        try:
+            for t in json.loads(r.get("tags") or "[]"):
+                if t not in tag_set: tag_set.append(t)
+        except Exception: pass
+    return {"ok": True, "date": date, "count": len(rows), "summary": summary,
+            "organized": organized, "titles": titles, "tags": tag_set}
+
 @app.get("/api/calendar")
 def calendar(year: Optional[int] = None, month: Optional[int] = None):
     with db() as c:
