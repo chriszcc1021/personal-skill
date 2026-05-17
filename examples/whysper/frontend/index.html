@@ -34,9 +34,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 }
 .brand{display:flex;align-items:center;gap:10px}
 .brand-icon{width:28px;height:28px;position:relative}
-.brand-icon i{position:absolute;width:2px;height:2px;background:var(--fg);border-radius:50%;left:50%;top:50%;margin-left:-1px;margin-top:-1px}
-.brand-icon i{background:var(--fg);border-radius:1px}
-.brand-icon i.off{display:none}
+.brand-icon i{position:absolute;width:2px;height:2px;background:var(--fg);border-radius:50%;left:50%;top:50%}
 .brand-name{font-size:14px;letter-spacing:0.3em;font-weight:600;text-transform:uppercase}
 .stats{font-size:11px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase}
 
@@ -283,7 +281,7 @@ function renderBrandIcon(){
   for(let i=0;i<N;i++){
     const a = -Math.PI/2 + 2*Math.PI*i/N;
     const x = R*Math.cos(a), y = R*Math.sin(a);
-    html += `<i style="transform:translate(${x}px,${y}px)"></i>`;
+    html += `<i style="transform:translate(calc(-50% + ${x}px),calc(-50% + ${y}px))"></i>`;
   }
   grid.innerHTML = html;
 }
