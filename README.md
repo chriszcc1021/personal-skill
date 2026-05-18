@@ -8,7 +8,8 @@
 .
 ├── skills/                    # 可复用的 AgentSkills
 │   ├── product-encyclopedia/  # 产品对比页生成 skill
-│   └── project-contribution-report/  # 仓库贡献画像 skill
+│   ├── project-contribution-report/  # 仓库贡献画像 skill
+│   └── pitch-skill/           # 数据型 pitch / 商业机会 deck skill
 └── examples/                  # 实战案例
     └── appliance-guide/       # 家电选购指南（含登山包）
 ```
@@ -47,6 +48,24 @@
 - 6 张人物卡，5 指标 + verdict 带量化亮点
 
 详见 [`skills/project-contribution-report/SKILL.md`](skills/project-contribution-report/SKILL.md)。
+
+### pitch-skill
+数据型 pitch / 商业机会 deck 构建方法论。
+
+**用途：**
+- 市场机会 pitch、发行判断、投资/立项 deck
+- 游戏海外发行预测、下载/RPD/收入模型拆解
+- Sensor Tower / Excel / PnL / 竞品资料整合
+- 把浏览器批注、研究材料和数字模型沉淀成可讲述的 deck
+
+**特点：**
+- 先定义决策问题，再拆模型变量
+- 竞品只校准一个变量，避免过度类比
+- 区分下载市场、RPD市场、社交传播市场
+- 支持保守/乐观两档场景和 PnL 对账
+- 强制版本快照和 changelist，方便回退
+
+详见 [`skills/pitch-skill/SKILL.md`](skills/pitch-skill/SKILL.md)。
 
 ## 📚 Examples
 

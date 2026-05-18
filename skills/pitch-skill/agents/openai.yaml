@@ -1,0 +1,7 @@
+interface:
+  display_name: "Pitch Skill"
+  short_description: "Build sharper data-backed pitch decks"
+  default_prompt: "Use $pitch-skill to turn this research and model into a clear, data-backed pitch deck."
+
+policy:
+  allow_implicit_invocation: true
