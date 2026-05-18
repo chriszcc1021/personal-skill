@@ -6,13 +6,13 @@
 <title>TeamForge · 团队驾驶舱</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
   :root{
     /* Squad Busters / Brawl Stars flat indigo palette */
     --bg:#2A2D85; --bg-2:#23267A; --bg-card:#3739A8; --bg-card-2:#4346C0;
     --line:rgba(0,0,0,0.35); --line2:rgba(0,0,0,0.45); --line3:rgba(0,0,0,0.65);
-    --text:#FFFFFF; --text2:#DCDDF5; --dim:#A8AAE0; --faint:#8688C4;
+    --text:#FFFFFF; --text2:#ECEDFB; --dim:#C5C7EE; --faint:#A1A4D8;
     --accent:#FFD93C; --accent-h:#FFE066; --accent-bg:rgba(255,217,60,0.18);
     --good:#5BE0B3; --warn:#FFA94D; --bad:#FF5C7A; --purple:#C77DFF; --teal:#4FD1FF;
     --coral:#FF5C7A; --mint:#5BE0B3; --lemon:#FFD93C; --sky:#4FD1FF; --pink:#FF6FB5; --lime:#B6FF3C; --indigo:#7C7FFF;
@@ -25,7 +25,7 @@
     --bd:3px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-  html,body{background:var(--bg);color:var(--text);font-family:'Nunito','PingFang SC',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-weight:700}
+  html,body{background:var(--bg);color:var(--text);font-family:'Nunito','Noto Sans SC','PingFang SC',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-weight:700}
   body{min-height:100vh;letter-spacing:0;background-image:radial-gradient(circle at 12px 12px, rgba(255,255,255,0.05) 1.5px, transparent 1.5px);background-size:24px 24px;background-attachment:fixed}
   .wrap{max-width:1320px;margin:0 auto;padding:32px 24px 80px}
 
@@ -540,6 +540,84 @@
   .slog-cell .sjob{color:var(--dim);font-size:10px;text-transform:uppercase}
 
   /* Toast */
+
+  /* === P3 polish: SVG icons + reduced noise + secondary teal + sticker decor === */
+  :root{ --teal:#5BE0B3; --orange:#FFA94D; }
+  /* lower yellow shadow noise: only main logo + section h2 keep small shadow */
+  .brand .logo{text-shadow:0 4px 0 rgba(0,0,0,0.45);transform:rotate(-2deg)}
+  .section-head h2{text-shadow:none;color:#fff;text-transform:none;font-size:30px;letter-spacing:-0.01em}
+  .section-head h2::before{content:'';display:inline-block;width:6px;height:26px;background:var(--teal);border-radius:3px;margin-right:12px;vertical-align:-4px}
+  .summon-hero h2{text-shadow:0 4px 0 rgba(0,0,0,0.4);color:var(--lemon)}
+  .pcard h3,.name,.pd-title h2,.drawer-head h3,.big-modal h3,.ai-modal h3,.summon-log h3,.modal h4{text-shadow:none}
+  /* readability: bump tiny labels */
+  .my-stat span,.pstat span,.load-summary{font-size:12px;color:var(--text2);letter-spacing:0.4px}
+  .risk-counts{font-size:13px;color:var(--text2)}
+  .cov-v,.cov-contrib,.bd-meta,.bd-hours{color:var(--text2)}
+  .breadcrumb{display:none}
+  .brand .v{display:none}
+  .hcard .hdetails{display:none}
+  .hcard .hname{font-size:18px;min-height:44px}
+
+  /* SVG icon system */
+  .ico{display:inline-block;width:18px;height:18px;vertical-align:-3px;flex-shrink:0}
+  .ico-lg{width:26px;height:26px}
+  .res-pill .ricon{padding:0;font-size:0;background:transparent;border:none}
+  .res-pill.power .ricon{background:var(--coral)} .res-pill.power svg{stroke:#fff}
+  .res-pill.trophy .ricon{background:var(--lemon)} .res-pill.trophy svg{stroke:#5a3f00}
+  .res-pill.energy .ricon{background:var(--lime)} .res-pill.energy svg{stroke:#264600}
+  .res-pill.gem .ricon{background:var(--sky)} .res-pill.gem svg{stroke:#063b5e}
+  .res-pill .ricon{display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--line3) !important}
+  .res-pill .ricon svg{width:18px;height:18px;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+
+  /* Chest replaces emoji */
+  .chest{padding:0;font-size:0;color:transparent;background:transparent;border:0;box-shadow:none;width:auto;height:auto;animation:none}
+  .chest svg{width:170px;height:170px;display:block;margin:0 auto 12px;animation:floaty 2.8s ease-in-out infinite;filter:drop-shadow(0 8px 0 rgba(0,0,0,0.45))}
+
+  /* Rarity icon dots on hero cards */
+  .hcard{padding-top:18px}
+  .hcard .hportrait{background:var(--bg-2);border-radius:18px;width:88px;height:88px;display:flex;align-items:center;justify-content:center;font-size:0;border:3px solid var(--line3);margin:0 auto 10px;position:relative}
+  .hcard .hportrait svg{width:54px;height:54px;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  .hcard.legend .hportrait{background:rgba(255,217,60,0.18)} .hcard.legend .hportrait svg{stroke:var(--r-legend);fill:rgba(255,217,60,0.22)}
+  .hcard.epic .hportrait{background:rgba(255,111,181,0.18)} .hcard.epic .hportrait svg{stroke:var(--r-epic);fill:rgba(255,111,181,0.22)}
+  .hcard.rare .hportrait{background:rgba(79,209,255,0.18)} .hcard.rare .hportrait svg{stroke:var(--r-rare);fill:rgba(79,209,255,0.22)}
+  .hcard.common .hportrait{background:rgba(91,224,179,0.18)} .hcard.common .hportrait svg{stroke:var(--r-common);fill:rgba(91,224,179,0.22)}
+
+  /* Scribble decor stickers */
+  .scribble-star,.scribble-spark,.scribble-tape{position:absolute;pointer-events:none;opacity:0.9}
+  .scribble-tape{display:inline-block;background:var(--teal);color:#0d3a2c;font-size:10px;font-weight:900;padding:3px 10px;letter-spacing:1px;text-transform:uppercase;transform:rotate(-3deg);border:2px solid #0d3a2c;border-radius:4px;position:absolute;top:-10px;right:14px;box-shadow:0 3px 0 #0d3a2c}
+  .summon-hero{position:relative;overflow:visible}
+  .summon-hero .deco-1{position:absolute;top:24px;left:32px;width:46px;height:46px;color:var(--teal);transform:rotate(-20deg)}
+  .summon-hero .deco-2{position:absolute;top:60px;right:48px;width:50px;height:50px;color:var(--orange);transform:rotate(15deg)}
+  .summon-hero .deco-3{position:absolute;bottom:30px;left:80px;width:36px;height:36px;color:var(--pink);transform:rotate(8deg)}
+  .summon-hero .deco-4{position:absolute;bottom:50px;right:90px;width:42px;height:42px;color:var(--lime);transform:rotate(-12deg)}
+  .summon-hero svg.deco{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+  /* Secondary teal accents */
+  .my-stat b{color:var(--lemon)} .my-stat.warn b{color:var(--orange)} .my-stat.bad b{color:var(--coral)}
+  .pstatus.active{background:var(--teal);color:#0d3a2c;border-color:#0d3a2c}
+
+  /* fix custom summon input alignment */
+  #summon-custom-btn input{margin:0 4px;background:rgba(0,0,0,0.25);color:#0d3a2c;border:2px solid #0d3a2c;border-radius:8px;font-weight:900;padding:4px 6px;width:46px;text-align:center;font-family:inherit}
+
+  /* progress flag accent under pcard */
+  .pcard{padding-top:30px}
+  .pcard::before{height:6px;background:repeating-linear-gradient(45deg,var(--c,var(--lemon)) 0 8px,rgba(0,0,0,0.25) 8px 12px)}
+
+  /* Chinese-friendly title font */
+  .brand .logo,.section-head h2,.pcard h3,.name,.pd-title h2,.drawer-head h3,.big-modal h3,.ai-modal h3,.summon-log h3,.summon-hero h2{font-family:'Fredoka','Noto Sans SC','PingFang SC','Nunito',sans-serif}
+
+  /* Hero cards: replace emoji portrait with svg via JS, hide font-size 42px */
+  .hcard .hportrait{font-family:inherit}
+
+  /* Tighter nav active state */
+  .nav a.on{background:var(--teal);color:#0d3a2c;box-shadow:inset 0 -3px 0 rgba(0,0,0,0.25)}
+
+  /* topbar wrap: stack resource bar above on narrow */
+  @media (max-width:980px){
+    .topbar{align-items:flex-start}
+    .res-bar{order:3;width:100%;margin-top:6px;flex-wrap:wrap}
+  }
+
 </style>
 </head>
 <body>
@@ -552,10 +630,10 @@
   </div>
   <div class="nav-wrap">
     <div class="res-bar" id="res-bar">
-      <div class="res-pill power" title="战力·全队总贡献"><span class="ricon">⚔️</span><span class="rval" id="res-power">—</span></div>
-      <div class="res-pill trophy" title="已完成战役"><span class="ricon">🏆</span><span class="rval" id="res-trophy">—</span></div>
-      <div class="res-pill energy" title="本周输出·人日"><span class="ricon">⚡</span><span class="rval" id="res-energy">—</span></div>
-      <div class="res-pill gem" title="HD·召唤点数"><span class="ricon">💎</span><span class="rval" id="res-hd">200</span></div>
+      <div class="res-pill power" title="战力·全队总贡献"><span class="ricon"><svg viewBox='0 0 24 24'><path d='M14.5 2 21 8.5 14 15l-2-2L4 21l-2-2 8-8-2-2L14.5 2Z'/><path d='m9 14 2 2'/></svg></span><span class="rval" id="res-power">—</span></div>
+      <div class="res-pill trophy" title="已完成战役"><span class="ricon"><svg viewBox='0 0 24 24'><path d='M6 9V4h12v5a6 6 0 1 1-12 0Z'/><path d='M6 9H3a3 3 0 0 0 3 3'/><path d='M18 9h3a3 3 0 0 1-3 3'/><path d='M12 15v3'/><path d='M9 21h6'/></svg></span><span class="rval" id="res-trophy">—</span></div>
+      <div class="res-pill energy" title="本周输出·人日"><span class="ricon"><svg viewBox='0 0 24 24'><path d='M13 2 4 14h7l-2 8 9-12h-7l2-8Z'/></svg></span><span class="rval" id="res-energy">—</span></div>
+      <div class="res-pill gem" title="HD·召唤点数"><span class="ricon"><svg viewBox='0 0 24 24'><path d='M6 3h12l4 6-10 12L2 9l4-6Z'/><path d='M11 3 8 9l4 12 4-12-3-6'/><path d='M2 9h20'/></svg></span><span class="rval" id="res-hd">200</span></div>
     </div>
     <div class="user-picker" id="user-picker">
       <span id="user-avatar" class="ph">?</span>
@@ -1649,6 +1727,24 @@ async function genJD(role, rarity){
 }
 
 const ROLE_POOL = ['高级制作人','游戏设计师','商化设计','发行主管','市场营销','UI 设计师','UX 研究员','技术美术','剧情编剧','数据分析','QA 主管','运营经理','社区运营','高级程序','客户端引擎'];
+const RARITY_SVG = {
+  legend: `<svg viewBox='0 0 24 24'><path d='M3 17 6 7l4 4 2-6 2 6 4-4 3 10H3Z'/><path d='M3 21h18'/></svg>`,
+  epic:   `<svg viewBox='0 0 24 24'><path d='M12 3v6'/><path d='M12 15v6'/><path d='m4.9 4.9 4.2 4.2'/><path d='m14.9 14.9 4.2 4.2'/><path d='M3 12h6'/><path d='M15 12h6'/><path d='m4.9 19.1 4.2-4.2'/><path d='m14.9 9.1 4.2-4.2'/></svg>`,
+  rare:   `<svg viewBox='0 0 24 24'><path d='M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7L12 2Z'/></svg>`,
+  common: `<svg viewBox='0 0 24 24'><circle cx='12' cy='12' r='5'/><path d='M12 2v3'/><path d='M12 19v3'/><path d='m4.9 4.9 2.1 2.1'/><path d='m17 17 2.1 2.1'/><path d='M2 12h3'/><path d='M19 12h3'/></svg>`,
+};
+const CHEST_SVG = `<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'>
+  <defs><linearGradient id='cg' x1='0' x2='0' y1='0' y2='1'><stop offset='0' stop-color='#FF7A92'/><stop offset='1' stop-color='#E33D63'/></linearGradient></defs>
+  <path d='M8 22 C8 12 14 8 32 8 C50 8 56 12 56 22 V52 C56 56 53 58 50 58 H14 C11 58 8 56 8 52 Z' fill='url(#cg)' stroke='#7a1b35' stroke-width='3' stroke-linejoin='round'/>
+  <path d='M8 30 H56' stroke='#7a1b35' stroke-width='3'/>
+  <rect x='27' y='28' width='10' height='14' rx='2' fill='#FFD93C' stroke='#7a1b35' stroke-width='2.5'/>
+  <circle cx='32' cy='35' r='2' fill='#7a1b35'/>
+  <path d='M14 14 C18 12 22 12 26 13' stroke='#FFE08C' stroke-width='2' fill='none' stroke-linecap='round'/>
+</svg>`;
+const DECO_STAR = `<svg viewBox='0 0 24 24' class='deco'><path d='M12 2 14 9 21 9 15 13 17 21 12 16 7 21 9 13 3 9 10 9 Z'/></svg>`;
+const DECO_SPARK = `<svg viewBox='0 0 24 24' class='deco'><path d='M12 3v18M3 12h18M5 5l14 14M19 5 5 19'/></svg>`;
+const DECO_BOLT = `<svg viewBox='0 0 24 24' class='deco'><path d='M13 2 4 14h7l-2 8 9-12h-7l2-8Z'/></svg>`;
+const DECO_HEART = `<svg viewBox='0 0 24 24' class='deco'><path d='M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9Z'/></svg>`;
 const RARITY_EMOJI = {legend:'🌟', epic:'🔮', rare:'⚡', common:'🎯'};
 
 function renderSummon(){
@@ -1656,12 +1752,15 @@ function renderSummon(){
   const hd = summonGetHD();
   const log = summonLog();
   root.innerHTML = `
-    <div class="breadcrumb"><span>领地 / 召唤英雄</span></div>
     <div class="summon-wrap">
       <div class="summon-hero">
+        <span class="deco-1">${DECO_STAR}</span>
+        <span class="deco-2">${DECO_BOLT}</span>
+        <span class="deco-3">${DECO_HEART}</span>
+        <span class="deco-4">${DECO_SPARK}</span>
         <h2>召唤英雄</h2>
-        <div class="sub">消耗 HD 抽取同盟成员，稀有度按职级划分</div>
-        <div class="chest">📦</div>
+        <div class="sub">消耗 HD 抽取同盟成员 · 稀有度按职级划分</div>
+        <div class="chest">${CHEST_SVG}</div>
         <div class="summon-actions">
           <button class="btn btn-summon" onclick="doSummon(1)">召唤 ×1  · ${HD_PER_PULL} HD</button>
           <button class="btn btn-summon" onclick="doSummon(10)">召唤 ×10  · ${HD_PER_PULL*10} HD</button>
@@ -1670,12 +1769,13 @@ function renderSummon(){
         <div class="summon-cfg">
           <span>HD 余额 · <b style="color:var(--lemon);font-size:14px">${hd}</b></span>
           <span>·</span>
-          <button class="btn btn-ghost" onclick="summonRecharge()">💳 充值</button>
+          <button class="btn btn-ghost" onclick="summonRecharge()">充值</button>
           <button class="btn btn-ghost" onclick="summonReset()">重置</button>
         </div>
         <div class="rarity-rates">
           ${Object.entries(RARITY_RATES).map(([k,v])=>`
             <div class="rate-pill ${k}">
+              <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.04);border:2px solid currentColor;color:${RARITY_META[k].color};display:inline-flex;align-items:center;justify-content:center;margin-bottom:6px"><svg viewBox='0 0 24 24' width='18' height='18' style='fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round'>${(RARITY_SVG[k]||'').replace(/<svg[^>]*>|<\/svg>/g,'')}</svg></div>
               <div class="r-label">${RARITY_META[k].label}</div>
               <div class="r-pct">${Math.round(v*100)}%</div>
             </div>
@@ -1713,14 +1813,10 @@ async function doSummon(n){
   summonPushLog(results);
   area.innerHTML = '<div class="summon-result">' + results.map(it=>`
     <div class="hcard ${it.rarity}" onclick='showJD(${JSON.stringify(it).replace(/'/g,"&apos;")})'>
-      <div class="hportrait">${RARITY_EMOJI[it.rarity]}</div>
+      <div class="hportrait">${RARITY_SVG[it.rarity]||''}</div>
       <div class="hname">${esc(it.hero_name||it.role)}</div>
       <div class="hjob">${esc(it.role)}</div>
       <span class="hrarity">${RARITY_META[it.rarity].label} · ${esc(it.level||'')}</span>
-      <div class="hdetails">
-        <div class="row"><span>职级</span><span class="v">${esc(it.level||'')}</span></div>
-        <div class="row"><span>哥点</span><span class="v">${RARITY_META[it.rarity].label}</span></div>
-      </div>
     </div>
   `).join('') + '</div>';
   // refresh log section without redrawing buttons
@@ -1748,7 +1844,8 @@ function showJD(it){
     <div class="ai-modal jd-modal" style="max-height:88vh;display:flex;flex-direction:column">
       <button class="close-x" onclick="this.parentElement.parentElement.classList.remove('open')">✕</button>
       <h3 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        ${RARITY_EMOJI[it.rarity]} ${esc(it.hero_name||it.role)}
+        <span style="width:32px;height:32px;border-radius:10px;background:${RARITY_META[it.rarity].color};display:inline-flex;align-items:center;justify-content:center;border:2px solid rgba(0,0,0,0.4)"><svg viewBox='0 0 24 24' width='20' height='20' style='fill:none;stroke:#000;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round'>${(RARITY_SVG[it.rarity]||'').replace(/<svg[^>]*>|<\/svg>/g,'')}</svg></span>
+        ${esc(it.hero_name||it.role)}
         <span class="hrarity ${it.rarity}" style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:8px;background:${RARITY_META[it.rarity].color};color:#000;border:2px solid rgba(0,0,0,0.4)">${RARITY_META[it.rarity].label} · ${esc(it.level||'')}</span>
       </h3>
       <div class="ai-sub">${esc(it.role)} · AI 生成的招聘 JD</div>
