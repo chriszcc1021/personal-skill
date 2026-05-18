@@ -137,8 +137,19 @@ a:hover{text-decoration:underline}
 
 /* ===== Appliance tiles ===== */
 .tiles{max-width:1024px;margin:0 auto;padding:0 22px 80px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.tile{background:var(--bg-alt);border-radius:18px;padding:40px 36px;min-height:300px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform 0.3s ease;position:relative;overflow:hidden}
-.tile:hover{text-decoration:none;transform:translateY(-2px)}
+.tile{background:var(--bg-alt);border-radius:18px;padding:40px 36px;min-height:300px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform 0.4s cubic-bezier(0.22,1,0.36,1),box-shadow 0.4s cubic-bezier(0.22,1,0.36,1);position:relative;overflow:hidden;will-change:transform}
+.tile:hover{text-decoration:none;transform:translateY(-4px) scale(1.005);box-shadow:0 22px 48px -16px rgba(0,0,0,0.35)}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.7s cubic-bezier(0.22,1,0.36,1),transform 0.7s cubic-bezier(0.22,1,0.36,1)}
+.reveal.in{opacity:1;transform:none}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+#over-banner{animation:slideDown 0.5s cubic-bezier(0.22,1,0.36,1) both}
+.kpi{transition:transform 0.3s ease}
+.kpi:hover{transform:translateY(-3px)}
+.progbar i{transition:width 1s cubic-bezier(0.22,1,0.36,1)}
+@media (prefers-reduced-motion: reduce){
+  .reveal,.reveal.in{opacity:1;transform:none;transition:none}
+  #over-banner{animation:none}
+}
 .tile.dark{background:#1d1d1f;color:#f5f5f7}
 .tile.dark .t-eyebrow{color:#86868b} .tile.dark .t-title{color:#f5f5f7} .tile.dark .t-sub{color:#a1a1a6} .tile.dark .t-cta{color:#2997ff} .tile.dark .t-tiers{color:#a1a1a6} .tile.dark .t-tiers b{color:#f5f5f7}
 .tile.wide{grid-column:span 2}
@@ -197,7 +208,7 @@ a:hover{text-decoration:underline}
 <nav class="chrome">
   <div class="chrome-inner">
     <nav>
-      <a id="tab-reno" class="on" onclick="switchTab('reno')">装修分析</a>
+      <a id="tab-reno" class="on" onclick="switchTab('reno')">装修一览</a>
       <a id="tab-app" onclick="switchTab('app')">选购</a>
     </nav>
     <span class="meta" id="updated">—</span>
@@ -221,7 +232,7 @@ a:hover{text-decoration:underline}
     </div>
     <div id="over-banner" style="display:none;background:#ffeded;color:#a50e1f;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px;font-weight:500"></div>
 
-    <div class="kpis">
+    <div class="kpis reveal">
       <div class="kpi"><div class="k-label">总预算</div><div class="k-value">55万</div><div class="k-sub" id="k-budget-sub">—</div></div>
       <div class="kpi"><div class="k-label">报价</div><div class="k-value" id="k-quote">—</div><div class="k-sub">设计师初报</div></div>
       <div class="kpi"><div class="k-label">当前</div><div class="k-value" id="k-target">—</div><div class="k-sub" id="k-target-sub">—</div></div>
@@ -229,7 +240,7 @@ a:hover{text-decoration:underline}
       <div class="kpi"><div class="k-label">已锁定</div><div class="k-value" id="k-locked">—</div><div class="k-sub" id="k-locked-sub">—</div></div>
     </div>
 
-    <div class="row2">
+    <div class="row2 reveal">
       <div class="card">
         <h3>大类占比</h3>
         <div class="pie-wrap">
@@ -260,7 +271,7 @@ a:hover{text-decoration:underline}
       </table>
     </div>
 
-    <div class="risks">
+    <div class="risks reveal">
       <div class="risk r-bad"><h4>实付超预算 <span class="count" id="r-over-c">0</span></h4><ul id="r-over"></ul></div>
       <div class="risk r-warn"><h4>报价水分大 <span class="count" id="r-high-c">0</span></h4><ul id="r-high"></ul></div>
       <div class="risk r-info"><h4>待办 <span class="count" id="r-pending-c">0</span></h4><ul id="r-pending"></ul></div>
@@ -355,6 +366,8 @@ function switchTab(t){
   document.getElementById('page-app').classList.toggle('on', t==='app');
   document.getElementById('tab-reno').classList.toggle('on', t==='reno');
   document.getElementById('tab-app').classList.toggle('on', t==='app');
+  document.querySelectorAll('.page.on .reveal').forEach(el=>el.classList.remove('in'));
+  requestAnimationFrame(()=>requestAnimationFrame(revealOnScroll));
   window.scrollTo({top:0,behavior:'instant'});
 }
 
@@ -411,6 +424,33 @@ function fmt(n){
 }
 function pct(a,b){ return b? Math.round(a/b*100):0; }
 
+function countTo(id, target, finalText){
+  const el=document.getElementById(id); if(!el) return;
+  const dur=900; const t0=performance.now();
+  const from=0;
+  function step(t){
+    const k=Math.min(1,(t-t0)/dur);
+    const eased=1-Math.pow(1-k,3);
+    const v=from+(target-from)*eased;
+    el.textContent = finalText && k>=1 ? finalText : fmt(v);
+    if(k<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function revealOnScroll(){
+  if(!('IntersectionObserver' in window)){
+    document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
+    return;
+  }
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  },{threshold:0.08,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.reveal:not(.in)').forEach(el=>io.observe(el));
+}
+
 const CAT_COLORS = {
   '全屋定制':'#0066cc','主材':'#1d6fc4','硬装':'#3a8ad7','家电':'#5da3df','软装':'#86868b','设计':'#0066cc','全屋智能':'#1d1d1f','其他':'#c7c7cc'
 };
@@ -431,11 +471,11 @@ function render(){
   const total_p = rows.reduce((s,r)=>s+r.paid_n,0);
   const locked = rows.filter(r=>r.locked==='是').length;
 
-  document.getElementById('k-quote').textContent = fmt(total_q);
+  countTo('k-quote', total_q);
   const BUDGET = 550000;
   const overBudget = total_t - BUDGET;
   document.getElementById('k-budget-sub').textContent = overBudget>0 ? '超 '+fmt(overBudget) : '余 '+fmt(-overBudget);
-  document.getElementById('k-target').textContent = fmt(total_t);
+  countTo('k-target', total_t);
   const targetEl = document.getElementById('k-target');
   const targetSub = document.getElementById('k-target-sub');
   if(overBudget>0){
@@ -453,9 +493,9 @@ function render(){
     targetSub.textContent = '余 '+fmt(-overBudget);
     document.getElementById('over-banner').style.display='none';
   }
-  document.getElementById('k-paid').textContent = fmt(total_p);
+  countTo('k-paid', total_p);
   document.getElementById('k-paid-sub').textContent = pct(total_p,total_t)+'% 进度';
-  document.getElementById('k-paid-bar').style.width = Math.min(100,pct(total_p,total_t))+'%';
+  requestAnimationFrame(()=>{ document.getElementById('k-paid-bar').style.width = Math.min(100,pct(total_p,total_t))+'%'; });
   document.getElementById('k-locked').textContent = locked+' / '+rows.length;
   document.getElementById('k-locked-sub').textContent = '项';
   document.getElementById('updated').textContent = '更新 ' + (DATA.updated_at || '').slice(0,10);
@@ -617,7 +657,12 @@ function boot(){
     try{ DATA = JSON.parse(saved); }catch(e){}
   }
   if(!DATA) DATA = loadBuiltin();
+  document.querySelectorAll('#page-app .tile').forEach((el,i)=>{
+    el.classList.add('reveal');
+    el.style.transitionDelay = (i*60)+'ms';
+  });
   render();
+  revealOnScroll();
 }
 boot();
 
