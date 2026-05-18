@@ -1,4 +1,4 @@
-const CACHE = 'reno-v1';
+const CACHE = 'reno-v2';
 const CORE = [
   '/appliance-guide/',
   '/appliance-guide/index.html',
