@@ -32,6 +32,8 @@
   .nav a{font-size:13px;color:var(--text2);padding:7px 14px;border-radius:7px;cursor:pointer;font-weight:500;transition:all 0.15s;text-decoration:none}
   .nav a.on{color:var(--text);background:var(--bg-card);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
   .nav a:not(.on):hover{color:var(--text)}
+  .utility-link{font-size:12px;color:var(--dim);background:transparent;border:0;padding:7px 8px;border-radius:7px;cursor:pointer;font-family:inherit}
+  .utility-link:hover{color:var(--text);background:rgba(0,0,0,0.04)}
   .user-picker{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.04);padding:5px 10px 5px 5px;border-radius:24px;cursor:pointer;font-size:13px;color:var(--text2);font-weight:500;transition:background 0.15s}
   .user-picker:hover{background:rgba(0,0,0,0.07)}
   .user-picker img,.user-picker .ph{width:26px;height:26px;border-radius:50%;background:#fff;font-size:12px;display:inline-flex;align-items:center;justify-content:center;color:var(--dim);object-fit:cover}
@@ -75,6 +77,10 @@
   .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
   .tag{font-size:11px;color:var(--text2);background:rgba(0,0,0,0.04);padding:4px 10px;border-radius:6px;font-weight:500}
   .radar-wrap{height:200px;margin:6px 0 16px}
+  .ability-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 14px}
+  .ability-pill{background:#F5F5F7;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 9px}
+  .ability-pill b{font-size:13px;font-weight:650;display:block;color:var(--text)}
+  .ability-pill span{font-size:10.5px;color:var(--dim);display:block;margin-top:2px}
 
   /* New compact load row: project chips + task badge */
   .load-row{padding-top:14px;border-top:1px solid var(--line);margin-top:4px}
@@ -156,6 +162,8 @@
   .pm-chip img,.pm-chip .ph{width:26px;height:26px;border-radius:50%;background:#fff;font-size:12px;display:inline-flex;align-items:center;justify-content:center;color:var(--dim);object-fit:cover}
   .pm-chip .role{font-size:11px;color:var(--dim);margin-left:2px}
   .pm-chip .alloc{font-size:11px;color:var(--accent);font-weight:600;margin-left:4px}
+  .pm-chip .global-load{font-size:11px;color:var(--dim);font-weight:600;margin-left:2px}
+  .pm-chip .global-load.over{color:var(--bad)}
   .pm-chip.lead{background:var(--accent-bg)}
   .pm-chip.lead .role{color:var(--accent)}
   .pm-add{background:transparent;border:1px dashed var(--line3);color:var(--dim);font-family:inherit;font-size:13px;padding:4px 12px;border-radius:24px;cursor:pointer}
@@ -208,6 +216,97 @@
   .my-stat span{font-size:12px;color:var(--dim);font-weight:500;letter-spacing:0.3px;display:block;margin-top:6px}
   .my-stat.bad b{color:var(--bad)}
   .my-stat.warn b{color:var(--warn)}
+
+  /* Leader cockpit */
+  .leader-hero{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .leader-hero h2{font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-bottom:8px}
+  .leader-hero .signal{font-size:14px;color:var(--text2);line-height:1.55;max-width:860px}
+  .leader-hero .copilot{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:18px}
+  .leader-hero .copilot div{background:#F5F5F7;border:1px solid var(--line);border-radius:var(--r-md);padding:11px 13px;font-size:12.5px;color:var(--text2);line-height:1.45}
+  .leader-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,0.8fr);gap:18px;align-items:start}
+  .leader-panel{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:18px}
+  .leader-panel h3{font-size:13px;font-weight:700;color:var(--dim);letter-spacing:0.7px;text-transform:uppercase;margin-bottom:14px}
+  .team-pressure{display:flex;flex-direction:column;gap:10px}
+  .person-row{display:grid;grid-template-columns:190px 1fr 92px;gap:14px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+  .person-row:first-child{border-top:0;padding-top:0}
+  .person-id{display:flex;align-items:center;gap:10px;min-width:0}
+  .person-id img,.person-id .ph{width:34px;height:34px;border-radius:50%;background:#F5F5F7;object-fit:cover;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:13px;flex-shrink:0}
+  .person-id b{font-size:13.5px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .person-id span{font-size:11px;color:var(--dim);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .load-track{height:8px;background:#F5F5F7;border-radius:999px;overflow:hidden;margin-bottom:7px}
+  .load-fill{height:100%;width:min(var(--load),140%);background:var(--good);border-radius:999px}
+  .load-fill.amber{background:var(--warn)}
+  .load-fill.red{background:var(--bad)}
+  .load-meta{font-size:11px;color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
+  .risk-tags{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+  .risk-tag{font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:5px;background:rgba(0,0,0,0.05);color:var(--text2);white-space:nowrap}
+  .risk-tag.red{background:rgba(255,59,48,0.12);color:var(--bad)}
+  .risk-tag.amber{background:rgba(255,149,0,0.12);color:var(--warn)}
+  .risk-tag.green{background:rgba(52,199,89,0.12);color:var(--good)}
+  .decision-list{display:flex;flex-direction:column;gap:9px}
+  .decision{border:1px solid var(--line);border-radius:var(--r-md);padding:12px 13px;cursor:pointer;transition:all 0.15s}
+  .decision:hover{border-color:var(--line3);background:#F5F5F7}
+  .decision b{font-size:13.5px;font-weight:600;display:block;margin-bottom:4px}
+  .decision p{font-size:12px;color:var(--text2);line-height:1.45;margin-bottom:7px}
+  .decision span{font-size:11px;color:var(--accent);font-weight:600}
+  .health-list{display:flex;flex-direction:column;gap:8px}
+  .health-row{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+  .health-row:first-child{border-top:0;padding-top:0}
+  .health-dot{width:9px;height:9px;border-radius:50%;background:var(--good)}
+  .health-dot.amber{background:var(--warn)}
+  .health-dot.red{background:var(--bad)}
+  .health-main b{font-size:13.5px;font-weight:600;display:block}
+  .health-main span{font-size:11.5px;color:var(--dim);line-height:1.4}
+  .health-stage{font-size:11px;color:var(--text2);background:#F5F5F7;border-radius:5px;padding:3px 8px;white-space:nowrap}
+  .gap-list{display:flex;flex-direction:column;gap:12px}
+  .gap-item{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;box-shadow:var(--shadow)}
+  .gap-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+  .gap-top b{font-size:16px;font-weight:650}
+  .gap-top span{font-size:11px;font-weight:700;text-transform:uppercase;border-radius:5px;padding:3px 8px;background:rgba(0,0,0,0.05);color:var(--text2);white-space:nowrap}
+  .gap-top span.high{background:rgba(255,59,48,0.12);color:var(--bad)}
+  .gap-top span.mid{background:rgba(255,149,0,0.12);color:var(--warn)}
+  .gap-meta{font-size:12px;color:var(--dim);display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .gap-meta strong{color:var(--text);font-weight:600}
+  .gap-reason{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:8px}
+  .gap-evidence{font-size:11.5px;color:var(--dim);line-height:1.5}
+  .scale-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:18px}
+  .scale-item{background:#F5F5F7;border:1px solid var(--line);border-radius:var(--r-md);padding:12px 13px}
+  .scale-item b{font-size:12.5px;font-weight:700;display:block;margin-bottom:4px}
+  .scale-item span{font-size:11.5px;color:var(--text2);line-height:1.45}
+  .summon-hero{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:26px 28px;margin-bottom:18px;box-shadow:var(--shadow);display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;overflow:hidden;position:relative}
+  .summon-hero::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,113,227,0.08),rgba(175,82,222,0.06));pointer-events:none}
+  .summon-hero > *{position:relative}
+  .summon-hero h2{font-size:30px;font-weight:750;letter-spacing:-0.02em;margin-bottom:8px}
+  .summon-hero .sub{font-size:14px;color:var(--text2);line-height:1.55;max-width:760px}
+  .summon-chest{width:118px;height:118px;border-radius:28px;background:#F5F5F7;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+  .summon-chest svg{width:70px;height:70px;stroke:var(--accent);fill:rgba(0,113,227,0.12);stroke-width:1.8}
+  .summon-pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:18px}
+  .summon-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 16px 15px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .summon-card::before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:var(--rarity,var(--accent))}
+  .summon-card.legend{--rarity:#F5B400;border-color:rgba(245,180,0,0.45);box-shadow:var(--shadow),0 0 0 2px rgba(245,180,0,0.08)}
+  .summon-card.epic{--rarity:#AF52DE;border-color:rgba(175,82,222,0.38)}
+  .summon-card.rare{--rarity:#0071E3;border-color:rgba(0,113,227,0.32)}
+  .summon-card.common{--rarity:#34C759;border-color:rgba(52,199,89,0.28)}
+  .summon-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;padding-top:2px}
+  .summon-card h3{font-size:18px;font-weight:700;letter-spacing:-0.01em;margin-bottom:3px}
+  .summon-card .role{font-size:12px;color:var(--dim);font-weight:600}
+  .rarity-badge{font-size:10.5px;font-weight:750;text-transform:uppercase;letter-spacing:0.4px;color:var(--rarity);background:color-mix(in srgb,var(--rarity) 12%,transparent);border:1px solid color-mix(in srgb,var(--rarity) 30%,transparent);border-radius:6px;padding:4px 8px;white-space:nowrap}
+  .summon-portrait{width:58px;height:58px;border-radius:18px;background:#F5F5F7;display:flex;align-items:center;justify-content:center;margin-bottom:12px;border:1px solid var(--line)}
+  .summon-portrait svg{width:34px;height:34px;stroke:var(--rarity);fill:color-mix(in srgb,var(--rarity) 14%,transparent);stroke-width:1.8}
+  .summon-info{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:12px;min-height:54px}
+  .summon-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .summon-meta span{font-size:11px;color:var(--text2);background:#F5F5F7;border-radius:5px;padding:4px 7px}
+  .summon-actions-row{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+  .summon-cost{font-size:12px;color:var(--dim);font-weight:650}
+  .summon-cost b{color:var(--text);font-feature-settings:'tnum'}
+  .summon-mini-list{display:flex;flex-direction:column;gap:10px}
+  .summon-mini{border:1px solid var(--line);border-radius:var(--r-md);padding:12px 13px;background:var(--bg-card);cursor:pointer;transition:all 0.15s}
+  .summon-mini:hover{background:#F5F5F7;border-color:var(--line2)}
+  .summon-mini .top{display:flex;justify-content:space-between;gap:10px;margin-bottom:5px}
+  .summon-mini b{font-size:13.5px;font-weight:650}
+  .summon-mini .rarity{font-size:10.5px;font-weight:700;color:var(--accent);white-space:nowrap}
+  .summon-mini p{font-size:12px;color:var(--text2);line-height:1.45;margin-bottom:6px}
+  .summon-mini span{font-size:11px;color:var(--dim)}
 
   /* Breakdown / Team eval modal */
   .big-modal{background:var(--bg-card);border-radius:var(--r-lg);padding:28px 32px;width:min(880px,100%);box-shadow:0 30px 80px rgba(0,0,0,0.25);position:relative;max-height:88vh;display:flex;flex-direction:column}
@@ -329,6 +428,9 @@
     .kanban{grid-template-columns:1fr}
     .pgrid,.grid{grid-template-columns:1fr}
     .my-summary{grid-template-columns:repeat(2,1fr)}
+    .leader-layout{grid-template-columns:1fr}
+    .person-row{grid-template-columns:1fr;gap:8px}
+    .risk-tags{justify-content:flex-start}
   }
 </style>
 </head>
@@ -346,11 +448,11 @@
       <select id="user-select"></select>
     </div>
     <div class="nav">
-      <a class="on" data-view="my">我的</a>
-      <a data-view="characters">角色卡</a>
+      <a class="on" data-view="my">态势</a>
+      <a data-view="characters">团队</a>
       <a data-view="projects">项目</a>
-      <a data-view="trash">回收站</a>
     </div>
+    <button class="utility-link" onclick="openTrash()">回收站</button>
   </div>
 </div>
 
@@ -358,6 +460,7 @@
 <div id="page-characters" class="page" style="display:none"></div>
 <div id="page-projects" class="page" style="display:none"></div>
 <div id="page-detail" class="page" style="display:none"></div>
+<div id="page-gaps" class="page" style="display:none"></div>
 <div id="page-trash" class="page" style="display:none"></div>
 
 </div>
@@ -479,13 +582,19 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API='/teamforge-api';
+const API = (location.protocol === 'file:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')
+  ? 'http://127.0.0.1:8083/api'
+  : '/teamforge-api';
 const SKILL_KEYS=['项目管理','战略大局','沟通协调','数据分析','商业化','用户运营','市场推广','本地化','创意策划','审美','执行力','抗压'];
 // Apple system colors
 const PROJ_COLORS=['#0071E3','#5856D6','#00C7BE','#34C759','#FF9500','#FF3B30','#AF52DE','#A2845E'];
+const store = {
+  get(k){ try { return window.localStorage?.getItem(k); } catch(_) { return null; } },
+  set(k,v){ try { window.localStorage?.setItem(k,v); } catch(_) {} }
+};
 
-const state={ view:'my', currentUser: localStorage.getItem('tf_user')||'chenchen',
-  chars:[], projects:[], currentProj:null, tasks:[], charts:{},
+const state={ view:'my', currentUser: store.get('tf_user')||'chenchen',
+  chars:[], projects:[], currentProj:null, tasks:[], dashboard:null, gaps:null, charts:{},
   editChar:null, editProj:null, editTask:null, editMember:null, pendingFile:null, modalAction:null,
   kanbanFilter:null };
 
@@ -496,22 +605,44 @@ async function api(path, opts={}){
   const txt = await r.text();
   return txt ? JSON.parse(txt) : null;
 }
+function assetUrl(url){
+  if (!url) return '';
+  if ((location.protocol === 'file:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost') && url.startsWith('/teamforge-api')) return API + url.slice('/teamforge-api'.length);
+  return url;
+}
+function escAttr(s){
+  return String(s ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function avatarFallback(img){
+  const div = document.createElement('div');
+  div.id = img.id || '';
+  div.className = img.dataset.fallbackClass || img.className || 'ph';
+  div.title = img.title || '';
+  div.textContent = (img.dataset.name || '?').trim()[0] || '?';
+  img.replaceWith(div);
+}
+function avatarTag(url, name, cls='', id='', title=''){
+  const fallbackClass = cls || 'ph';
+  if (!url) return `<div ${id?`id="${escAttr(id)}"`:''} class="${escAttr(fallbackClass)}" ${title?`title="${escAttr(title)}"`:''}>${escAttr((name||'?')[0]||'?')}</div>`;
+  return `<img ${id?`id="${escAttr(id)}"`:''} class="${escAttr(cls)}" src="${escAttr(assetUrl(url))}" ${title?`title="${escAttr(title)}"`:''} data-name="${escAttr(name||'?')}" data-fallback-class="${escAttr(fallbackClass)}" onerror="avatarFallback(this)">`;
+}
 async function loadChars(){ state.chars = await api('/characters_with_load'); }
 async function loadProjects(){ state.projects = await api('/projects'); }
 async function loadTasks(pid){ state.tasks = await api(`/tasks?project_id=${pid}`); }
+async function loadDashboard(){ state.dashboard = await api('/leader_dashboard'); }
+async function loadGaps(){ state.gaps = await api('/talent_gaps'); }
 
 // ============ User picker ============
 function renderUserPicker(){
   const sel = document.getElementById('user-select');
   sel.innerHTML = state.chars.map(c=>`<option value="${c.id}" ${c.id===state.currentUser?'selected':''}>${c.cn_name}</option>`).join('');
-  sel.onchange = () => { state.currentUser = sel.value; localStorage.setItem('tf_user', sel.value); refreshUserAvatar(); routeRender(); };
+  sel.onchange = () => { state.currentUser = sel.value; store.set('tf_user', sel.value); refreshUserAvatar(); routeRender(); };
   refreshUserAvatar();
 }
 function refreshUserAvatar(){
   const c = state.chars.find(x=>x.id===state.currentUser);
   const av = document.getElementById('user-avatar');
-  if (c && c.avatar_url) av.outerHTML = `<img id="user-avatar" src="${c.avatar_url}">`;
-  else av.outerHTML = `<div id="user-avatar" class="ph">${c?.cn_name?.[0]||'?'}</div>`;
+  av.outerHTML = avatarTag(c?.avatar_url, c?.cn_name || '?', 'ph', 'user-avatar');
 }
 
 // ============ Nav ============
@@ -526,16 +657,33 @@ document.querySelectorAll('.nav a').forEach(a=>{
   };
 });
 
+function setNav(view){
+  document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('on', x.dataset.view===view));
+}
+function openTrash(){
+  state.view = 'trash';
+  state.currentProj = null;
+  state.kanbanFilter = null;
+  setNav('');
+  routeRender();
+}
+
 async function routeRender(){
-  ['my','characters','projects','detail','trash'].forEach(v=>document.getElementById('page-'+v).style.display='none');
+  ['my','characters','projects','detail','gaps','trash'].forEach(v=>document.getElementById('page-'+v).style.display='none');
+  const activePage = document.getElementById('page-' + (state.view==='projects' && state.currentProj ? 'detail' : state.view));
+  if (activePage) {
+    activePage.style.display = '';
+    if (!activePage.innerHTML.trim()) activePage.innerHTML = '<div class="empty">数据加载中...</div>';
+  }
   // ensure chars loaded for user picker
   if (!state.chars.length) await loadChars();
   if (!state.projects.length) await loadProjects();
   if (state.chars.length && !document.getElementById('user-select').options.length) renderUserPicker();
-  if (state.view==='my'){ document.getElementById('page-my').style.display=''; await loadChars(); await loadProjects(); await renderMy(); }
+  if (state.view==='my'){ document.getElementById('page-my').style.display=''; await loadChars(); await loadProjects(); await Promise.all([loadDashboard(), loadGaps()]); await renderMy(); }
   else if (state.view==='characters'){ document.getElementById('page-characters').style.display=''; await loadChars(); await loadProjects(); renderCharacters(); }
   else if (state.view==='projects' && !state.currentProj){ document.getElementById('page-projects').style.display=''; await loadProjects(); await loadChars(); renderProjects(); }
   else if (state.view==='projects' && state.currentProj){ document.getElementById('page-detail').style.display=''; await loadProjects(); await loadChars(); await loadTasks(state.currentProj); renderProjectDetail(); }
+  else if (state.view==='gaps'){ document.getElementById('page-gaps').style.display=''; await loadGaps(); renderGaps(); }
   else if (state.view==='trash'){ document.getElementById('page-trash').style.display=''; await renderTrash(); }
 }
 
@@ -559,61 +707,83 @@ function ddlLabel(d){
 
 async function renderMy(){
   const root = document.getElementById('page-my');
-  const me = state.chars.find(c=>c.id===state.currentUser);
-  if (!me){
-    root.innerHTML = '<div class="empty">请先在右上角选择身份</div>';
+  const dash = state.dashboard;
+  if (!dash){
+    root.innerHTML = '<div class="empty">Leader 态势加载中</div>';
     return;
   }
-  const myTasks = await api(`/my_tasks?owner_id=${state.currentUser}`);
-  const today = new Date().toISOString().slice(0,10);
-  const overdue = myTasks.filter(t=>t.deadline && t.deadline<today && t.status!=='done' && t.status!=='archived').length;
-  const todoCnt = myTasks.filter(t=>t.status==='todo').length;
-  const doingCnt = myTasks.filter(t=>t.status==='doing').length;
-  const projCnt = me.project_load?.length||0;
+  const stats = dash.stats || {};
+  const topTeam = (dash.team||[]).slice().sort((a,b)=>(b.planned_load||0)-(a.planned_load||0)).slice(0,8);
+  const healthOrder = {red:0, amber:1, green:2};
+  const topProjects = (dash.projects||[]).slice().sort((a,b)=>(healthOrder[a.health]??3)-(healthOrder[b.health]??3)).slice(0,8);
+  const tagClass = t => t.includes('逾期') || t==='超载' ? 'red' : t==='可承接' ? 'green' : t.includes('切换') || t.includes('压力') ? 'amber' : '';
+  const loadClass = p => p > 120 ? 'red' : p > 100 ? 'amber' : '';
 
   root.innerHTML = `
+    <div class="leader-hero">
+      <h2>Leader 今日态势</h2>
+      <div class="signal">${dash.summary || '正在汇总团队、项目、任务和人才缺口。'}</div>
+      <div class="copilot">${(dash.copilot||[]).map(x=>`<div>${x}</div>`).join('')}</div>
+    </div>
     <div class="section-head">
-      <div><h2>${me.cn_name} 的工作台 <span>· ${me.style||''}</span></h2></div>
+      <div><h2>共享团队调度台 <span>· people first</span></h2></div>
     </div>
     <div class="my-summary">
-      <div class="my-stat"><b>${projCnt}</b><span>在建项目</span></div>
-      <div class="my-stat"><b>${doingCnt}</b><span>进行中任务</span></div>
-      <div class="my-stat"><b>${todoCnt}</b><span>待办任务</span></div>
-      <div class="my-stat ${overdue?'bad':''}"><b>${overdue}</b><span>逾期</span></div>
+      <div class="my-stat"><b>${stats.people||0}</b><span>团队成员</span></div>
+      <div class="my-stat"><b>${stats.projects||0}</b><span>活跃项目</span></div>
+      <div class="my-stat ${stats.overloaded_people?'warn':''}"><b>${stats.overloaded_people||0}</b><span>超载成员</span></div>
+      <div class="my-stat ${stats.overdue_tasks?'bad':''}"><b>${stats.overdue_tasks||0}</b><span>逾期任务</span></div>
+      <div class="my-stat ${stats.no_owner_tasks?'warn':''}"><b>${stats.no_owner_tasks||0}</b><span>无人任务</span></div>
+      <div class="my-stat ${stats.high_gaps?'bad':''}"><b>${stats.high_gaps||0}</b><span>高优先级缺口</span></div>
+      <div class="my-stat"><b>${stats.open_tasks||0}</b><span>开放任务</span></div>
+      <div class="my-stat"><b>${(dash.projects||[]).filter(p=>p.health==='red').length}</b><span>红灯项目</span></div>
     </div>
-    ${projCnt ? `<div class="risk-card" id="risk-scan-box"></div>` : ''}
-    ${me.project_load?.length ? `
-    <h3 class="section-title">我的项目</h3>
-    <div class="pgrid" style="margin-bottom:30px">${me.project_load.map(pl=>{
-      const p = state.projects.find(x=>x.id===pl.project_id);
-      if (!p) return '';
-      return projCardHtml(p, true);
-    }).join('')}</div>
-    `:''}
-    <h3 class="section-title">我的任务</h3>
-    ${myTasks.length ? `
-    <div class="mtasks">${myTasks.map(t=>{
-      const cls = ddlClass(t.deadline);
-      return `<div class="mtask" style="--c:${t.proj_color}" onclick="state.currentProj='${t.project_id}';document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on'));document.querySelector('.nav a[data-view=projects]').classList.add('on');state.view='projects';routeRender()">
-        <div class="mt-bar"></div>
-        <div class="mt-main">
-          <div class="mt-title">${t.title}</div>
-          <div class="mt-meta"><span class="pn">${t.proj_name}</span>${t.descr?' · '+t.descr.slice(0,40):''}</div>
+    <div class="leader-layout">
+      <div>
+        <div class="leader-panel">
+          <h3>团队负载</h3>
+          <div class="team-pressure">${topTeam.map(p=>{
+            const av = avatarTag(p.avatar_url, p.cn_name, 'ph');
+            return `<div class="person-row" onclick="state.view='characters';document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on'));document.querySelector('.nav a[data-view=characters]').classList.add('on');routeRender()">
+              <div class="person-id">${av}<div><b>${p.cn_name}</b><span>${p.func||p.style||'未设职能'}</span></div></div>
+              <div>
+                <div class="load-track"><div class="load-fill ${loadClass(p.planned_load||0)}" style="--load:${p.planned_load||0}%"></div></div>
+                <div class="load-meta"><span>计划 ${p.planned_load||0}%</span><span>开放 ${p.active_tasks||0}</span><span>逾期 ${p.overdue_tasks||0}</span><span>${p.project_count||0} 项目</span></div>
+              </div>
+              <div class="risk-tags">${(p.risk_tags||[]).slice(0,3).map(t=>`<span class="risk-tag ${tagClass(t)}">${t}</span>`).join('')}</div>
+            </div>`;
+          }).join('')}</div>
         </div>
-        <div class="mt-status ${t.status==='archived'?'done':t.status}">${({todo:'待办',doing:'进行中',done:'完成',archived:'归档'})[t.status]}</div>
-        <div class="mt-ddl ${cls}">${t.deadline?ddlLabel(t.deadline):'—'}</div>
-      </div>`;
-    }).join('')}</div>
-    ` : '<div class="empty">没有指派给你的任务</div>'}
+        <div class="leader-panel">
+          <h3>项目健康</h3>
+          <div class="health-list">${topProjects.map(p=>`
+            <div class="health-row" onclick="state.currentProj='${p.id}';state.view='projects';document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on'));document.querySelector('.nav a[data-view=projects]').classList.add('on');routeRender()">
+              <span class="health-dot ${p.health}"></span>
+              <div class="health-main"><b>${p.name}</b><span>${(p.health_reasons||[]).join(' · ')} · 开放 ${p.open_tasks||0} · 无人 ${p.no_owner_tasks||0}</span></div>
+              <span class="health-stage">${p.stage}</span>
+            </div>`).join('')}</div>
+        </div>
+      </div>
+      <div>
+        <div class="leader-panel">
+          <h3>Leader 待处理</h3>
+          <div class="decision-list">${(dash.decisions||[]).length ? dash.decisions.map(d=>`
+            <div class="decision" onclick="${d.project_id?`state.currentProj='${d.project_id}';state.view='projects';document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on'));document.querySelector('.nav a[data-view=projects]').classList.add('on');routeRender()`:`state.view='characters';document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on'));document.querySelector('.nav a[data-view=characters]').classList.add('on');routeRender()`}">
+              <b>${d.title}</b><p>${d.detail}</p><span>${d.action}</span>
+            </div>`).join('') : '<div class="empty" style="padding:30px 10px">暂无需要立即拍板的事项</div>'}</div>
+        </div>
+        <div class="leader-panel">
+          <h3>招募召唤池</h3>
+          <div class="summon-mini-list">${(state.gaps?.gaps || []).slice(0,4).map(summonMiniHtml).join('') || '<div class="empty" style="padding:30px 10px">当前没有待召唤卡位</div>'}</div>
+          ${(state.gaps?.gaps || []).length>4?'<button class="btn" style="width:100%;justify-content:center;margin-top:12px" onclick="openGapsPool()">展开全部卡池</button>':''}
+        </div>
+      </div>
+    </div>
   `;
-  document.querySelectorAll('#page-my .pcard').forEach(c=>{
-    c.onclick = ()=>{ const pid=c.dataset.pid; state.currentProj=pid; document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on')); document.querySelector('.nav a[data-view=projects]').classList.add('on'); state.view='projects'; routeRender(); };
-  });
-  if (document.getElementById('risk-scan-box')) loadRiskScan();
 }
 
 function projCardHtml(p, mineCtx){
-  const memberAvs = (p.members||[]).slice(0,5).map(m=>m.avatar_url?`<img class="av" src="${m.avatar_url}" title="${m.cn_name}">`:`<div class="av">${(m.cn_name||'?')[0]}</div>`).join('');
+  const memberAvs = (p.members||[]).slice(0,5).map(m=>avatarTag(m.avatar_url, m.cn_name, 'av', '', m.cn_name)).join('');
   const more = (p.members||[]).length>5 ? `<div class="more-n">+${p.members.length-5}</div>` : '';
   const statusLabel = {active:'进行中',paused:'暂停',archived:'已归档'}[p.status]||p.status;
   const myMember = (p.members||[]).find(m=>m.character_id===state.currentUser);
@@ -646,9 +816,17 @@ function renderCharacters(){
   const grid = document.getElementById('cgrid');
   state.chars.forEach(p=>{
     const tags = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
-    const avatar = p.avatar_url ? `<img class="avatar" src="${p.avatar_url}" onerror="this.outerHTML='<div class=avatar>👤</div>'">` : `<div class="avatar">👤</div>`;
-    const planned = p.computed_capacity ?? 0;
+    const avatar = avatarTag(p.avatar_url, p.cn_name, 'avatar');
+    const topSkills = Object.entries(p.skills||{}).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const planned = p.planned_load ?? p.computed_capacity ?? 0;
     const overload = planned > 100;
+    const riskTags = p.risk_tags || [
+      ...(overload?['超载']:[]),
+      ...((p.project_load||[]).length>=3?['上下文切换多']:[]),
+      ...((p.overdue_tasks||0)?[`${p.overdue_tasks} 个逾期`]:[]),
+      ...(!overload && (p.active_tasks||0)<=2?['可承接']:[])
+    ];
+    const tagClass = t => t.includes('逾期') || t==='超载' ? 'red' : t==='可承接' ? 'green' : t.includes('切换') || t.includes('压力') ? 'amber' : '';
     const projChips = (p.project_load||[]).map(pl=>`<span class="proj-chip" style="background:${pl.color}">${pl.is_lead?'★ ':''}${pl.project_name}<span class="alloc">${pl.allocation}%</span></span>`).join('') || '<span class="proj-chip empty">未加入任何项目</span>';
     const taskHtml = (p.active_tasks||0) > 0 ? `<b>${p.active_tasks}</b> 个在手任务${p.overdue_tasks?`<span class="od">· ${p.overdue_tasks} 逾期</span>`:''}` : '<span style="color:var(--faint)">暂无任务</span>';
     const isMe = p.id === state.currentUser;
@@ -658,7 +836,7 @@ function renderCharacters(){
       ${isMe?'<div class="me-badge">我</div>':''}
       <div class="card-head">${avatar}<div class="head-text"><div class="name">${p.cn_name||'(未命名)'}</div><div class="style-line">${p.style||'<span style="color:#A1A1A6">待编辑</span>'}</div></div></div>
       <div class="tags">${tags}</div>
-      <div class="radar-wrap"><canvas id="r-${p.id}"></canvas></div>
+      <div class="ability-summary">${topSkills.map(([k,v])=>`<div class="ability-pill"><b>${v}</b><span>${k}</span></div>`).join('') || '<div class="ability-pill"><b>—</b><span>待补能力</span></div>'}</div>
       <div class="load-row">
         <div class="load-summary">
           <div class="planned">分配 <b class="${overload?'over':''}">${planned}%</b>${overload?'<span style="color:var(--bad);font-size:11px;margin-left:4px">超载</span>':''}</div>
@@ -666,18 +844,29 @@ function renderCharacters(){
         </div>
         <div class="proj-chips">${projChips}</div>
       </div>
+      <div class="risk-tags" style="justify-content:flex-start;margin-top:10px">${riskTags.slice(0,4).map(t=>`<span class="risk-tag ${tagClass(t)}">${t}</span>`).join('')}</div>
       <div class="bio">${p.bio||'<span style="color:#A1A1A6">待编辑</span>'}</div>
-      <button class="more-btn" onclick="event.stopPropagation();const d=this.nextElementSibling;d.classList.toggle('open');this.textContent=d.classList.contains('open')?'收起':'更多'">更多</button>
+      <button class="more-btn" onclick="event.stopPropagation();toggleCharacterMore(this,'${p.id}')">更多</button>
       <div class="more-detail">
         <div class="row"><span class="k">职能</span><span class="v">${p.func||'—'}</span></div>
         <div class="row"><span class="k">年限</span><span class="v">${p.years||'—'}</span></div>
         <div class="row"><span class="k">擅长</span><span class="v">${p.strengths||'—'}</span></div>
         ${p.weakness?`<div class="row"><span class="k">不擅长</span><span class="v">${p.weakness}</span></div>`:''}
+        <div class="radar-wrap"><canvas id="r-${p.id}"></canvas></div>
       </div>`;
     card.onclick = () => openCharDrawer(p.id);
     grid.appendChild(card);
-    setTimeout(()=>renderRadar(`r-${p.id}`, p.skills||{}), 10);
   });
+}
+
+function toggleCharacterMore(btn, id){
+  const d = btn.nextElementSibling;
+  d.classList.toggle('open');
+  btn.textContent = d.classList.contains('open') ? '收起' : '更多';
+  if (d.classList.contains('open') && !state.charts[`r-${id}`]){
+    const p = state.chars.find(x=>x.id===id);
+    setTimeout(()=>renderRadar(`r-${id}`, p?.skills||{}), 0);
+  }
 }
 
 function renderRadar(id, skills){
@@ -772,8 +961,12 @@ function renderProjectDetail(){
   (p.members||[]).forEach(m=>{
     const chip = document.createElement('div');
     chip.className = 'pm-chip' + (m.is_lead?' lead':'');
-    const av = m.avatar_url?`<img src="${m.avatar_url}">`:`<div class="ph">${(m.cn_name||'?')[0]}</div>`;
-    chip.innerHTML = `${av}<span>${m.cn_name||m.character_id}</span>${m.role?`<span class="role">· ${m.role}</span>`:''}<span class="alloc">${m.allocation}%</span>${m.is_lead?'<span class="lead">★</span>':''}`;
+    const av = avatarTag(m.avatar_url, m.cn_name, 'ph');
+    const global = state.chars.find(c=>c.id===m.character_id);
+    const globalLoad = global?.computed_capacity ?? global?.planned_load ?? m.allocation;
+    const activeTasks = global?.active_tasks ?? 0;
+    chip.title = `${m.cn_name||m.character_id} 全局投入 ${globalLoad}% · 开放任务 ${activeTasks}`;
+    chip.innerHTML = `${av}<span>${m.cn_name||m.character_id}</span>${m.role?`<span class="role">· ${m.role}</span>`:''}<span class="alloc">本项目 ${m.allocation}%</span><span class="global-load ${globalLoad>100?'over':''}">全局 ${globalLoad}% · ${activeTasks} 任务</span>${m.is_lead?'<span class="lead">★</span>':''}`;
     chip.onclick = () => openMemberDrawer(p.id, m.character_id);
     pmList.appendChild(chip);
   });
@@ -796,7 +989,7 @@ function renderProjectDetail(){
     const riskCls = (lane!=='done') ? (ddlCls==='urgent'?' risk-urgent':ddlCls==='soon'?' risk-soon':'') : '';
     card.className = 'tcard' + (lane==='done'?' done':'') + riskCls;
     const owner = state.chars.find(c=>c.id===t.owner_id);
-    const ownerHtml = owner ? `<div class="tleft">${owner.avatar_url?`<img class="av-mini" src="${owner.avatar_url}">`:`<div class="av-mini">${owner.cn_name[0]}</div>`}<span class="owner-name">${owner.cn_name}</span></div>` : `<div class="tleft" style="color:var(--faint)">未指派</div>`;
+    const ownerHtml = owner ? `<div class="tleft">${avatarTag(owner.avatar_url, owner.cn_name, 'av-mini')}<span class="owner-name">${owner.cn_name}</span></div>` : `<div class="tleft" style="color:var(--faint)">未指派</div>`;
     const ddlHtml = t.deadline ? `<div class="ddl ${ddlCls}">${ddlLabel(t.deadline)}</div>` : '';
     const nextStatus = lane==='todo'?'doing':lane==='doing'?'done':'doing';
     const nextLabel = lane==='todo'?'→':lane==='doing'?'✓':'↶';
@@ -834,6 +1027,111 @@ async function moveTask(tid, newStatus){
   await loadTasks(state.currentProj);
   renderProjectDetail();
   toast('已更新');
+}
+
+// ============ Talent gaps page ============
+const SUMMON_SVG = {
+  legend: `<svg viewBox="0 0 24 24"><path d="M3 17 6 7l4 4 2-6 2 6 4-4 3 10H3Z"/><path d="M3 21h18"/></svg>`,
+  epic: `<svg viewBox="0 0 24 24"><path d="M12 3v6"/><path d="M12 15v6"/><path d="m4.9 4.9 4.2 4.2"/><path d="m14.9 14.9 4.2 4.2"/><path d="M3 12h6"/><path d="M15 12h6"/><path d="m4.9 19.1 4.2-4.2"/><path d="m14.9 9.1 4.2-4.2"/></svg>`,
+  rare: `<svg viewBox="0 0 24 24"><path d="M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7L12 2Z"/></svg>`,
+  common: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="m4.9 4.9 2.1 2.1"/><path d="m17 17 2.1 2.1"/><path d="M2 12h3"/><path d="M19 12h3"/></svg>`,
+  chest: `<svg viewBox="0 0 24 24"><path d="M4 10h16v9H4z"/><path d="M4 10c0-3 2.4-5 8-5s8 2 8 5"/><path d="M4 14h16"/><path d="M10 10v9"/><path d="M14 10v9"/></svg>`
+};
+
+function gapRarity(g){
+  if (g.rarity) return g.rarity;
+  return ({'senior manager':'legend','associate manager':'epic','senior associate':'rare','junior associate':'common'})[g.needed_seniority] || 'rare';
+}
+
+function rarityLabel(r){
+  return ({legend:'传说',epic:'史诗',rare:'稀有',common:'普通'})[r] || r;
+}
+
+function openGapsPool(){
+  state.view = 'gaps';
+  setNav('');
+  routeRender();
+}
+
+function summonMiniHtml(g){
+  const r = gapRarity(g);
+  return `<div class="summon-mini" onclick="openGapVacancyFromGap('${g.id}')">
+    <div class="top"><b>${g.card_title || g.function}</b><span class="rarity">${g.rarity_label || rarityLabel(r)} · ${g.needed_seniority}</span></div>
+    <p>${g.project_name} · ${g.reason}</p>
+    <span>${g.stage} · ${g.summon_cost||20} HD · 点此设为虚位</span>
+  </div>`;
+}
+
+function openGapVacancy(pid, role, why, priority){
+  state.view = 'projects';
+  state.currentProj = pid;
+  document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('on'));
+  document.querySelector('.nav a[data-view=projects]').classList.add('on');
+  routeRender().then(()=>{
+    openVacancyEditor(pid, null);
+    setTimeout(()=>{
+      document.getElementById('vac-role').value = role || '';
+      document.getElementById('vac-priority').value = priority || 'mid';
+      document.getElementById('vac-why').value = why || '';
+    }, 60);
+  });
+}
+
+function openGapVacancyFromGap(id){
+  const g = (state.gaps?.gaps || []).find(x=>x.id===id);
+  if (!g) return;
+  const priority = g.urgency==='high' ? 'high' : g.urgency==='mid' ? 'mid' : 'low';
+  const why = `${g.project_name} · ${g.stage} · ${g.reason}`;
+  openGapVacancy(g.project_id, `${g.function} ${g.needed_seniority}`, why, priority);
+}
+
+function renderGaps(){
+  const root = document.getElementById('page-gaps');
+  const data = state.gaps;
+  if (!data){
+    root.innerHTML = '<div class="empty">召唤池加载中</div>';
+    return;
+  }
+  const gaps = data.gaps || [];
+  const totalCost = gaps.reduce((n,g)=>n+(g.summon_cost||20),0);
+  root.innerHTML = `
+    <div class="summon-hero">
+      <div>
+        <h2>招募召唤池</h2>
+        <div class="sub">把团队缺口包装成待召唤卡位。系统按当前职能、人力占用和项目阶段判断卡池，不靠玄学抽人。</div>
+      </div>
+      <div class="summon-chest">${SUMMON_SVG.chest}</div>
+    </div>
+    <div class="scale-grid">
+      <div class="scale-item"><b>${gaps.length}</b><span>待召唤卡位</span></div>
+      <div class="scale-item"><b>${gaps.filter(g=>g.urgency==='high').length}</b><span>高优先级卡位</span></div>
+      <div class="scale-item"><b>${totalCost} HD</b><span>补齐当前卡池的预算估算</span></div>
+      <div class="scale-item"><b>职级稀有度</b><span>senior manager = 传说，associate manager = 史诗，senior associate = 稀有，junior associate = 普通</span></div>
+    </div>
+    <div class="summon-pool">
+      ${gaps.length ? gaps.map(g=>{
+        const r = gapRarity(g);
+        return `<div class="summon-card ${r}">
+          <div class="summon-card-head">
+            <div><h3>${g.card_title || g.function}</h3><div class="role">${g.function} · ${g.project_name}</div></div>
+            <span class="rarity-badge">${g.rarity_label || rarityLabel(r)} · ${g.needed_seniority}</span>
+          </div>
+          <div class="summon-portrait">${SUMMON_SVG[r] || SUMMON_SVG.rare}</div>
+          <div class="summon-info">${g.reason}</div>
+          <div class="summon-meta">
+            <span>${g.stage}</span>
+            <span>${g.urgency==='high'?'立即补':g.urgency==='mid'?'本月关注':'观察'}</span>
+            <span>${g.suggested_action}</span>
+          </div>
+          <div class="gap-evidence">${(g.evidence||[]).map(x=>`· ${x}`).join('<br>')}</div>
+          <div class="summon-actions-row">
+            <div class="summon-cost"><b>${g.summon_cost||20}</b> HD</div>
+            <button class="btn btn-primary" onclick="openGapVacancyFromGap('${g.id}')">设为虚位</button>
+          </div>
+        </div>`;
+      }).join('') : '<div class="empty">当前没有明显待召唤卡位。继续保持 owner、deadline 和项目阶段信息完整，卡池判断会更准。</div>'}
+    </div>
+  `;
 }
 
 // ============ Trash ============
@@ -1042,8 +1340,7 @@ function openCharDrawer(id){
   });
   document.getElementById('f-tags').value = (p.tags||[]).join(', ');
   const ap = document.getElementById('avatar-preview');
-  if (p.avatar_url) ap.outerHTML = `<img id="avatar-preview" src="${p.avatar_url}">`;
-  else ap.outerHTML = '<div id="avatar-preview" class="ph">👤</div>';
+  ap.outerHTML = avatarTag(p.avatar_url, p.cn_name || '👤', 'ph', 'avatar-preview');
   const sg = document.getElementById('skills-grid');
   sg.innerHTML = SKILL_KEYS.map(k=>{
     const v = p.skills?.[k]??50;
@@ -1363,7 +1660,14 @@ async function generateJD(){
   }
 }
 
-routeRender();
+routeRender().catch(e=>{
+  console.error(e);
+  const root = document.getElementById('page-my');
+  if (root) {
+    root.style.display = '';
+    root.innerHTML = `<div class="empty">页面数据加载失败：${e.message}<br><br>请确认本地 API 正在运行：<code>${API}/health</code></div>`;
+  }
+});
 </script>
 </body>
 </html>

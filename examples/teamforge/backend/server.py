@@ -607,6 +607,323 @@ def my_tasks(owner_id: str):
                             ORDER BY CASE WHEN t.deadline='' THEN 1 ELSE 0 END, t.deadline ASC, t.created_at ASC""", (owner_id,)).fetchall()
         return [dict(row_to_task(r), proj_name=r["proj_name"], proj_color=r["proj_color"]) for r in rows]
 
+# ============ leader cockpit ============
+SENIORITY_SCALE = [
+    {"level": "junior associate", "use": "明确执行项，有人带，风险低"},
+    {"level": "senior associate", "use": "能独立推进明确模块，稳定交付"},
+    {"level": "associate manager", "use": "能拆解模块、协调接口、处理一般不确定性"},
+    {"level": "senior manager", "use": "能扛方向、跨项目协调、处理高风险缺口"},
+]
+
+SENIORITY_RARITY = {
+    "junior associate": {"rarity": "common", "label": "普通", "cost": 10},
+    "senior associate": {"rarity": "rare", "label": "稀有", "cost": 20},
+    "associate manager": {"rarity": "epic", "label": "史诗", "cost": 35},
+    "senior manager": {"rarity": "legend", "label": "传说", "cost": 50},
+}
+
+FUNCTION_RULES = [
+    ("项目管理", ["项目", "管理", "pm", "lead", "负责人", "排期", "协调", "推进"]),
+    ("数据分析", ["数据", "分析", "指标", "实验", "ab", "漏斗", "看板"]),
+    ("商业化", ["商业", "营收", "付费", "变现", "收费", "收入", "定价"]),
+    ("用户运营", ["运营", "活跃", "留存", "活动", "社区", "用户"]),
+    ("市场推广", ["市场", "推广", "投放", "传播", "品牌", "campaign", "渠道"]),
+    ("本地化", ["本地化", "local", "多语言", "翻译", "sea", "东南亚", "文案"]),
+    ("创意策划", ["创意", "策划", "玩法", "活动方案", "内容"]),
+    ("审美", ["审美", "视觉", "设计", "ui", "素材", "美术"]),
+]
+
+def _contains_any(text, words):
+    t = (text or "").lower()
+    return any(w.lower() in t for w in words)
+
+def _function_match(text):
+    return [name for name, words in FUNCTION_RULES if _contains_any(text, words)]
+
+def _project_stage(p, tasks):
+    active = [t for t in tasks if t["status"] not in ("archived",)]
+    if not active:
+        return "立项探索"
+    done = sum(1 for t in active if t["status"] == "done")
+    open_n = sum(1 for t in active if t["status"] in ("todo", "doing"))
+    ratio = done / max(len(active), 1)
+    today = time.strftime("%Y-%m-%d")
+    overdue = any(t["deadline"] and t["deadline"] < today and t["status"] in ("todo", "doing") for t in active)
+    if overdue:
+        return "延期救火"
+    if p["deadline"]:
+        try:
+            days = (time.mktime(time.strptime(p["deadline"], "%Y-%m-%d")) - time.time()) / 86400
+            if days <= 14 and open_n > 0:
+                return "冲刺交付"
+        except Exception:
+            pass
+    if ratio < 0.25:
+        return "拆解启动"
+    if ratio < 0.75:
+        return "执行推进"
+    return "收尾上线"
+
+def _risk_level(planned, active_tasks, overdue_tasks):
+    if overdue_tasks > 0 or planned > 120:
+        return "red"
+    if planned > 100 or active_tasks >= 6:
+        return "amber"
+    if planned < 60 and active_tasks <= 2:
+        return "green"
+    return "steady"
+
+def _risk_tags(planned, active_tasks, overdue_tasks, project_count):
+    tags = []
+    if planned > 100:
+        tags.append("超载")
+    if project_count >= 3:
+        tags.append("上下文切换多")
+    if active_tasks >= 6:
+        tags.append("任务压力高")
+    if overdue_tasks:
+        tags.append(f"{overdue_tasks} 个逾期")
+    if planned < 60 and active_tasks <= 2:
+        tags.append("可承接")
+    return tags or ["稳定"]
+
+def _team_pressure(c):
+    rows = c.execute("SELECT * FROM characters WHERE deleted_at IS NULL ORDER BY sort_order").fetchall()
+    today = time.strftime("%Y-%m-%d")
+    team = []
+    for r in rows:
+        ch = row_to_char(r)
+        loads = c.execute("""SELECT pm.allocation, pm.role, pm.is_lead, p.id pid, p.name pname, p.color
+                             FROM project_members pm JOIN projects p ON p.id=pm.project_id
+                             WHERE pm.character_id=? AND p.deleted_at IS NULL AND p.status!='archived'""", (r["id"],)).fetchall()
+        project_load = [{"project_id": l["pid"], "project_name": l["pname"], "color": l["color"],
+                         "allocation": l["allocation"], "role": l["role"], "is_lead": bool(l["is_lead"])} for l in loads]
+        planned = sum(l["allocation"] for l in loads)
+        tk = c.execute("""SELECT COUNT(*) cnt,
+                                 SUM(CASE WHEN status='doing' THEN 1 ELSE 0 END) doing,
+                                 SUM(CASE WHEN status='todo' THEN 1 ELSE 0 END) todo
+                          FROM tasks WHERE owner_id=? AND status IN ('todo','doing')""", (r["id"],)).fetchone()
+        od = c.execute("""SELECT COUNT(*) cnt FROM tasks WHERE owner_id=? AND status IN ('todo','doing')
+                          AND deadline != '' AND deadline < ?""", (r["id"], today)).fetchone()
+        active_tasks = tk["cnt"] or 0
+        overdue_tasks = od["cnt"] or 0
+        ch.update({
+            "project_load": project_load,
+            "planned_load": planned,
+            "active_tasks": active_tasks,
+            "doing_tasks": tk["doing"] or 0,
+            "todo_tasks": tk["todo"] or 0,
+            "overdue_tasks": overdue_tasks,
+            "project_count": len(project_load),
+            "risk_level": _risk_level(planned, active_tasks, overdue_tasks),
+            "risk_tags": _risk_tags(planned, active_tasks, overdue_tasks, len(project_load)),
+        })
+        if overdue_tasks:
+            ch["recommendation"] = "先清逾期，不建议继续塞新任务"
+        elif planned > 100:
+            ch["recommendation"] = "需要降 allocation 或转移任务"
+        elif planned < 60 and active_tasks <= 2:
+            ch["recommendation"] = "可承接明确执行任务"
+        else:
+            ch["recommendation"] = "保持节奏，适合接同项目上下文任务"
+        team.append(ch)
+    return team
+
+def _project_health(c, team_by_id):
+    projects = c.execute("SELECT * FROM projects WHERE deleted_at IS NULL AND status!='archived' ORDER BY sort_order ASC, created_at ASC").fetchall()
+    today = time.strftime("%Y-%m-%d")
+    out = []
+    for p in projects:
+        tasks = [row_to_task(r) for r in c.execute("SELECT * FROM tasks WHERE project_id=? ORDER BY sort_order", (p["id"],)).fetchall()]
+        members = project_members(c, p["id"])
+        open_tasks = [t for t in tasks if t["status"] in ("todo", "doing")]
+        overdue = [t for t in open_tasks if t["deadline"] and t["deadline"] < today]
+        no_owner = [t for t in open_tasks if not t["owner_id"]]
+        member_load = sum(m["allocation"] for m in members)
+        overloaded = [m for m in members if (team_by_id.get(m["character_id"], {}).get("planned_load") or 0) > 100]
+        reasons = []
+        if overdue:
+            reasons.append(f"{len(overdue)} 个逾期")
+        if no_owner:
+            reasons.append(f"{len(no_owner)} 个无人承接")
+        if overloaded:
+            reasons.append(f"{len(overloaded)} 个成员全局超载")
+        if not members:
+            reasons.append("未配置成员")
+        health = "green"
+        if overdue or len(no_owner) >= 2 or len(overloaded) >= 2:
+            health = "red"
+        elif no_owner or overloaded or member_load < 60:
+            health = "amber"
+        out.append({
+            "id": p["id"], "name": p["name"], "goal": p["goal"], "status": p["status"],
+            "color": p["color"], "deadline": p["deadline"], "stage": _project_stage(p, tasks),
+            "member_count": len(members), "member_allocation": member_load,
+            "total_tasks": len(tasks), "open_tasks": len(open_tasks),
+            "done_tasks": sum(1 for t in tasks if t["status"] in ("done", "archived")),
+            "overdue_tasks": len(overdue), "no_owner_tasks": len(no_owner),
+            "health": health, "health_reasons": reasons or ["节奏正常"],
+        })
+    return out
+
+def _needed_functions(project, tasks):
+    text = " ".join([project["name"] or "", project["goal"] or ""] + [t["title"] + " " + (t["descr"] or "") for t in tasks])
+    needs = set(_function_match(text))
+    stage = _project_stage(project, tasks)
+    if stage in ("立项探索", "拆解启动", "延期救火"):
+        needs.add("项目管理")
+    if stage in ("执行推进", "冲刺交付", "收尾上线"):
+        needs.add("用户运营")
+    if not needs:
+        needs.update(["项目管理", "用户运营"])
+    return list(needs)
+
+def _seniority_for_gap(function_name, stage, urgency, has_any):
+    if function_name == "项目管理" and stage in ("延期救火", "冲刺交付"):
+        return "senior manager"
+    if function_name in ("商业化", "数据分析", "市场推广") and urgency == "high":
+        return "associate manager" if has_any else "senior manager"
+    if function_name in ("本地化", "用户运营", "创意策划", "审美"):
+        return "senior associate" if has_any else "associate manager"
+    return "senior associate"
+
+def _summon_meta(function_name, seniority):
+    meta = SENIORITY_RARITY.get(seniority, SENIORITY_RARITY["senior associate"])
+    title_map = {
+        "项目管理": "推进队长",
+        "数据分析": "数据观星者",
+        "商业化": "商业炼金师",
+        "用户运营": "活跃守护者",
+        "市场推广": "传播指挥官",
+        "本地化": "语言旅人",
+        "创意策划": "创意发动机",
+        "审美": "视觉锻造师",
+    }
+    return {**meta, "card_title": title_map.get(function_name, f"{function_name}专员")}
+
+def _talent_gaps(c):
+    team = _team_pressure(c)
+    team_by_id = {t["id"]: t for t in team}
+    active_projects = c.execute("SELECT * FROM projects WHERE deleted_at IS NULL AND status!='archived' ORDER BY sort_order").fetchall()
+    gaps = []
+    for p in active_projects:
+        tasks = [row_to_task(r) for r in c.execute("SELECT * FROM tasks WHERE project_id=? ORDER BY sort_order", (p["id"],)).fetchall()]
+        members = project_members(c, p["id"])
+        stage = _project_stage(p, tasks)
+        needed = _needed_functions(p, tasks)
+        open_tasks = [t for t in tasks if t["status"] in ("todo", "doing")]
+        no_owner = [t for t in open_tasks if not t["owner_id"]]
+        overloaded_members = [m for m in members if (team_by_id.get(m["character_id"], {}).get("planned_load") or 0) > 100]
+        member_ids = [m["character_id"] for m in members]
+        for fn in needed:
+            matching = []
+            for cid in member_ids:
+                ch = team_by_id.get(cid)
+                if not ch:
+                    continue
+                profile_text = " ".join([ch.get("func") or "", ch.get("style") or "", ch.get("strengths") or "", " ".join(ch.get("tags") or [])])
+                skill_score = (ch.get("skills") or {}).get(fn, 0)
+                if fn in _function_match(profile_text) or skill_score >= 80:
+                    matching.append(ch)
+            available = [m for m in matching if m["planned_load"] <= 100 and m["overdue_tasks"] == 0]
+            if available:
+                continue
+            has_any = bool(matching)
+            urgency = "mid"
+            if stage in ("延期救火", "冲刺交付") or len(no_owner) >= 2:
+                urgency = "high"
+            elif stage in ("立项探索", "拆解启动"):
+                urgency = "watch"
+            reason = "没有覆盖该职能的人"
+            if has_any:
+                reason = "有能力覆盖，但当前人力已被其他项目占用"
+            if fn == "项目管理" and not any(m["is_lead"] for m in members):
+                reason = "项目缺少明确 Lead 扛拆解和推进"
+                urgency = "high" if stage != "立项探索" else "mid"
+            evidence = []
+            if no_owner:
+                evidence.append(f"{len(no_owner)} 个开放任务无人承接")
+            if overloaded_members:
+                evidence.append(f"{len(overloaded_members)} 个项目成员全局超载")
+            if not has_any:
+                evidence.append(f"项目成员中缺少 {fn} 明显覆盖")
+            seniority = _seniority_for_gap(fn, stage, urgency, has_any)
+            summon = _summon_meta(fn, seniority)
+            gaps.append({
+                "id": f"{p['id']}-{fn}",
+                "scope": "project",
+                "project_id": p["id"],
+                "project_name": p["name"],
+                "function": fn,
+                "stage": stage,
+                "urgency": urgency,
+                "needed_seniority": seniority,
+                "rarity": summon["rarity"],
+                "rarity_label": summon["label"],
+                "summon_cost": summon["cost"],
+                "card_title": summon["card_title"],
+                "reason": reason,
+                "evidence": evidence or ["按项目阶段和当前成员结构推导"],
+                "suggested_action": "招聘或临时借调" if urgency == "high" else "观察并培养内部备份",
+            })
+    gaps.sort(key=lambda g: {"high": 0, "mid": 1, "watch": 2}.get(g["urgency"], 3))
+    return gaps
+
+@app.get("/api/leader_dashboard")
+def leader_dashboard():
+    with db() as c:
+        team = _team_pressure(c)
+        team_by_id = {t["id"]: t for t in team}
+        projects = _project_health(c, team_by_id)
+        gaps = _talent_gaps(c)
+        open_tasks = c.execute("SELECT COUNT(*) FROM tasks WHERE status IN ('todo','doing')").fetchone()[0] or 0
+        today = time.strftime("%Y-%m-%d")
+        overdue = c.execute("SELECT COUNT(*) FROM tasks WHERE status IN ('todo','doing') AND deadline!='' AND deadline<?", (today,)).fetchone()[0] or 0
+        no_owner = c.execute("SELECT COUNT(*) FROM tasks WHERE status IN ('todo','doing') AND (owner_id IS NULL OR owner_id='')").fetchone()[0] or 0
+        overloaded = [t for t in team if t["planned_load"] > 100]
+        red_projects = [p for p in projects if p["health"] == "red"]
+        decisions = []
+        for t in sorted(overloaded, key=lambda x: x["planned_load"], reverse=True)[:3]:
+            decisions.append({"kind": "people", "priority": "high", "title": f"{t['cn_name']} 全局投入 {t['planned_load']}%",
+                              "detail": "跨项目负载超过 100%，需要降投入或转移任务", "character_id": t["id"], "action": "本周不要再分配新任务"})
+        for p in red_projects[:3]:
+            decisions.append({"kind": "project", "priority": "high", "title": f"{p['name']} 项目红灯",
+                              "detail": "；".join(p["health_reasons"]), "project_id": p["id"], "action": "今天安排一次 30 分钟风险对齐"})
+        for g in [x for x in gaps if x["urgency"] == "high"][:3]:
+            decisions.append({"kind": "talent", "priority": "mid", "title": f"{g['project_name']} 缺 {g['function']}",
+                              "detail": f"建议 {g['needed_seniority']}，{g['reason']}", "project_id": g["project_id"], "action": g["suggested_action"]})
+        copilot = []
+        if red_projects:
+            copilot.append(f"先介入 {red_projects[0]['name']}，主要问题是{red_projects[0]['health_reasons'][0]}。")
+        if overloaded:
+            copilot.append(f"{overloaded[0]['cn_name']} 暂时不要再接新任务，先处理跨项目降载。")
+        if gaps:
+            top_gap = gaps[0]
+            copilot.append(f"当前最值得补的是 {top_gap['function']}，建议按 {top_gap['needed_seniority']} 标准找人。")
+        if not copilot:
+            copilot.append("当前没有明显红灯，重点保持任务 owner 和 deadline 清晰。")
+        return {
+            "generated_at": int(time.time()),
+            "summary": f"{len(red_projects)} 个项目红灯，{len(overloaded)} 人超载，{len([g for g in gaps if g['urgency']=='high'])} 个高优先级人才缺口。",
+            "stats": {
+                "people": len(team), "projects": len(projects), "open_tasks": open_tasks,
+                "overdue_tasks": overdue, "no_owner_tasks": no_owner,
+                "overloaded_people": len(overloaded), "high_gaps": len([g for g in gaps if g["urgency"] == "high"]),
+            },
+            "team": team, "projects": projects, "decisions": decisions[:8], "copilot": copilot,
+        }
+
+@app.get("/api/talent_gaps")
+def talent_gaps():
+    with db() as c:
+        gaps = _talent_gaps(c)
+        return {
+            "generated_at": int(time.time()),
+            "summary": f"识别到 {len(gaps)} 个项目人才缺口，其中 {len([g for g in gaps if g['urgency']=='high'])} 个需要优先处理。",
+            "seniority_scale": SENIORITY_SCALE,
+            "gaps": gaps,
+        }
+
 # ============ AI ============
 import urllib.request as _ur
 AI_GATEWAY = os.environ.get("AI_GATEWAY", "https://new-api.openclaw.ingarena.net")
