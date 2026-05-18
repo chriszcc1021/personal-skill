@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>装修与家电指南</title>
+<title>装修与选购</title>
 <link rel="manifest" href="/appliance-guide/manifest.webmanifest">
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
@@ -28,13 +28,13 @@ a{color:var(--blue);text-decoration:none}
 a:hover{text-decoration:underline}
 
 /* ===== TOP NAV ===== */
-.chrome{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.8);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,0.08);height:44px}
-.chrome-inner{max-width:1100px;margin:0 auto;padding:0 22px;display:flex;align-items:center;justify-content:space-between;height:100%;font-size:14px}
-.chrome-inner .brand{font-weight:400;letter-spacing:-0.01em}
-.chrome-inner nav{display:flex;gap:24px}
-.chrome-inner nav a{color:var(--gray);font-size:13px;cursor:pointer}
+.chrome{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.72);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-bottom:1px solid rgba(0,0,0,0.06);height:48px}
+.chrome-inner{max-width:1100px;margin:0 auto;padding:0 22px;display:flex;align-items:center;justify-content:center;height:100%;font-size:14px;position:relative}
+.chrome-inner nav{display:flex;gap:32px}
+.chrome-inner nav a{color:var(--gray);font-size:14px;cursor:pointer;transition:color 0.2s}
+.chrome-inner nav a:hover{color:var(--black);text-decoration:none}
 .chrome-inner nav a.on{color:var(--black);font-weight:500}
-.chrome-inner .meta{color:var(--gray);font-size:12px}
+.chrome-inner .meta{color:var(--gray);font-size:12px;position:absolute;right:22px;top:50%;transform:translateY(-50%)}
 
 /* ===== HERO ===== */
 .hero{text-align:center;padding:60px 22px 32px}
@@ -196,10 +196,9 @@ a:hover{text-decoration:underline}
 
 <nav class="chrome">
   <div class="chrome-inner">
-    <span class="brand">家居装修指南</span>
     <nav>
       <a id="tab-reno" class="on" onclick="switchTab('reno')">装修分析</a>
-      <a id="tab-app" onclick="switchTab('app')">家电选购</a>
+      <a id="tab-app" onclick="switchTab('app')">选购</a>
     </nav>
     <span class="meta" id="updated">—</span>
   </div>
@@ -272,7 +271,7 @@ a:hover{text-decoration:underline}
 <!-- ============ 家电选购 ============ -->
 <div id="page-app" class="page">
   <section class="hero">
-    <h1>家电选购</h1>
+    <h1>选购</h1>
     <p class="tagline">按品类、按价格段对比。</p>
   </section>
 
@@ -284,13 +283,13 @@ a:hover{text-decoration:underline}
       <p class="t-tiers"><b>2K</b>云鲸 J4 / 追觅 S10　　<b>5K</b>石头 G20S / 科沃斯 X2 Pro　　<b>旗舰</b>追觅 X40 / 大疆 Romo</p>
       <p class="t-cta">查看 33 款对比</p>
     </a>
-    <a class="tile" href="/appliance-guide/categories/washer-dryer.html"><p class="t-eyebrow">洗烘机</p><h2 class="t-title">一体还是套装？</h2><p class="t-sub">博世、西门子、松下、海尔、小天鹅、LG。</p><p class="t-tiers"><b>5K</b>小天鹅 TG100　<b>1W</b>松下罗密欧　<b>2W+</b>博世套装</p><p class="t-cta">查看 32 款</p></a>
-    <a class="tile" href="/appliance-guide/categories/dishwasher.html"><p class="t-eyebrow">洗碗机</p><h2 class="t-title">能换门板，<br>才叫全嵌入。</h2><p class="t-sub">全嵌入 / 独立 / 台式三类。</p><p class="t-tiers"><b>4-5K</b>美的 RX600　<b>8-10K</b>博世 / 西门子</p><p class="t-cta">查看 36 款</p></a>
-    <a class="tile" href="/appliance-guide/categories/steam-oven.html"><p class="t-eyebrow">微蒸烤一体机</p><h2 class="t-title">蒸、烤、微波，<br>一台搞定。</h2><p class="t-sub">嵌入式 vs 台面式。</p><p class="t-tiers"><b>3-4K</b>美的 / 松下台面　<b>7-9K</b>方太 / 老板嵌入</p><p class="t-cta">查看 31 款</p></a>
-    <a class="tile" href="/appliance-guide/categories/induction-cooker.html"><p class="t-eyebrow">电陶炉</p><h2 class="t-title">不挑锅，<br>明火般加热。</h2><p class="t-sub">替代明火灶的安全方案。</p><p class="t-tiers"><b>百元</b>美的 / 苏泊尔　<b>千元</b>钛古 / WMF　<b>高端</b>米技</p><p class="t-cta">查看 15 款</p></a>
-    <a class="tile" href="/appliance-guide/categories/underwear-washer.html"><p class="t-eyebrow">内衣洗衣机</p><h2 class="t-title">壁挂、台面、<br>落地小型。</h2><p class="t-sub">高温煮洗 + 与大件分开。</p><p class="t-tiers"><b>千元下</b>小吉 G02C　<b>1-2K</b>小天鹅 V1 / 海尔</p><p class="t-cta">查看 17 款</p></a>
-    <a class="tile dark wide" href="/appliance-guide/categories/ebike.html"><p class="t-eyebrow">电动车</p><h2 class="t-title">新国标电自<br>12 款一次看清。</h2><p class="t-sub">九号、雅迪、小牛、爱玛、台铃、绿源、极核。</p><p class="t-tiers"><b>2K</b>爱玛小蜜豆 / 雅迪 E8　　<b>3K</b>九号 M95C / 台铃 / 绿源　　<b>5K</b>九号 F90 / 小牛 U+ Pro / 极核 AE2</p><p class="t-cta">查看 12 款对比</p></a>
-    <a class="tile dark wide" href="/appliance-guide/categories/hiking-backpack.html"><p class="t-eyebrow">户外登山包</p><h2 class="t-title">从日常通勤<br>到重装穿越。</h2><p class="t-sub">始祖鸟、Gregory、Osprey、攀山鼠、迪卡侬。</p><p class="t-tiers"><b>百元</b>迪卡侬 MH100　　<b>1K</b>Osprey Talon 33 / Deuter Futura　　<b>3K</b>Osprey Atmos AG 65</p><p class="t-cta">查看 41 款</p></a>
+    <a class="tile dark wide" href="/appliance-guide/categories/washer-dryer.html"><p class="t-eyebrow">洗烘机</p><h2 class="t-title">一体还是套装？</h2><p class="t-sub">博世、西门子、松下、海尔、小天鹅、LG。</p><p class="t-tiers"><b>5K</b>小天鹅 TG100　<b>1W</b>松下罗密欧　<b>2W+</b>博世套装</p><p class="t-cta">查看 32 款</p></a>
+    <a class="tile dark wide" href="/appliance-guide/categories/dishwasher.html"><p class="t-eyebrow">洗碗机</p><h2 class="t-title">能换门板，才叫全嵌入。</h2><p class="t-sub">全嵌入 / 独立 / 台式三类。</p><p class="t-tiers"><b>4-5K</b>美的 RX600　<b>8-10K</b>博世 / 西门子</p><p class="t-cta">查看 36 款</p></a>
+    <a class="tile dark wide" href="/appliance-guide/categories/steam-oven.html"><p class="t-eyebrow">微蒸烤一体机</p><h2 class="t-title">蒸、烤、微波，一台搞定。</h2><p class="t-sub">嵌入式 vs 台面式。</p><p class="t-tiers"><b>3-4K</b>美的 / 松下台面　<b>7-9K</b>方太 / 老板嵌入</p><p class="t-cta">查看 31 款</p></a>
+    <a class="tile dark wide" href="/appliance-guide/categories/induction-cooker.html"><p class="t-eyebrow">电陶炉</p><h2 class="t-title">不挑锅，明火般加热。</h2><p class="t-sub">替代明火灶的安全方案。</p><p class="t-tiers"><b>百元</b>美的 / 苏泊尔　<b>千元</b>钛古 / WMF　<b>高端</b>米技</p><p class="t-cta">查看 15 款</p></a>
+    <a class="tile dark wide" href="/appliance-guide/categories/underwear-washer.html"><p class="t-eyebrow">内衣洗衣机</p><h2 class="t-title">壁挂、台面、落地小型。</h2><p class="t-sub">高温煮洗 + 与大件分开。</p><p class="t-tiers"><b>千元下</b>小吉 G02C　<b>1-2K</b>小天鹅 V1 / 海尔</p><p class="t-cta">查看 17 款</p></a>
+    <a class="tile dark wide" href="/appliance-guide/categories/ebike.html"><p class="t-eyebrow">电动车</p><h2 class="t-title">新国标电自12 款一次看清。</h2><p class="t-sub">九号、雅迪、小牛、爱玛、台铃、绿源、极核。</p><p class="t-tiers"><b>2K</b>爱玛小蜜豆 / 雅迪 E8　　<b>3K</b>九号 M95C / 台铃 / 绿源　　<b>5K</b>九号 F90 / 小牛 U+ Pro / 极核 AE2</p><p class="t-cta">查看 12 款对比</p></a>
+    <a class="tile dark wide" href="/appliance-guide/categories/hiking-backpack.html"><p class="t-eyebrow">户外登山包</p><h2 class="t-title">从日常通勤到重装穿越。</h2><p class="t-sub">始祖鸟、Gregory、Osprey、攀山鼠、迪卡侬。</p><p class="t-tiers"><b>百元</b>迪卡侬 MH100　　<b>1K</b>Osprey Talon 33 / Deuter Futura　　<b>3K</b>Osprey Atmos AG 65</p><p class="t-cta">查看 41 款</p></a>
   </div>
 </div>
 
