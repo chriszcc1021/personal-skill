@@ -1014,5 +1014,15 @@ def archive_done(pid: str):
         c.commit()
         return {"archived": cur.rowcount}
 
+# ---- Generic AI endpoint for Summon/JD etc ----
+@app.post("/api/ai")
+def ai_generic(body: dict = Body(...)):
+    prompt = (body.get("prompt") or "").strip()
+    if not prompt: raise HTTPException(400, "prompt required")
+    system = body.get("system") or "你是个紧凑、有趣、带点游戏化口吻的助手。严格按要求输出。"
+    text = ai_chat(messages=[{"role":"user","content":prompt}], system=system,
+                   max_tokens=body.get("max_tokens", 700), temperature=body.get("temperature", 0.5))
+    return {"text": text}
+
 @app.get("/api/health")
 def health(): return {"ok": True}
