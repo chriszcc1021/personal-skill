@@ -69,15 +69,22 @@ a:hover{text-decoration:underline}
 .pie-legend .lg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 .pie-legend .lg-name{flex:1;color:var(--gray-dark)}
 .pie-legend .lg-val{color:var(--gray);font-variant-numeric:tabular-nums;font-size:12px}
-.pie-legend .lg-pct{color:var(--black);font-weight:500;width:48px;text-align:right;font-variant-numeric:tabular-nums}
+.pie-legend .lg-pct{color:var(--black);font-weight:500;width:48px;text-align:right;font-variant-numeric:tabular-nums;transition:transform 0.25s ease}
+.pie-legend .lg-row{padding:4px 8px;margin:-2px -8px;border-radius:6px;cursor:pointer;transition:background 0.2s ease}
+.pie-legend .lg-row:hover{background:#f0f0f2}
+.pie-legend .lg-row:hover .lg-pct{color:var(--blue)}
 
 .cat-bars{display:flex;flex-direction:column;gap:14px}
+.cat-bar{padding:10px 14px;margin:-4px -14px;border-radius:10px;cursor:pointer;transition:background 0.25s ease,transform 0.25s cubic-bezier(0.22,1,0.36,1)}
+.cat-bar:hover{background:#f0f0f2;transform:translateX(4px)}
+.cat-bar:hover .cb-name{color:var(--blue)}
+.cat-bar:active{transform:translateX(4px) scale(0.99);transition-duration:0.12s}
 .cat-bar .cb-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
-.cat-bar .cb-name{font-size:14px;font-weight:500}
+.cat-bar .cb-name{font-size:14px;font-weight:500;transition:color 0.2s ease}
 .cat-bar .cb-nums{font-size:12px;color:var(--gray);font-variant-numeric:tabular-nums}
 .cat-bar .cb-track{height:8px;background:#e5e5ea;border-radius:4px;position:relative;overflow:hidden}
-.cat-bar .cb-fill{position:absolute;top:0;left:0;height:100%;border-radius:4px}
-.cat-bar .cb-paid{position:absolute;top:0;left:0;height:100%;background:rgba(0,0,0,0.35);border-radius:4px}
+.cat-bar .cb-fill{position:absolute;top:0;left:0;height:100%;border-radius:4px;width:0;transition:width 1s cubic-bezier(0.22,1,0.36,1)}
+.cat-bar .cb-paid{position:absolute;top:0;left:0;height:100%;background:rgba(0,0,0,0.35);border-radius:4px;width:0;transition:width 1.1s cubic-bezier(0.22,1,0.36,1) 0.1s}
 .cat-bar .cb-meta{display:flex;gap:14px;font-size:11px;color:var(--gray);margin-top:5px}
 .cat-bar .cb-meta b{color:var(--black);font-weight:500;font-variant-numeric:tabular-nums}
 
@@ -522,13 +529,22 @@ function render(){
   document.getElementById('cat-bars').innerHTML = catArr.map(([k,v])=>{
     const w = (v.target/maxT*100).toFixed(1);
     const pw = (v.paid/maxT*100).toFixed(1);
-    return `<div class="cat-bar">
+    const safeK = k.replace(/'/g, "\\'");
+    return `<div class="cat-bar" onclick="jumpToCat('${safeK}')" data-tw="${w}" data-pw="${pw}">
       <div class="cb-head"><span class="cb-name" style="border-left:3px solid ${CAT_COLORS[k]||'#999'};padding-left:8px">${k}</span>
       <span class="cb-nums">${fmt(v.target)} · ${pct(v.target,total_t)}%</span></div>
-      <div class="cb-track"><div class="cb-fill" style="width:${w}%;background:${CAT_COLORS[k]||'#999'};opacity:0.25"></div><div class="cb-paid" style="width:${pw}%;background:${CAT_COLORS[k]||'#999'}"></div></div>
+      <div class="cb-track"><div class="cb-fill" style="background:${CAT_COLORS[k]||'#999'};opacity:0.25"></div><div class="cb-paid" style="background:${CAT_COLORS[k]||'#999'}"></div></div>
       <div class="cb-meta"><span>报价 <b>${fmt(v.quote)}</b></span><span>目标 <b>${fmt(v.target)}</b></span><span>已付 <b>${fmt(v.paid)}</b></span><span>${v.n} 项</span></div>
     </div>`;
   }).join('');
+  // trigger width transitions
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.querySelectorAll('.cat-bar').forEach((el,i)=>{
+      const f=el.querySelector('.cb-fill'); const p=el.querySelector('.cb-paid');
+      if(f) f.style.width = el.dataset.tw+'%';
+      if(p) p.style.width = el.dataset.pw+'%';
+    });
+  }));
 
   // filter buttons
   const filt = document.getElementById('cat-filter');
@@ -587,6 +603,20 @@ function rowHtml(r){
 
 function setCat(c){ CAT_FILTER=c; render(); }
 
+function jumpToCat(c){
+  CAT_FILTER=c;
+  render();
+  setTimeout(()=>{
+    const heads=document.querySelectorAll('.head-actions');
+    let target=null;
+    heads.forEach(h=>{ if(h.querySelector('.h-title') && h.querySelector('.h-title').textContent.trim()==='明细') target=h; });
+    if(target){
+      const top = target.getBoundingClientRect().top + window.scrollY - 70;
+      window.scrollTo({top, behavior:'smooth'});
+    }
+  }, 60);
+}
+
 function renderRisks(rows){
   const over = rows.filter(r=>r.paid_n>0 && r.target_n>0 && r.paid_n>r.target_n*1.05);
   const high = rows.filter(r=>r.quote_n>0 && r.target_n>0 && (r.quote_n-r.target_n)/r.quote_n>=0.2);
@@ -619,7 +649,22 @@ function drawPie(catArr, total){
     return `<path d="${p}" fill="${CAT_COLORS[k]||'#999'}" stroke="#fff" stroke-width="2"/>`;
   });
   document.getElementById('pie').innerHTML = paths.join('') + `<circle cx="100" cy="100" r="36" fill="#fff"/><text x="100" y="98" text-anchor="middle" font-size="11" fill="#86868b" font-family="-apple-system">目标总额</text><text x="100" y="116" text-anchor="middle" font-size="16" fill="#1d1d1f" font-weight="600" font-family="-apple-system">${fmt(total)}</text>`;
-  document.getElementById('pie-legend').innerHTML = catArr.map(([k,v])=>`<div class="lg-row"><span class="lg-dot" style="background:${CAT_COLORS[k]||'#999'}"></span><span class="lg-name">${k}</span><span class="lg-val">${fmt(v.target)}</span><span class="lg-pct">${pct(v.target,total)}%</span></div>`).join('');
+  document.getElementById('pie-legend').innerHTML = catArr.map(([k,v])=>{const safeK=k.replace(/'/g,"\\'");return `<div class="lg-row" onclick="jumpToCat('${safeK}')"><span class="lg-dot" style="background:${CAT_COLORS[k]||'#999'}"></span><span class="lg-name">${k}</span><span class="lg-val">${fmt(v.target)}</span><span class="lg-pct" data-target="${pct(v.target,total)}">0%</span></div>`;}).join('');
+  // count up percentages
+  setTimeout(()=>{
+    document.querySelectorAll('.lg-pct[data-target]').forEach((el,i)=>{
+      const tg=parseInt(el.dataset.target,10)||0;
+      const t0=performance.now()+i*40;
+      function step(t){
+        if(t<t0){requestAnimationFrame(step);return;}
+        const k=Math.min(1,(t-t0)/700);
+        const eased=1-Math.pow(1-k,3);
+        el.textContent=Math.round(tg*eased)+'%';
+        if(k<1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  },200);
 }
 
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
