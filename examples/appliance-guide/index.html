@@ -86,10 +86,14 @@ a:hover{text-decoration:underline}
 .tabs-mini button{background:var(--bg-alt);border:none;padding:7px 14px;border-radius:20px;font-size:13px;color:var(--gray-dark);cursor:pointer;font-family:inherit}
 .tabs-mini button.on{background:var(--black);color:#fff}
 
-.items-tbl{width:100%;border-collapse:collapse;font-size:13px}
-.items-tbl th{text-align:left;padding:10px 12px;color:var(--gray);font-weight:500;font-size:12px;border-bottom:1px solid var(--gray-border);background:#fafafa;position:sticky;top:44px}
+.items-tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:auto}
+.items-tbl thead th{text-align:left;padding:10px 12px;color:var(--gray);font-weight:500;font-size:12px;border-bottom:1px solid var(--gray-border);background:#fafafa;position:sticky;top:44px}
 .items-tbl td{padding:11px 12px;border-bottom:1px solid #ececec;vertical-align:middle}
-.items-tbl tr:hover td{background:#fafafa}
+.items-tbl tbody tr:nth-child(even) td{background:#fafafa}
+.items-tbl tbody tr:hover td{background:#f0f0f2 !important}
+.items-tbl tr.group-row td{background:#f5f5f7 !important;font-weight:600;font-size:12px;color:var(--black);border-top:2px solid var(--gray-border);border-bottom:1px solid var(--gray-border);padding:8px 12px}
+.items-tbl tr.group-row .gr-name{font-size:13px}
+.items-tbl tr.group-row .gr-pct{color:var(--gray);font-weight:500;margin-left:8px;font-size:11px}
 .items-tbl .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--gray-dark)}
 .items-tbl .name{font-weight:500;color:var(--black)}
 .items-tbl .model{color:var(--gray);font-size:12px;display:block;margin-top:2px}
@@ -216,6 +220,7 @@ a:hover{text-decoration:underline}
         <button class="btn ghost" onclick="openUpdate()">更新数据</button>
       </div>
     </div>
+    <div id="over-banner" style="display:none;background:#ffeded;color:#a50e1f;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px;font-weight:500"></div>
 
     <div class="kpis">
       <div class="kpi"><div class="k-label">总预算</div><div class="k-value">55万</div><div class="k-sub" id="k-budget-sub">—</div></div>
@@ -432,7 +437,23 @@ function render(){
   const overBudget = total_t - BUDGET;
   document.getElementById('k-budget-sub').textContent = overBudget>0 ? '超 '+fmt(overBudget) : '余 '+fmt(-overBudget);
   document.getElementById('k-target').textContent = fmt(total_t);
-  document.getElementById('k-target-sub').textContent = '省 '+fmt(total_q-total_t);
+  const targetEl = document.getElementById('k-target');
+  const targetSub = document.getElementById('k-target-sub');
+  if(overBudget>0){
+    targetEl.style.color='#d70015';
+    targetSub.style.color='#d70015';
+    targetSub.style.fontWeight='600';
+    targetSub.textContent = '已超支 '+Math.round(overBudget/BUDGET*100)+'%（'+fmt(overBudget)+'）';
+    const bn = document.getElementById('over-banner');
+    bn.style.display='block';
+    bn.textContent = '超预算 '+fmt(overBudget)+' （总预算 '+fmt(BUDGET)+' · 当前 '+fmt(total_t)+'）。要压回需砍 '+fmt(overBudget)+'。';
+  }else{
+    targetEl.style.color='';
+    targetSub.style.color='';
+    targetSub.style.fontWeight='';
+    targetSub.textContent = '余 '+fmt(-overBudget);
+    document.getElementById('over-banner').style.display='none';
+  }
   document.getElementById('k-paid').textContent = fmt(total_p);
   document.getElementById('k-paid-sub').textContent = pct(total_p,total_t)+'% 进度';
   document.getElementById('k-paid-bar').style.width = Math.min(100,pct(total_p,total_t))+'%';
@@ -471,35 +492,53 @@ function render(){
 
   // items table
   const body = document.getElementById('items-body');
-  const items = CAT_FILTER==='全部' ? rows : rows.filter(r=>r.category===CAT_FILTER);
-  items.sort((a,b)=>{
-    const ja=judgeRow(a).level, jb=judgeRow(b).level;
-    const order={high:0,low:1,ok:2,unset:3};
-    if(order[ja]!==order[jb]) return order[ja]-order[jb];
-    return (b.target_n||b.quote_n)-(a.target_n||a.quote_n);
-  });
-  body.innerHTML = items.map(r=>{
-    const j = judgeRow(r);
-    const diff = (r.paid_n||0) - (r.target_n||0);
-    const diffStr = r.paid_n>0 && r.target_n>0
-      ? (diff>0 ? '+'+fmt(diff) : (diff<0 ? '-'+fmt(-diff) : '0'))
-      : '—';
-    const diffCol = diff>0 ? 'color:var(--black);font-weight:600' : '';
-    const benchStr = j.bench ? ` <span class="tag" title="上海基准 ${fmt(j.bench.low)}–${fmt(j.bench.high)}">i</span>` : '';
-    return `<tr>
-      <td><span class="name">${escapeHtml(r.name)}</span>${r.model?`<span class="model">${escapeHtml(r.model)}</span>`:''}</td>
-      <td class="cat" style="color:${CAT_COLORS[r.category]||'#999'}">${r.category}</td>
-      <td class="num">${fmt(r.quote_n)}</td>
-      <td class="num">${fmt(r.target_n)}</td>
-      <td class="num">${fmt(r.paid_n)}</td>
-      <td class="num" style="${diffCol}">${diffStr}</td>
-      <td><span class="judge ${j.level}">${j.label}</span>${benchStr}</td>
-      <td style="color:var(--gray);font-size:12px">${escapeHtml(r.remark||'')}</td>
-    </tr>`;
-  }).join('');
+  // group by category if 全部, else flat list sorted by amount desc
+  let html = '';
+  if(CAT_FILTER==='全部'){
+    const grouped = {};
+    rows.forEach(r=>{(grouped[r.category]=grouped[r.category]||[]).push(r);});
+    const catList = Object.keys(grouped).sort((a,b)=>{
+      const sa=grouped[a].reduce((s,r)=>s+(r.target_n||0),0);
+      const sb=grouped[b].reduce((s,r)=>s+(r.target_n||0),0);
+      return sb-sa;
+    });
+    catList.forEach(c=>{
+      const list = grouped[c].sort((a,b)=>(b.target_n||b.paid_n||b.quote_n||0)-(a.target_n||a.paid_n||a.quote_n||0));
+      const sumT = list.reduce((s,r)=>s+(r.target_n||0),0);
+      const sumP = list.reduce((s,r)=>s+(r.paid_n||0),0);
+      const sumQ = list.reduce((s,r)=>s+(r.quote_n||0),0);
+      html += `<tr class="group-row"><td colspan="3"><span class="gr-name">${c}</span><span class="gr-pct">${list.length}项 · ${pct(sumT,total_t)}%</span></td><td class="num">${fmt(sumQ)}</td><td class="num">${fmt(sumT)}</td><td class="num">${fmt(sumP)}</td><td colspan="3"></td></tr>`;
+      html += list.map(r=>rowHtml(r)).join('');
+    });
+  }else{
+    const items = rows.filter(r=>r.category===CAT_FILTER)
+      .sort((a,b)=>(b.target_n||b.paid_n||b.quote_n||0)-(a.target_n||a.paid_n||a.quote_n||0));
+    html = items.map(r=>rowHtml(r)).join('');
+  }
+  body.innerHTML = html;
 
   // risks
   renderRisks(rows);
+}
+
+function rowHtml(r){
+  const j = judgeRow(r);
+  const diff = (r.paid_n||0) - (r.target_n||0);
+  const diffStr = r.paid_n>0 && r.target_n>0
+    ? (diff>0 ? '+'+fmt(diff) : (diff<0 ? '-'+fmt(-diff) : '0'))
+    : '—';
+  const diffCol = diff>0 ? 'color:#d70015;font-weight:600' : '';
+  const benchStr = j.bench ? ` <span class="tag" title="上海基准 ${fmt(j.bench.low)}–${fmt(j.bench.high)}">i</span>` : '';
+  return `<tr>
+    <td><span class="name">${escapeHtml(r.name)}</span>${r.model?`<span class="model">${escapeHtml(r.model)}</span>`:''}</td>
+    <td class="cat" style="color:${CAT_COLORS[r.category]||'#999'}">${r.category}</td>
+    <td class="num">${fmt(r.quote_n)}</td>
+    <td class="num">${fmt(r.target_n)}</td>
+    <td class="num">${fmt(r.paid_n)}</td>
+    <td class="num" style="${diffCol}">${diffStr}</td>
+    <td><span class="judge ${j.level}">${j.label}</span>${benchStr}</td>
+    <td style="color:var(--gray);font-size:12px">${escapeHtml(r.remark||'')}</td>
+  </tr>`;
 }
 
 function setCat(c){ CAT_FILTER=c; render(); }
