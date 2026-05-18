@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenClaw Console backend
+After=network.target
+
+[Service]
+Type=simple
+Environment=CONSOLE_PORT=8088
+Environment=PATH=/home/openclaw/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WorkingDirectory=/home/openclaw/.openclaw/workspace/projects/console/backend
+ExecStart=/usr/bin/python3 /home/openclaw/.openclaw/workspace/projects/console/backend/server.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

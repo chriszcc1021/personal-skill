@@ -1,0 +1,13 @@
+[Unit]
+Description=Reverse SSH tunnel for console (43.134.32.223:18791 -> 127.0.0.1:8088)
+After=network-online.target openclaw-console.service
+
+[Service]
+Type=simple
+Environment=SSHPASS=<set-via-secret-file-or-env>
+ExecStart=/usr/bin/sshpass -e /usr/bin/ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -N -R 18791:127.0.0.1:8088 ubuntu@43.134.32.223
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
