@@ -178,13 +178,63 @@ a:hover{text-decoration:underline}
 .footer-inner{max-width:1100px;margin:0 auto}
 
 @media(max-width:900px){
-  .kpis{grid-template-columns:repeat(3,1fr)}
   .row2{grid-template-columns:1fr}
   .risks{grid-template-columns:1fr}
   .tiles{grid-template-columns:1fr} .tile.wide{grid-column:span 1}
-  .items-tbl{font-size:12px} .items-tbl th, .items-tbl td{padding:8px}
-  .items-tbl th{position:static}
 }
+
+@media(max-width:640px){
+  .chrome{height:44px}
+  .chrome-inner nav{gap:18px} .chrome-inner nav a{font-size:13px}
+  .chrome-inner .meta{font-size:10px;right:14px}
+  .hero{padding:30px 18px 18px}
+  .reno-wrap{padding:0 16px 60px}
+  .head-actions{flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:14px}
+  .kpis{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .kpi{padding:14px 12px}
+  .kpi .k-label{font-size:11px;margin-bottom:4px}
+  .kpi .k-value{font-size:22px}
+  .kpi .k-sub{font-size:10px}
+  .card{padding:18px 16px;border-radius:14px}
+  .card h3{font-size:12px;margin-bottom:10px}
+  .row2{gap:10px;margin-bottom:10px}
+  .risks{gap:10px;margin-bottom:12px}
+  .risk{padding:14px 14px}
+  .pie{width:160px;height:160px}
+  .pie-wrap{gap:10px}
+  .pie-legend{font-size:12px}
+  .pie-legend .lg-pct{width:38px;font-size:11px}
+  .cat-bar{margin:-3px -10px;padding:8px 10px}
+  .cat-bar .cb-name{font-size:13px}
+  .cat-bar .cb-meta{flex-wrap:wrap;gap:8px 12px;font-size:10px}
+  /* hide table, show card list */
+  .items-tbl{display:none}
+  .items-cards{display:flex;flex-direction:column;gap:10px}
+  .items-cards .ic-group{font-size:11px;color:var(--gray);font-weight:600;letter-spacing:0.04em;padding:14px 0 4px;border-bottom:1px solid var(--gray-border);display:flex;justify-content:space-between;align-items:baseline}
+  .items-cards .ic-group b{color:var(--black);font-size:13px;font-weight:600}
+  .items-cards .ic{background:#fafafa;border-radius:12px;padding:12px 14px}
+  .items-cards .ic-row1{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .items-cards .ic-name{font-size:15px;font-weight:500;color:var(--black);flex:1}
+  .items-cards .ic-amount{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--black);margin-left:8px}
+  .items-cards .ic-row2{display:flex;justify-content:space-between;font-size:12px;color:var(--gray);font-variant-numeric:tabular-nums}
+  .items-cards .ic-row2 .ic-paid{color:var(--black);font-weight:500}
+  .items-cards .ic-judge{display:inline-block;font-size:11px;padding:1px 0;margin-top:6px}
+  .items-cards .ic-judge.high{color:#d70015;font-weight:600;padding-left:6px;border-left:2px solid #d70015}
+  .items-cards .ic-judge.low{color:var(--blue);font-weight:600;padding-left:6px;border-left:2px solid var(--blue)}
+  .items-cards .ic-judge.ok{color:var(--gray-dark)}
+  .items-cards .ic-judge.unset{color:var(--gray-light)}
+  .items-cards .ic-remark{font-size:11px;color:var(--gray);margin-top:4px}
+  .items-cards .ic-model{font-size:11px;color:var(--gray);margin-top:2px}
+  #over-banner{font-size:12px;padding:8px 12px}
+  .tile{padding:28px 22px;min-height:auto;border-radius:14px}
+  .tile .t-title{font-size:22px;margin-bottom:6px}
+  .tile .t-sub{font-size:13px}
+  .tile .t-tiers{font-size:11px}
+  .tile .t-cta{font-size:13px}
+  .tiles{padding:0 16px 60px;gap:8px}
+  .modal-inner{padding:20px 16px;max-width:92vw;max-height:88vh}
+}
+.items-cards{display:none}
 @media(max-width:640px){
   .chrome-inner{padding:0 14px}
   .chrome-inner .brand{font-size:13px}
@@ -282,6 +332,7 @@ a:hover{text-decoration:underline}
         </tr></thead>
         <tbody id="items-body"></tbody>
       </table>
+      <div class="items-cards" id="items-cards"></div>
     </div>
 
     <div class="risks reveal">
@@ -578,8 +629,42 @@ function render(){
   }
   body.innerHTML = html;
 
+  // mobile card list (CSS controls visibility)
+  const cbody = document.getElementById('items-cards');
+  if(cbody){
+    let cHtml='';
+    if(CAT_FILTER==='全部'){
+      const grouped={}; rows.forEach(r=>{(grouped[r.category]=grouped[r.category]||[]).push(r);});
+      const catList=Object.keys(grouped).sort((a,b)=>grouped[b].reduce((s,r)=>s+(r.target_n||0),0)-grouped[a].reduce((s,r)=>s+(r.target_n||0),0));
+      catList.forEach(c=>{
+        const list=grouped[c].sort((a,b)=>(b.target_n||b.paid_n||b.quote_n||0)-(a.target_n||a.paid_n||a.quote_n||0));
+        const sumT=list.reduce((s,r)=>s+(r.target_n||0),0);
+        const sumP=list.reduce((s,r)=>s+(r.paid_n||0),0);
+        cHtml+=`<div class="ic-group"><b>${c}</b><span>${list.length}项 · ${fmt(sumT)} · 已付 ${fmt(sumP)}</span></div>`;
+        cHtml+=list.map(r=>cardHtml(r)).join('');
+      });
+    }else{
+      const items=rows.filter(r=>r.category===CAT_FILTER).sort((a,b)=>(b.target_n||b.paid_n||b.quote_n||0)-(a.target_n||a.paid_n||a.quote_n||0));
+      cHtml=items.map(r=>cardHtml(r)).join('');
+    }
+    cbody.innerHTML=cHtml;
+  }
+
   // risks
   renderRisks(rows);
+}
+
+function cardHtml(r){
+  const j=judgeRow(r);
+  const diff=(r.paid_n||0)-(r.target_n||0);
+  const diffStr=r.paid_n>0&&r.target_n>0?(diff>0?'+'+fmt(diff):(diff<0?'-'+fmt(-diff):'0')):'—';
+  return `<div class="ic">
+    <div class="ic-row1"><span class="ic-name">${escapeHtml(r.name)}</span><span class="ic-amount">${fmt(r.target_n)}</span></div>
+    ${r.model?`<div class="ic-model">${escapeHtml(r.model)}</div>`:''}
+    <div class="ic-row2"><span>报价 ${fmt(r.quote_n)}</span><span class="ic-paid">已付 ${fmt(r.paid_n)}${diff!==0&&r.paid_n>0?' · 差'+diffStr:''}</span></div>
+    <span class="ic-judge ${j.level}">${j.label}${j.bench?' · 基准 '+fmt(j.bench.low)+'–'+fmt(j.bench.high):''}</span>
+    ${r.remark?`<div class="ic-remark">${escapeHtml(r.remark)}</div>`:''}
+  </div>`;
 }
 
 function rowHtml(r){
