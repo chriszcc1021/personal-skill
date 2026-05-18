@@ -80,6 +80,13 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-actions button.primary{border-color:var(--fg)}
 .rec-actions button.danger{border-color:var(--red);color:var(--red)}
 .img-preview{margin-top:12px;width:120px;height:120px;border:1px solid var(--dim2);object-fit:cover}
+.shortcut-card{width:360px;max-width:92%;border:1px dashed var(--dim2);padding:12px 14px;margin-top:12px;display:none;font-family:var(--font)}
+.shortcut-card.show{display:block}
+.shortcut-card .sc-meta{font-size:9px;color:var(--red);letter-spacing:0.28em;text-transform:uppercase;margin-bottom:7px}
+.shortcut-card .sc-text{font-size:12px;color:#aaa;line-height:1.55;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
+.shortcut-card .sc-actions{display:flex;gap:8px;margin-top:10px}
+.shortcut-card button{flex:1;padding:9px 10px;border:1px solid var(--dim2);font-size:10px;letter-spacing:0.22em;text-transform:uppercase}
+.shortcut-card button.primary{border-color:var(--red);color:var(--red)}
 
 /* list view */
 .day-head{margin:24px 0 12px;padding:0 4px;display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
@@ -193,6 +200,14 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .modal-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--dim2)}
 .modal-actions button{flex:1;padding:12px;border:1px solid var(--dim2);font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
 .modal-actions button.danger{border-color:var(--red);color:var(--red)}
+.setup-steps{counter-reset:step;margin:0 0 16px;padding:0;list-style:none}
+.setup-steps li{counter-increment:step;display:grid;grid-template-columns:24px 1fr;gap:10px;margin:12px 0;color:#ccc;font-size:14px;line-height:1.55;letter-spacing:0}
+.setup-steps li::before{content:counter(step);width:22px;height:22px;border:1px solid var(--dim2);display:flex;align-items:center;justify-content:center;color:var(--red);font-family:var(--font);font-size:10px}
+.setup-url{border:1px solid var(--dim2);padding:12px;color:#ddd;font-size:12px;line-height:1.45;word-break:break-all;font-family:var(--font);letter-spacing:0;margin:12px 0}
+.setup-note{font-size:12px;color:var(--dim);line-height:1.6;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
+.setup-actions{display:flex;gap:8px;margin-top:14px}
+.setup-actions button{flex:1;padding:12px;border:1px solid var(--dim2);font-size:10px;letter-spacing:0.22em;text-transform:uppercase}
+.setup-actions button.primary{border-color:var(--red);color:var(--red)}
 
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border:1px solid var(--dim2);font-size:12px;letter-spacing:0.1em;z-index:200;opacity:0;transition:opacity 0.3s;font-family:-apple-system,system-ui,sans-serif}
 .toast.show{opacity:1}
@@ -214,6 +229,14 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
     <div class="rec-status" id="recStatus">按住下方按钮开始</div>
     <div class="rec-live" id="recLive"></div>
     <img class="img-preview" id="imgPreview" style="display:none"/>
+    <div class="shortcut-card" id="shortcutCard">
+      <div class="sc-meta">Action Button</div>
+      <div class="sc-text">截图快捷指令还没标记为已配置。配置后，长按 Action Button 就能把当前屏幕丢进 Whysper。</div>
+      <div class="sc-actions">
+        <button class="primary" onclick="openShortcutSetup()">配置</button>
+        <button onclick="markShortcutReady()">已配置</button>
+      </div>
+    </div>
   </div>
   <div class="rec-mid">
     <div class="rec-actions">
@@ -305,6 +328,35 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
   </div>
 </div>
 
+<!-- shortcut setup modal -->
+<div class="modal" id="shortcutModal">
+  <div class="modal-head">
+    <div class="brand-name" style="font-size:12px">快捷指令</div>
+    <button class="modal-close" onclick="closeShortcutSetup()">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="meta">Action Button · Screenshot</div>
+    <h2>把截图送进 Whysper</h2>
+    <ol class="setup-steps">
+      <li>在「快捷指令」中新建动作：截屏。</li>
+      <li>添加「通过 URL 获取内容」，方法选 POST，请求体选表单。</li>
+      <li>表单字段添加 image（文件）和 source（文本，值为 shortcut）。</li>
+      <li>把下面这个地址填进 URL，然后在系统设置里把 Action Button 绑定到这个快捷指令。</li>
+    </ol>
+    <div class="meta">URL</div>
+    <div class="setup-url" id="shortcutUrl"></div>
+    <div class="setup-note">iOS 不允许网页静默创建或绑定快捷指令，所以这里会帮你复制接口地址并打开快捷指令 App。第一次跑会弹权限确认。</div>
+    <div class="setup-actions">
+      <button class="primary" onclick="copyShortcutUrl()">复制 URL</button>
+      <button onclick="openShortcutsApp()">打开快捷指令</button>
+    </div>
+  </div>
+  <div class="modal-actions">
+    <button onclick="markShortcutReady()" class="danger">我已配置</button>
+    <button onclick="closeShortcutSetup()">稍后</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -338,10 +390,52 @@ renderBrandIcon();
 // ===== api =====
 const API = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
 const MEDIA = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-media';
+const SHORTCUT_READY_KEY = 'whysperShortcutReady';
 async function api(path, opts={}){
   const r = await fetch(API+path, opts);
   if(!r.ok) throw new Error(await r.text());
   return r.json();
+}
+
+// ===== action button shortcut setup =====
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function shortcutEndpoint(){
+  return location.origin + API + '/entries';
+}
+function refreshShortcutCard(){
+  const card = document.getElementById('shortcutCard');
+  if(!card) return;
+  const ready = localStorage.getItem(SHORTCUT_READY_KEY) === '1';
+  card.classList.toggle('show', isIOS() && !ready);
+}
+function openShortcutSetup(){
+  const urlBox = document.getElementById('shortcutUrl');
+  if(urlBox) urlBox.textContent = shortcutEndpoint();
+  document.getElementById('shortcutModal').classList.add('show');
+}
+function closeShortcutSetup(){
+  document.getElementById('shortcutModal').classList.remove('show');
+}
+async function copyShortcutUrl(){
+  const url = shortcutEndpoint();
+  try{
+    await navigator.clipboard.writeText(url);
+    toast('已复制快捷指令 URL');
+  }catch(_){
+    toast(url);
+  }
+}
+async function openShortcutsApp(){
+  await copyShortcutUrl();
+  setTimeout(()=>{ location.href = 'shortcuts://'; }, 120);
+}
+function markShortcutReady(){
+  localStorage.setItem(SHORTCUT_READY_KEY, '1');
+  closeShortcutSetup();
+  refreshShortcutCard();
+  toast('已标记 Action Button 已配置');
 }
 
 // ===== tabs =====
@@ -788,6 +882,7 @@ function toast(msg){
 }
 
 loadStats();
+refreshShortcutCard();
 
 // ===== ask voice button (click to start, click to stop; show 问 button after) =====
 let askSR=null,askListening=false;

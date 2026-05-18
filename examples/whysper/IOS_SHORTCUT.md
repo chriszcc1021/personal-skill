@@ -5,33 +5,47 @@
 
 ## 配置步骤
 
-### 1. 打开「捷径」App，新建快捷指令
+### 1. 在 Whysper 里复制接口地址
 
-### 2. 添加动作（顺序）
+打开 Whysper 记录页，点「Action Button」配置提示里的「配置」。
+
+页面会显示当前部署环境对应的上传地址，通常形如：
+
+`https://你的域名/whysper-api/entries`
+
+点「复制 URL」，再打开「快捷指令」App。
+
+> 不要固定使用旧的临时隧道域名。隧道重启后域名会变，以 Whysper 页面里显示的 URL 为准。
+
+### 2. 打开「快捷指令」App，新建快捷指令
+
+### 3. 添加动作（顺序）
 
 | # | 动作 | 参数 |
 |---|---|---|
 | 1 | **截屏** | （iOS 自动捕获当前屏幕，分享时会跳出隐私确认） |
 | 2 | **获取「截屏」的内容** | 用上一步输出 |
-| 3 | **通过 URL 获取内容** | URL: `https://broadway-aim-discuss-occasions.trycloudflare.com/whysper-api/entries` |
+| 3 | **通过 URL 获取内容** | URL: 使用 Whysper 页面里复制的地址 |
 |   |   | 方法: **POST** |
 |   |   | 请求体: **表单** |
 |   |   | 字段 1: `image` (文件) = 上一步输出 |
 |   |   | 字段 2: `source` (文本) = `shortcut` |
 | 4 | **显示通知** | 标题: "Whysper" / 正文: "已上传，AI 处理中" |
 
-### 3. 命名 + 绑定 Action Button
+### 4. 命名 + 绑定 Action Button
 
 1. 起名「Whysper 截图」
 2. 设置 → Action Button → 选「快捷指令」→ 选「Whysper 截图」
 3. 长按 Action Button 触发
+4. 回到 Whysper，点「我已配置」
 
-### 4. 首次运行
-- 系统会弹「允许访问 broadway-aim...trycloudflare.com」→ 选「允许」
+### 5. 首次运行
+- 系统会弹「允许访问当前域名」→ 选「允许」
 - 之后每次自动跑
 
 ## 注意
 
+- **iOS 限制**：网页不能静默创建快捷指令，也不能自动绑定 Action Button。Whysper 只能复制接口地址、打开快捷指令 App，并提示你完成一次配置。
 - **trycloudflare URL 不稳定**：临时隧道偶尔换域名，等做了固定域名再固化
 - **响应快慢**：上传约 1-2 秒，AI 处理 5-15 秒（异步），通知是「已上传」，处理结果进 Whysper「记」列表
 - **失败排查**：通知里加一行「获取上一步输出的 `状态`」就能看到 HTTP 状态码
