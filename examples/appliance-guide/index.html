@@ -638,17 +638,80 @@ function renderRisks(rows){
 
 function drawPie(catArr, total){
   const cx=100, cy=100, r=80;
-  let a0=-Math.PI/2;
-  const paths = catArr.map(([k,v])=>{
+  // pre-compute angles
+  const segs=[]; let a0=-Math.PI/2;
+  catArr.forEach(([k,v])=>{
     const a1 = a0 + (v.target/total)*Math.PI*2;
-    const large = (a1-a0)>Math.PI?1:0;
-    const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0);
-    const x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
-    const p = `M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`;
+    segs.push({k,v,a0,a1});
     a0=a1;
-    return `<path d="${p}" fill="${CAT_COLORS[k]||'#999'}" stroke="#fff" stroke-width="2"/>`;
   });
-  document.getElementById('pie').innerHTML = paths.join('') + `<circle cx="100" cy="100" r="36" fill="#fff"/><text x="100" y="98" text-anchor="middle" font-size="11" fill="#86868b" font-family="-apple-system">目标总额</text><text x="100" y="116" text-anchor="middle" font-size="16" fill="#1d1d1f" font-weight="600" font-family="-apple-system">${fmt(total)}</text>`;
+  // initial render: all segments collapsed (a0=a0)
+  const sliceSvg = segs.map((s,i)=>{
+    return `<path class="pie-slice" data-i="${i}" data-k="${s.k.replace(/"/g,'&quot;')}" data-a0="${s.a0}" data-a1="${s.a1}" fill="${CAT_COLORS[s.k]||'#999'}" stroke="#fff" stroke-width="2" style="cursor:pointer;transition:transform 0.35s cubic-bezier(0.22,1,0.36,1),opacity 0.25s ease;transform-origin:${cx}px ${cy}px"/>`;
+  }).join('');
+  document.getElementById('pie').innerHTML = sliceSvg + `<circle id="pie-hole" cx="${cx}" cy="${cy}" r="38" fill="#fff"/>` +
+    `<text id="pie-label-top" x="${cx}" y="${cy-4}" text-anchor="middle" font-size="11" fill="#86868b" font-family="-apple-system">目标总额</text>` +
+    `<text id="pie-label-bot" x="${cx}" y="${cy+14}" text-anchor="middle" font-size="16" fill="#1d1d1f" font-weight="600" font-family="-apple-system">0</text>`;
+
+  // animate sweep: each slice sweeps from a0 -> a1 with stagger
+  const slices=document.querySelectorAll('.pie-slice');
+  slices.forEach((el,i)=>{
+    const a0=parseFloat(el.dataset.a0), a1=parseFloat(el.dataset.a1);
+    const dur=600, delay=i*80;
+    const t0=performance.now()+delay;
+    function step(t){
+      if(t<t0){ requestAnimationFrame(step); return; }
+      const k=Math.min(1,(t-t0)/dur);
+      const eased=1-Math.pow(1-k,3);
+      const cur=a0+(a1-a0)*eased;
+      const large=(cur-a0)>Math.PI?1:0;
+      const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0);
+      const x1=cx+r*Math.cos(cur), y1=cy+r*Math.sin(cur);
+      el.setAttribute('d', `M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`);
+      if(k<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+
+  // animate center number count-up
+  const labelBot=document.getElementById('pie-label-bot');
+  const t0n=performance.now();
+  function stepN(t){
+    const k=Math.min(1,(t-t0n)/900);
+    const eased=1-Math.pow(1-k,3);
+    labelBot.textContent = fmt(total*eased);
+    if(k<1) requestAnimationFrame(stepN);
+  }
+  requestAnimationFrame(stepN);
+
+  // hover: push slice out, dim others, swap center label
+  slices.forEach(el=>{
+    el.addEventListener('mouseenter', ()=>{
+      const i=parseInt(el.dataset.i,10);
+      const seg=segs[i]; const mid=(seg.a0+seg.a1)/2;
+      const dx=Math.cos(mid)*8, dy=Math.sin(mid)*8;
+      el.style.transform=`translate(${dx.toFixed(2)}px,${dy.toFixed(2)}px)`;
+      slices.forEach(o=>{ if(o!==el) o.style.opacity='0.4'; });
+      document.getElementById('pie-label-top').textContent = seg.k;
+      document.getElementById('pie-label-bot').textContent = fmt(seg.v.target)+' · '+pct(seg.v.target,total)+'%';
+      // highlight legend row
+      document.querySelectorAll('.lg-row').forEach((row,j)=>{
+        if(j===i){ row.style.background='#eef4ff'; row.querySelector('.lg-pct').style.color='var(--blue)'; }
+      });
+    });
+    el.addEventListener('mouseleave', ()=>{
+      el.style.transform='';
+      slices.forEach(o=>{ o.style.opacity=''; });
+      document.getElementById('pie-label-top').textContent = '目标总额';
+      document.getElementById('pie-label-bot').textContent = fmt(total);
+      document.querySelectorAll('.lg-row').forEach(row=>{ row.style.background=''; row.querySelector('.lg-pct').style.color=''; });
+    });
+    el.addEventListener('click', ()=>{
+      const i=parseInt(el.dataset.i,10);
+      jumpToCat(segs[i].k);
+    });
+  });
+
   document.getElementById('pie-legend').innerHTML = catArr.map(([k,v])=>{const safeK=k.replace(/'/g,"\\'");return `<div class="lg-row" onclick="jumpToCat('${safeK}')"><span class="lg-dot" style="background:${CAT_COLORS[k]||'#999'}"></span><span class="lg-name">${k}</span><span class="lg-val">${fmt(v.target)}</span><span class="lg-pct" data-target="${pct(v.target,total)}">0%</span></div>`;}).join('');
   // count up percentages
   setTimeout(()=>{
