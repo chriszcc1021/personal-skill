@@ -137,8 +137,14 @@ a:hover{text-decoration:underline}
 
 /* ===== Appliance tiles ===== */
 .tiles{max-width:1024px;margin:0 auto;padding:0 22px 80px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.tile{background:var(--bg-alt);border-radius:18px;padding:40px 36px;min-height:300px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform 0.4s cubic-bezier(0.22,1,0.36,1),box-shadow 0.4s cubic-bezier(0.22,1,0.36,1);position:relative;overflow:hidden;will-change:transform}
-.tile:hover{text-decoration:none;transform:translateY(-4px) scale(1.005);box-shadow:0 22px 48px -16px rgba(0,0,0,0.35)}
+.tile{background:var(--bg-alt);border-radius:18px;padding:40px 36px;min-height:300px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform 0.5s cubic-bezier(0.22,1,0.36,1),box-shadow 0.5s cubic-bezier(0.22,1,0.36,1),background 0.4s ease;position:relative;overflow:hidden;will-change:transform;cursor:pointer}
+.tile::before{content:'';position:absolute;inset:0;border-radius:18px;background:radial-gradient(600px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,0.08),transparent 40%);opacity:0;transition:opacity 0.4s ease;pointer-events:none}
+.tile:hover::before{opacity:1}
+.tile:hover{text-decoration:none;transform:translateY(-10px) scale(1.015);box-shadow:0 40px 80px -20px rgba(0,0,0,0.45),0 14px 28px -10px rgba(0,0,0,0.3)}
+.tile.dark:hover{background:#0a0a0c}
+.tile .t-title,.tile .t-cta{transition:transform 0.5s cubic-bezier(0.22,1,0.36,1)}
+.tile:hover .t-cta{transform:translateX(6px)}
+.tile:active{transform:translateY(-6px) scale(1.008);transition-duration:0.18s}
 .reveal{opacity:0;transform:translateY(18px);transition:opacity 0.7s cubic-bezier(0.22,1,0.36,1),transform 0.7s cubic-bezier(0.22,1,0.36,1)}
 .reveal.in{opacity:1;transform:none}
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
@@ -660,6 +666,11 @@ function boot(){
   document.querySelectorAll('#page-app .tile').forEach((el,i)=>{
     el.classList.add('reveal');
     el.style.transitionDelay = (i*60)+'ms';
+    el.addEventListener('mousemove',(e)=>{
+      const r=el.getBoundingClientRect();
+      el.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+      el.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+    });
   });
   render();
   revealOnScroll();
