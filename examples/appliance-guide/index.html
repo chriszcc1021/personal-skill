@@ -653,25 +653,29 @@ function drawPie(catArr, total){
     `<text id="pie-label-top" x="${cx}" y="${cy-4}" text-anchor="middle" font-size="11" fill="#86868b" font-family="-apple-system">目标总额</text>` +
     `<text id="pie-label-bot" x="${cx}" y="${cy+14}" text-anchor="middle" font-size="16" fill="#1d1d1f" font-weight="600" font-family="-apple-system">0</text>`;
 
-  // animate sweep: each slice sweeps from a0 -> a1 with stagger
+  // animate sweep: ONE single sweep angle (0 -> 2π), all slices revealed together by clipping mask
   const slices=document.querySelectorAll('.pie-slice');
-  slices.forEach((el,i)=>{
-    const a0=parseFloat(el.dataset.a0), a1=parseFloat(el.dataset.a1);
-    const dur=600, delay=i*80;
-    const t0=performance.now()+delay;
-    function step(t){
-      if(t<t0){ requestAnimationFrame(step); return; }
-      const k=Math.min(1,(t-t0)/dur);
-      const eased=1-Math.pow(1-k,3);
-      const cur=a0+(a1-a0)*eased;
+  const dur=900;
+  const t0s=performance.now();
+  function sweepStep(t){
+    const k=Math.min(1,(t-t0s)/dur);
+    const eased=1-Math.pow(1-k,3);
+    const sweepEnd = -Math.PI/2 + eased*Math.PI*2;
+    slices.forEach(el=>{
+      const a0=parseFloat(el.dataset.a0), a1=parseFloat(el.dataset.a1);
+      if(sweepEnd <= a0){
+        el.setAttribute('d','');
+        return;
+      }
+      const cur = Math.min(a1, sweepEnd);
       const large=(cur-a0)>Math.PI?1:0;
       const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0);
       const x1=cx+r*Math.cos(cur), y1=cy+r*Math.sin(cur);
       el.setAttribute('d', `M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`);
-      if(k<1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-  });
+    });
+    if(k<1) requestAnimationFrame(sweepStep);
+  }
+  requestAnimationFrame(sweepStep);
 
   // animate center number count-up
   const labelBot=document.getElementById('pie-label-bot');
