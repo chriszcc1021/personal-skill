@@ -48,7 +48,7 @@ a:hover{text-decoration:underline}
 
 /* ===== Reno: KPI grid ===== */
 .reno{max-width:1100px;margin:0 auto;padding:0 22px 60px}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}
 .kpi{background:var(--bg-alt);border-radius:16px;padding:22px 24px}
 .kpi .k-label{font-size:12px;color:var(--gray);margin-bottom:8px}
 .kpi .k-value{font-size:30px;font-weight:600;letter-spacing:-0.02em;line-height:1.1}
@@ -149,7 +149,7 @@ a:hover{text-decoration:underline}
 .footer-inner{max-width:1100px;margin:0 auto}
 
 @media(max-width:900px){
-  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpis{grid-template-columns:repeat(3,1fr)}
   .row2{grid-template-columns:1fr}
   .risks{grid-template-columns:1fr}
   .tiles{grid-template-columns:1fr} .tile.wide{grid-column:span 1}
@@ -218,6 +218,7 @@ a:hover{text-decoration:underline}
     </div>
 
     <div class="kpis">
+      <div class="kpi"><div class="k-label">总预算</div><div class="k-value">55万</div><div class="k-sub" id="k-budget-sub">—</div></div>
       <div class="kpi"><div class="k-label">报价</div><div class="k-value" id="k-quote">—</div><div class="k-sub">设计师初报</div></div>
       <div class="kpi"><div class="k-label">预算</div><div class="k-value" id="k-target">—</div><div class="k-sub" id="k-target-sub">—</div></div>
       <div class="kpi"><div class="k-label">已付</div><div class="k-value" id="k-paid">—</div><div class="k-sub" id="k-paid-sub">—</div><div class="progbar"><i id="k-paid-bar"></i></div></div>
@@ -427,6 +428,9 @@ function render(){
   const locked = rows.filter(r=>r.locked==='是').length;
 
   document.getElementById('k-quote').textContent = fmt(total_q);
+  const BUDGET = 550000;
+  const overBudget = total_t - BUDGET;
+  document.getElementById('k-budget-sub').textContent = overBudget>0 ? '超 '+fmt(overBudget) : '余 '+fmt(-overBudget);
   document.getElementById('k-target').textContent = fmt(total_t);
   document.getElementById('k-target-sub').textContent = '省 '+fmt(total_q-total_t);
   document.getElementById('k-paid').textContent = fmt(total_p);
