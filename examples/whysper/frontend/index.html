@@ -100,6 +100,8 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .entry-tags{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px}
 .tag{font-size:10px;padding:2px 6px;border:1px solid var(--dim2);color:var(--dim);letter-spacing:0.1em}
 .entry-img{margin-top:10px;max-width:100%;max-height:200px;border:1px solid var(--dim2)}
+.entry-cal-btn{display:inline-block;margin-top:10px;padding:8px 14px;border:1px solid var(--red);color:var(--red);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;font-family:-apple-system,system-ui,sans-serif}
+.entry-cal-btn:active{background:var(--red);color:#fff}
 .empty{text-align:center;color:var(--dim);padding:60px 20px;font-size:12px;letter-spacing:0.3em;text-transform:uppercase}
 
 /* calendar view */
@@ -676,12 +678,16 @@ async function loadList(){
     const hm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
     const sel = selectedIds.has(e.id);
     const clickFn = selectMode ? 'toggleEntrySel(\''+e.id+'\')' : 'openEntry(\''+e.id+'\')';
+    const hasEvent = !!((e.meta||{}).events||[]).find(ev=>ev.start_iso);
+    const apiBase = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
+    const calBtn = hasEvent ? '<a class="entry-cal-btn" href="'+apiBase+'/entries/'+e.id+'/ics" onclick="event.stopPropagation()">📅 加日历</a>' : '';
     html += '<div class="entry'+(sel?' selected':'')+'" data-eid="'+e.id+'" onclick="'+clickFn+'">'+
       (selectMode?'<span class="entry-select"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>':'')+
       '<div class="entry-meta"><span>'+hm+(e.source==='shortcut'?'<span class="src-badge shortcut">快捷</span>':'')+'</span><span>'+(e.transcribing?'转写中…':(e.organized?'整理':'原始'))+'</span></div>'+
       (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
       '<div class="entry-text">'+esc(e.final_text||e.draft_text||'(无文字)')+'</div>'+
       (e.tags && e.tags.length?'<div class="entry-tags">'+e.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>':'')+
+      calBtn +
       (e.image_file?'<img class="entry-img" src="'+MEDIA+'/images/'+e.image_file+'" loading="lazy"/>':'')+
     '</div>';
   });
@@ -721,7 +727,7 @@ function checkAutoEventSheet(entries){
   const nowS = Date.now()/1000;
   const candidate = entries.find(e=>{
     if(seen.has(e.id)) return false;
-    if(nowS - (e.created_at||0) > 600) return false; // 10 分钟外不烦
+    if(nowS - (e.created_at||0) > 1800) return false; // 30 分钟外不烦
     if(!e.organized) return false;
     const evs = (e.meta && e.meta.events) || [];
     if(!evs.length) return false;
