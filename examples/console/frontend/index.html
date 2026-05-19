@@ -114,6 +114,12 @@
   .session-item .arch{margin-right:4px;opacity:.6}
   .session-item.archived{opacity:.55}
   .session-item .chan-tag{display:inline-block;font-family:var(--ff-mono);font-size:var(--fs-10);padding:1px 5px;border:1px solid var(--br2);border-radius:3px;color:var(--fg3);text-transform:lowercase;letter-spacing:var(--ls-base);margin-right:6px;line-height:var(--lh-tight);vertical-align:1px}
+  .session-item .chan-tag.seatalk{color:#4a9eff;border-color:rgba(74,158,255,.45);background:rgba(74,158,255,.08)}
+  .session-item .chan-tag.telegram{color:#3ba4e0;border-color:rgba(59,164,224,.45);background:rgba(59,164,224,.08)}
+  .session-item .chan-tag.discord{color:#a78bfa;border-color:rgba(167,139,250,.45);background:rgba(167,139,250,.08)}
+  .session-item .chan-tag.signal{color:#9bb6ff;border-color:rgba(155,182,255,.45);background:rgba(155,182,255,.08)}
+  .session-item .chan-tag.whatsapp{color:#25d366;border-color:rgba(37,211,102,.45);background:rgba(37,211,102,.08)}
+  .session-item .chan-tag.slack{color:#e91e63;border-color:rgba(233,30,99,.45);background:rgba(233,30,99,.08)}
   .session-menu{position:fixed;background:var(--bg);border:1px solid var(--br);border-radius:8px;padding:4px;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,.18);min-width:140px;font-size:var(--fs-13)}
   .session-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--fg);padding:8px 12px;cursor:pointer;border-radius:6px;font:inherit}
   .session-menu button:hover{background:var(--bg2)}
@@ -578,7 +584,7 @@ function renderSessions(){
     const runDot = running ? '<span class="running-dot"></span>' : (unread ? '<span class="unread-dot"></span>' : '');
     const externalChans = new Set(['seatalk','telegram','whatsapp','signal','discord','slack','imessage','feishu','messenger','line','wechat','matrix','irc','msteams','mattermost','qqbot','twitch','nostr']);
     const chan = externalChans.has(s.channel) ? s.channel : '';
-    const chanTag = chan ? `<span class="chan-tag">${escapeHTML(chan)}</span>` : '';
+    const chanTag = chan ? `<span class="chan-tag ${escapeHTML(chan)}">${escapeHTML(chan)}</span>` : '';
     const pinIcon = s.pinned ? '<span class="pin">★</span>' : '';
     const archIcon = s.archived ? '<span class="arch">[arch]</span>' : '';
     const displayLabel = s.alias || prettyLabel(s);
@@ -612,14 +618,17 @@ function ageLabel(ms){
 function escapeHTML(s){ return (s||'').replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])) }
 
 function prettyLabel(s){
-  // 群聊 / 线程：优先用 “群·sid 缩写” 加发言者
+  // 群聊：服务端如能解出群名（label 不含 sessionId/chat_id hash）优先用
   if (s.category === 'group'){
+    const serverLabel = s.label || '';
+    const isHashed = /^群\s*·\s*[a-f0-9]{4,}$/i.test(serverLabel) || /^群\s*·\s*[a-z0-9]{6,}$/i.test(serverLabel);
+    if (serverLabel && !isHashed) return serverLabel;
     const sid6 = (s.sessionId||'').slice(0,6);
     if (s.lastSender && s.lastSender !== '82124' && !/chenchen/i.test(s.lastSender) && !/^\d+$/.test(s.lastSender)){
       return `群·${s.lastSender}`;
     }
     if (s.hint) return `群·${sid6} · ${truncate(s.hint, 18)}`;
-    return `群 · ${sid6}`;
+    return serverLabel || `群 · ${sid6}`;
   }
   if (s.category === 'thread'){
     const sid6 = (s.sessionId||'').slice(0,6);

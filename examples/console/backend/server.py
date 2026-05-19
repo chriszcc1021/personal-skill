@@ -165,20 +165,45 @@ def _load_sessions_index() -> list:
     return out
 
 
+_GROUP_NAMES_PATH = ROOT / "data" / "group-names.json"
+_GROUP_NAMES_CACHE: dict = {"mt": 0, "data": {}}
+
+def _group_names() -> dict:
+    try:
+        mt = _GROUP_NAMES_PATH.stat().st_mtime
+    except Exception:
+        return {}
+    if _GROUP_NAMES_CACHE["mt"] != mt:
+        try:
+            _GROUP_NAMES_CACHE["data"] = json.loads(_GROUP_NAMES_PATH.read_text())
+            _GROUP_NAMES_CACHE["mt"] = mt
+        except Exception:
+            _GROUP_NAMES_CACHE["data"] = {}
+    return _GROUP_NAMES_CACHE["data"]
+
+
 def _short_label(s: dict) -> str:
     key = s.get("key", "")
     if key.endswith(":main"):
         return "主 session"
     parts = key.split(":")
     if ":thread:" in key:
-        # 取母 session 类型
         if "group" in parts:
-            return "群线程"
+            # parent group 在 parts 里紧跟在 "group" 后面
+            try:
+                gi = parts.index("group")
+                gid = parts[gi+1]
+                gn = _group_names().get(gid.lower()) or _group_names().get(gid)
+                return f"群线程 · {gn}" if gn else "群线程"
+            except Exception:
+                return "群线程"
         return "DM 线程"
     if "direct" in parts:
         return f"DM · {parts[-1][:8]}"
     if "group" in parts:
-        return f"群 · {parts[-1][:10]}"
+        gid = parts[-1]
+        gn = _group_names().get(gid.lower()) or _group_names().get(gid)
+        return f"群 · {gn}" if gn else f"群 · {gid[:10]}"
     if ":subagent:" in key:
         return f"子代理 · {parts[-1][:8]}"
     if ":cron:" in key:
