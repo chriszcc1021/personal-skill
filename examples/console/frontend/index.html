@@ -109,6 +109,7 @@
   .session-item .pin{color:var(--fg);margin-right:4px;font-size:var(--fs-10)}
   .session-item .arch{margin-right:4px;opacity:.6}
   .session-item.archived{opacity:.55}
+  .session-item .chan-tag{display:inline-block;font-family:var(--ff-mono);font-size:var(--fs-10);padding:1px 5px;border:1px solid var(--br2);border-radius:3px;color:var(--fg3);text-transform:lowercase;letter-spacing:var(--ls-base);margin-right:6px;line-height:var(--lh-tight);vertical-align:1px}
   .session-menu{position:fixed;background:var(--bg);border:1px solid var(--br);border-radius:8px;padding:4px;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,.18);min-width:140px;font-size:var(--fs-13)}
   .session-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--fg);padding:8px 12px;cursor:pointer;border-radius:6px;font:inherit}
   .session-menu button:hover{background:var(--bg2)}
@@ -566,11 +567,14 @@ function renderSessions(){
     const running = state.running && state.running[s.sessionId];
     d.className = 'session-item' + (state.current?.sessionId===s.sessionId ? ' active':'') + (s.archived?' archived':'') + (sel?' selected':'') + (running?' running':'');
     const runDot = running ? '<span class="running-dot"></span>' : '';
+    const externalChans = new Set(['seatalk','telegram','whatsapp','signal','discord','slack','imessage','feishu','messenger','line','wechat','matrix','irc','msteams','mattermost','qqbot','twitch','nostr']);
+    const chan = externalChans.has(s.channel) ? s.channel : '';
+    const chanTag = chan ? `<span class="chan-tag">${escapeHTML(chan)}</span>` : '';
     const pinIcon = s.pinned ? '<span class="pin">★</span>' : '';
     const archIcon = s.archived ? '<span class="arch">[arch]</span>' : '';
     const displayLabel = s.alias || prettyLabel(s);
     const subline = s.alias ? s.label : (s.recentSenders?.length ? s.recentSenders.slice(0,3).join(', ') : '');
-    d.innerHTML = `<div class="label">${runDot}${pinIcon}${archIcon}${escapeHTML(displayLabel)}</div>${subline?`<div class="sender-line">${escapeHTML(subline)}</div>`:''}${s.hint?`<div class="hint-line">${escapeHTML(s.hint)}</div>`:''}<div class="meta"><span>${ageLabel(s.ageMs)}</span><span class="tok">${fmt(s.totalTokens)}</span></div>`;
+    d.innerHTML = `<div class="label">${runDot}${pinIcon}${archIcon}${chanTag}${escapeHTML(displayLabel)}</div>${subline?`<div class="sender-line">${escapeHTML(subline)}</div>`:''}${s.hint?`<div class="hint-line">${escapeHTML(s.hint)}</div>`:''}<div class="meta"><span>${ageLabel(s.ageMs)}</span><span class="tok">${fmt(s.totalTokens)}</span></div>`;
     d.onclick = (ev)=>{
       if (ev.metaKey || ev.ctrlKey){
         if (state.selectedIds.has(s.sessionId)) state.selectedIds.delete(s.sessionId);
@@ -688,8 +692,8 @@ async function selectSession(s){
       // 空 thread / 还没有 jsonl
       const projThread = (state.projects||[]).flatMap(p=>p.threads).find(t=>t.sessionId===s.sessionId);
       const projName = (state.projects||[]).find(p=>p.threads.some(t=>t.sessionId===s.sessionId))?.name;
-      const hint = projThread ? `<div style="font-size:var(--fs-12);color:var(--fg2);margin-top:6px">线程· ${escapeHTML(projThread.alias||'')}${projName?` <span style="color:var(--fg3)">· ${escapeHTML(projName)}</span>`:''}</div>` : '';
-      $('#chat').innerHTML = `<div class="empty"><div style="font-size:var(--fs-14);color:var(--fg)">空线程</div>${hint}<div style="font-size:var(--fs-12);color:var(--fg3);margin-top:10px">发送一条消息开始。项目 context / cwd 会在首条自动注入。</div></div>`;
+      const hint = projThread ? `<div style="font-size:var(--fs-12);color:var(--fg2);margin-top:8px">线程：${escapeHTML(projThread.alias||'')}${projName?` · ${escapeHTML(projName)}`:''}</div>` : '';
+      $('#chat').innerHTML = `<div class="empty"><div style="font-size:var(--fs-15);color:var(--fg);font-weight:500">空线程</div>${hint}<div style="font-size:var(--fs-12);color:var(--fg3);margin-top:12px">发送一条消息开始。项目 context / cwd 会在首条自动注入。</div></div>`;
     }else{
       renderMessages(r.messages || []);
     }

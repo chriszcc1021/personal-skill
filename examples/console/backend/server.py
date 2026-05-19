@@ -67,6 +67,7 @@ def _extract_session_info(session_id: str) -> dict:
         return cached[1]
     last_hint = ""
     senders_recent = []
+    channel_seen = ""
     try:
         with f.open() as fp:
             for line in fp:
@@ -83,6 +84,17 @@ def _extract_session_info(session_id: str) -> dict:
                     t = c.get("text", "")
                     if not t:
                         continue
+                    # 抽 channel源【System: [time] SeaTalk[default] DM from ...】
+                    if not channel_seen:
+                        cmt = re.search(r'System:\s*\[[^\]]+\]\s*([A-Za-z][A-Za-z0-9 _-]+?)(?:\[[^\]]*\])?\s+(?:DM|Group)\b', t)
+                        if cmt:
+                            ch = cmt.group(1).strip().lower()
+                            if ch in ('seatalk','telegram','whatsapp','signal','discord','slack','imessage','feishu','messenger','line','wechat','matrix','irc','msteams','mattermost'):
+                                channel_seen = ch
+                        if not channel_seen:
+                            # 退一步：看 JSON 里的 channel字段
+                            cmt2 = re.search(r'"channel"\s*:\s*"([^"]+)"', t)
+                            if cmt2: channel_seen = cmt2.group(1)
                     # 抽 sender
                     smt = re.search(r'Sender[^\n]*\n+```json\s*({.*?})\s*```', t, re.S)
                     if not smt:
@@ -125,7 +137,7 @@ def _extract_session_info(session_id: str) -> dict:
         if len(uniq_back) >= 3:
             break
     last_sender = uniq_back[0] if uniq_back else ""
-    info = {"hint": last_hint, "lastSender": last_sender, "recentSenders": uniq_back}
+    info = {"hint": last_hint, "lastSender": last_sender, "recentSenders": uniq_back, "channel": channel_seen}
     _HINT_CACHE[session_id] = (mt, info)
     return info
 
@@ -196,7 +208,16 @@ def api_list_sessions():
     for s in _load_sessions_index():
         sid = s.get("sessionId")
         m = meta.get(sid, {}) if sid else {}
-        info = _extract_session_info(sid) if sid else {"hint":"","lastSender":"","recentSenders":[]}
+        info = _extract_session_info(sid) if sid else {"hint":"","lastSender":"","recentSenders":[],"channel":""}
+        # 从 sessionKey 第 3 段抽 channel（优先于 jsonl 抽取）
+        key_parts = (s.get("key") or "").split(":")
+        key_chan = key_parts[2] if len(key_parts) >= 3 else ""
+        # 带外部渠道名才当作 channel；cron / main / subagent / dreaming 不算外部渠道
+        external = {"seatalk","telegram","whatsapp","signal","discord","slack","imessage","feishu","messenger","line","wechat","matrix","irc","msteams","mattermost","qqbot","twitch","nostr"}
+        if key_chan in external:
+            chan = key_chan
+        else:
+            chan = info.get("channel", "") or key_chan
         out.append({
             "key": s.get("key"),
             "sessionId": sid,
@@ -207,6 +228,7 @@ def api_list_sessions():
             "hint": info.get("hint", ""),
             "lastSender": info.get("lastSender", ""),
             "recentSenders": info.get("recentSenders", []),
+            "channel": chan,
             "category": _category(s),
             "kind": s.get("kind"),
             "updatedAt": s.get("updatedAt"),
