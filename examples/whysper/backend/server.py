@@ -509,6 +509,38 @@ def _ics_dt(iso: str) -> str:
     except Exception:
         return ""
 
+@app.get("/api/entries/{eid}/event")
+def entry_event(eid: str):
+    """返回给快捷指令设计的扯平事件结构。取 meta.events[0]。"""
+    with db() as c:
+        r = c.execute("SELECT * FROM entries WHERE id=?", (eid,)).fetchone()
+    if not r: raise HTTPException(404)
+    e = row_to_dict(r)
+    events = (e.get("meta") or {}).get("events") or []
+    if not events:
+        return {"has_event": False, "entry_id": eid}
+    ev = events[0]
+    def _fmt(iso):
+        try:
+            d = dt.datetime.fromisoformat(iso.replace("Z","+00:00"))
+            if d.tzinfo is None: d = d.replace(tzinfo=dt.timezone(dt.timedelta(hours=8)))
+            d = d.astimezone(dt.timezone(dt.timedelta(hours=8)))
+            return d.strftime("%Y-%m-%d %H:%M")
+        except Exception: return ""
+    return {
+        "has_event": True,
+        "entry_id": eid,
+        "title": ev.get("title") or e.get("title") or "Whysper 事件",
+        "start": _fmt(ev.get("start_iso") or ""),
+        "end": _fmt(ev.get("end_iso") or ""),
+        "start_iso": ev.get("start_iso") or "",
+        "end_iso": ev.get("end_iso") or "",
+        "location": ev.get("location") or "",
+        "notes": ev.get("notes") or e.get("summary") or "",
+        "event_count": len(events),
+    }
+
+
 @app.get("/api/entries/{eid}/ics")
 def entry_ics(eid: str):
     with db() as c:
@@ -551,7 +583,7 @@ def entry_ics(eid: str):
     lines.append("END:VCALENDAR")
     body = "\r\n".join(lines) + "\r\n"
     return Response(content=body, media_type="text/calendar; charset=utf-8",
-                    headers={"Content-Disposition": f'attachment; filename="whysper-{eid}.ics"'})
+                    headers={"Content-Disposition": f'inline; filename="whysper-{eid}.ics"'})
 
 @app.get("/api/storage")
 def storage_info():
