@@ -189,6 +189,23 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .event-card .ev-notes{font-size:12px;color:#aaa;margin-top:6px;letter-spacing:0}
 .btn-ics{display:block;text-align:center;padding:14px;border:1px solid var(--red);color:var(--red);margin-top:12px;font-size:12px;letter-spacing:0.3em;text-transform:uppercase;text-decoration:none}
 .btn-ics:active{background:var(--red);color:#fff}
+/* event sheet (auto popup) */
+#eventSheet{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;font-family:-apple-system,system-ui,sans-serif}
+#eventSheet .es-back{position:absolute;inset:0;background:rgba(0,0,0,.55);animation:esFade .18s ease}
+#eventSheet .es-card{position:relative;background:var(--bg);border:1px solid var(--dim2);border-radius:12px 12px 0 0;width:100%;max-width:520px;padding:18px 18px calc(20px + env(safe-area-inset-bottom)) 18px;box-shadow:0 -8px 30px rgba(0,0,0,.4);animation:esSlide .22s ease}
+@keyframes esFade{from{opacity:0}to{opacity:1}}
+@keyframes esSlide{from{transform:translateY(20px);opacity:.6}to{transform:translateY(0);opacity:1}}
+#eventSheet .es-head{font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:var(--red);margin-bottom:14px;font-weight:600}
+#eventSheet .es-body{max-height:50vh;overflow-y:auto;margin-bottom:14px}
+#eventSheet .es-evcard{border:1px solid var(--dim2);padding:12px;margin-bottom:8px}
+#eventSheet .es-evt{font-size:15px;color:var(--fg);font-weight:600;margin-bottom:4px}
+#eventSheet .es-evm{font-size:12px;color:var(--dim);letter-spacing:0}
+#eventSheet .es-evn{font-size:12px;color:#aaa;margin-top:6px}
+#eventSheet .es-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#eventSheet .es-btn{display:block;text-align:center;padding:14px;border:1px solid var(--dim2);background:var(--bg);color:var(--fg);font-size:12px;letter-spacing:0.25em;text-transform:uppercase;text-decoration:none;font-family:inherit;cursor:pointer}
+#eventSheet .es-btn.es-primary{background:var(--red);border-color:var(--red);color:#fff}
+#eventSheet .es-btn.es-primary:active{opacity:.7}
+#eventSheet .es-btn.es-secondary:active{background:var(--dim2)}
 .code-card{border:1px solid var(--dim2);padding:12px;margin:8px 0;display:flex;align-items:center;gap:12px}
 .code-card .code-val{font-size:22px;letter-spacing:0.2em;color:var(--fg);font-variant-numeric:tabular-nums;cursor:pointer;padding:6px 10px;border:1px dashed var(--dim2)}
 .code-card .code-kind{font-size:11px;color:var(--dim);letter-spacing:0.2em;text-transform:uppercase}
@@ -407,7 +424,9 @@ function shortcutEndpoint(){
 function refreshShortcutCard(){
   const card = document.getElementById('shortcutCard');
   if(!card) return;
-  const ready = localStorage.getItem(SHORTCUT_READY_KEY) === '1';
+  const flag = localStorage.getItem(SHORTCUT_READY_KEY);
+  // 默认视为已配置（用户已经手动配过）；只有显式清空才会再显示
+  const ready = flag === null ? true : flag === '1';
   card.classList.toggle('show', isIOS() && !ready);
 }
 function openShortcutSetup(){
@@ -677,6 +696,83 @@ async function loadList(){
   } else if(!pending.length && window._txPoll){
     clearInterval(window._txPoll); window._txPoll=null;
   }
+  // 检查是否有新折叠事件需要粘出 sheet
+  checkAutoEventSheet(j.entries);
+}
+
+// ===== auto event sheet =====
+// 记录已弹过或驳回过的 entry id，避免重复弹
+let _seenEventIds = null;
+function _loadSeen(){
+  if(_seenEventIds) return _seenEventIds;
+  try{ _seenEventIds = new Set(JSON.parse(localStorage.getItem('whysper.eventSheet.seen')||'[]')); }
+  catch(e){ _seenEventIds = new Set(); }
+  return _seenEventIds;
+}
+function _markSeen(id){
+  const s = _loadSeen(); s.add(id);
+  try{ localStorage.setItem('whysper.eventSheet.seen', JSON.stringify([...s].slice(-100))); }catch(e){}
+}
+function checkAutoEventSheet(entries){
+  if(!entries || !entries.length) return;
+  if(document.getElementById('eventSheet')) return; // already showing
+  const seen = _loadSeen();
+  // 只看最近 5 分钟内创建、已整理、有 events 且未看过的
+  const nowS = Date.now()/1000;
+  const candidate = entries.find(e=>{
+    if(seen.has(e.id)) return false;
+    if(nowS - (e.created_at||0) > 600) return false; // 10 分钟外不烦
+    if(!e.organized) return false;
+    const evs = (e.meta && e.meta.events) || [];
+    if(!evs.length) return false;
+    // 必须有含未来时间的事件
+    return evs.some(ev => ev.start_iso);
+  });
+  if(!candidate) return;
+  // 需要拿详情读 meta（list 接口可能不含 meta）
+  if(!candidate.meta || !candidate.meta.events){
+    api('/entries/'+candidate.id).then(full=>{
+      if(full && (full.meta||{}).events && full.meta.events.length){
+        showEventSheet(full);
+      }
+    }).catch(()=>{});
+  } else {
+    showEventSheet(candidate);
+  }
+}
+function showEventSheet(e){
+  if(document.getElementById('eventSheet')) return;
+  const events = (e.meta||{}).events || [];
+  if(!events.length) return;
+  const apiBase = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
+  const icsUrl = apiBase + '/entries/' + e.id + '/ics';
+  const evCards = events.map(ev=>{
+    const t = ev.start_iso ? new Date(ev.start_iso).toLocaleString('zh-CN',{hour12:false,month:'short',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}) : '时间未定';
+    return '<div class="es-evcard">'+
+      '<div class="es-evt">'+esc(ev.title||'事件')+'</div>'+
+      '<div class="es-evm">'+esc(t)+(ev.location?' · '+esc(ev.location):'')+'</div>'+
+      (ev.notes?'<div class="es-evn">'+esc(ev.notes)+'</div>':'')+
+    '</div>';
+  }).join('');
+  const sheet = document.createElement('div');
+  sheet.id = 'eventSheet';
+  sheet.innerHTML = '<div class="es-back"></div><div class="es-card">'+
+    '<div class="es-head">检测到 '+events.length+' 个事件</div>'+
+    '<div class="es-body">'+evCards+'</div>'+
+    '<div class="es-btns">'+
+      '<a class="es-btn es-primary" href="'+icsUrl+'" id="esAddBtn">加入日历</a>'+
+      '<button class="es-btn es-secondary" id="esSkipBtn">跳过</button>'+
+    '</div>'+
+  '</div>';
+  document.body.appendChild(sheet);
+  const close = ()=>{ _markSeen(e.id); sheet.remove(); };
+  sheet.querySelector('.es-back').onclick = close;
+  sheet.querySelector('#esSkipBtn').onclick = close;
+  sheet.querySelector('#esAddBtn').onclick = ()=>{
+    _markSeen(e.id);
+    // 让原生下载走一下，iOS 会弹加入日历确认框
+    setTimeout(()=>{ sheet.remove(); }, 400);
+  };
 }
 
 function esc(s){return (s||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}
