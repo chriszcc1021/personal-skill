@@ -113,4 +113,4 @@ squid-console-tunnel.service.example
 
 如果你也想给自己的 agent 装个类似的 IM 控制台，本目录就是完整可参考的实现，配合根目录 [`docs/console-skill.md`](../../skills/squid-console-skill/SKILL.md) 看方法论。
 
-核心理念：**会话 = 文件**（jsonl 一行一 entry）+ **CLI = 唯一写入口**，前端只是把这两者编排好。后端不到 1000 行，前端不到 1500 行，没有数据库、没有 ORM、没有依赖。
+核心理念：**会话 = 文件**（jsonl 一行一 entry）+ **CLI = 唯一写入口**，前端只是把这两者编排好。后端 ~900 行，前端 ~1400 行，没有数据库、没有 ORM、没有依赖。

@@ -40,7 +40,7 @@
     --tool-bg:#1c1c1e; --tool-fg:#98989d;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);font:var(--fs-14)/var(--lh-base) var(--ff-sans);-webkit-font-smoothing:antialiased}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);font:var(--fs-14)/var(--lh-base) var(--ff-sans);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   /* 细滚动条 · 不打扰 */
   *{scrollbar-width:thin;scrollbar-color:transparent transparent}
   *:hover{scrollbar-color:var(--br2) transparent}
@@ -248,6 +248,10 @@
   .inbox button.attach:disabled{opacity:.3;cursor:not-allowed}
   .inbox input[type=file].hidden-file{display:none}
   textarea#input{resize:none;min-height:24px;max-height:200px;padding:6px 0;font-size:var(--fs-14);line-height:var(--lh-base)}
+  /* iOS 聚焦自动缩放防范：font-size < 16px 会触发 */
+  @media (max-width:720px){
+    textarea#input{font-size:16px}
+  }
   .inbox button.send{padding:8px 14px;background:var(--acc);color:#fff;border-radius:10px;font-size:var(--fs-13);font-weight:500;white-space:nowrap}
   .inbox button.send:disabled{opacity:.3;cursor:not-allowed}
   .inbox button.inbox-stop{padding:8px 12px;background:transparent;color:var(--fg2);border:1px solid var(--br2);border-radius:10px;font-size:var(--fs-12);font-weight:500;font-family:var(--ff-mono);letter-spacing:var(--ls-wide);white-space:nowrap;cursor:pointer}
@@ -263,14 +267,6 @@
   .topbar .status .dot{width:6px;height:6px;border-radius:50%;background:var(--fg3)}
   .topbar .status.running .dot{background:var(--fg);animation:pulse 1.4s ease-in-out infinite}
   .topbar .status .timer{font-variant-numeric:tabular-nums;min-width:36px}
-
-  /* completion banner */
-  .done-banner{position:fixed;top:14px;right:14px;background:var(--bg);border:1px solid var(--fg2);border-radius:6px;padding:10px 14px;font-size:var(--fs-12);color:var(--fg);box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:300;display:flex;align-items:center;gap:10px;max-width:320px;opacity:0;transform:translateY(-8px);transition:opacity .2s,transform .2s}
-  .done-banner.show{opacity:1;transform:translateY(0)}
-  .done-banner .db-title{font-weight:600;color:var(--fg)}
-  .done-banner .db-sub{color:var(--fg2);font-size:var(--fs-11);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
-  .done-banner button{border:1px solid var(--br);background:var(--bg);color:var(--fg2);padding:4px 10px;border-radius:3px;font-size:var(--fs-11)}
-  .done-banner button:hover{color:var(--fg);border-color:var(--fg2)}
 
   @media (max-width:720px){
     .app{grid-template-columns:1fr}
@@ -1120,7 +1116,20 @@ function renderPastePreview(){
 }
 
 function updateSendBtn(){
-  $('#send').disabled = (!input.value.trim() && !state.pendingMedia.length) || !state.current;
+  const btn = $('#send');
+  const hasContent = input.value.trim() || state.pendingMedia.length;
+  if (!state.current){
+    // 未选 session：按钮不置灰，点击引导用户选择
+    btn.disabled = false;
+    btn.textContent = '选 session';
+    btn.dataset.guard = '1';
+    input.placeholder = '请先在左侧选一个 session';
+    return;
+  }
+  btn.textContent = '发送';
+  btn.dataset.guard = '';
+  input.placeholder = '输入消息,Enter 发送,Shift+Enter 换行';
+  btn.disabled = !hasContent;
 }
 
 input.addEventListener('input', ()=>{
@@ -1161,7 +1170,14 @@ $('#file-input').addEventListener('change', async (e)=>{
   updateSendBtn();
   e.target.value = '';
 });
-$('#send').onclick = send;
+$('#send').onclick = ()=>{
+  if ($('#send').dataset.guard === '1'){
+    toast('请先在左侧选一个 session');
+    $('#sidebar').classList.add('open'); $('#scrim').classList.add('show');
+    return;
+  }
+  send();
+};
 
 // inbox STOP button
 $('#inbox-stop').onclick = async ()=>{
@@ -1277,7 +1293,6 @@ function closeSidebar(){ $('#sidebar').classList.remove('open'); $('#scrim').cla
 
 // ===== global running tracker + status bar + completion notify =====
 state.running = {};        // sid -> {pid, started}
-state.runningPrev = {};    // sid -> {started}
 state.tickHandle = null;
 
 async function pollRunning(){
@@ -1299,19 +1314,7 @@ async function pollRunning(){
     updateInboxStop();
     // 更新 sidebar 运行状态 (轻量 rerender)
     renderProjects();
-    markSessionRunning();
   }catch(e){}
-}
-function markSessionRunning(){
-  document.querySelectorAll('.session-item').forEach(el=>{
-    el.classList.remove('running');
-    el.querySelectorAll('.running-dot').forEach(d=>d.remove());
-  });
-  for (const sid of Object.keys(state.running)){
-    document.querySelectorAll(`.session-item`).forEach(el=>{
-      // 没有 data-sid 索引,简略
-    });
-  }
 }
 function updateStatusBar(){
   const sb = $('#status'); if (!sb) return;
@@ -1375,6 +1378,7 @@ if (window.Notification && Notification.permission === 'default'){
 $('#refresh').onclick = refresh;
 
 // init
+updateSendBtn();
 refresh();
 setInterval(refresh, 30000);
 setInterval(pollRunning, 2000);

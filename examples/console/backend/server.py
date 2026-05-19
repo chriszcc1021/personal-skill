@@ -110,7 +110,7 @@ def _extract_session_info(session_id: str) -> dict:
                                 if nm:
                                     senders_recent.append(nm)
                         except Exception:
-                            pass
+                            pass  # 项目上下文 hint 提取是 best-effort，任何解析错误都跳过
                     # 抽 cleaned hint
                     cleaned = t
                     cleaned = re.sub(r'```json[\s\S]*?```', '', cleaned)
@@ -125,7 +125,7 @@ def _extract_session_info(session_id: str) -> dict:
                     if cleaned and len(cleaned) > 2:
                         last_hint = cleaned[:60]
     except Exception:
-        pass
+        pass  # _extract_session_info 整体容错：jsonl 读不到或格式不对都返回空 hint
     # dedupe recent senders, 保最后 3 个不同
     seen = set()
     uniq_back = []
@@ -327,14 +327,14 @@ def api_usage_today():
                         continue
                     try:
                         e = json.loads(line)
-                    except:
+                    except Exception:  # skip malformed jsonl line
                         continue
                     ts = e.get("timestamp")
                     if not ts:
                         continue
                     try:
                         dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(SGT)
-                    except:
+                    except Exception:  # skip malformed timestamp
                         continue
                     if dt.date() != today_sgt:
                         continue
@@ -666,8 +666,8 @@ CONTENT_TYPES = {
     ".js": "application/javascript; charset=utf-8",
     ".json": "application/json; charset=utf-8",
     ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".ico": "image/x-icon",
+    ".webmanifest": "application/manifest+json; charset=utf-8",
 }
-
 
 class H(BaseHTTPRequestHandler):
     def log_message(self, fmt, *a):
@@ -811,7 +811,7 @@ class H(BaseHTTPRequestHandler):
         body = self.rfile.read(n).decode("utf-8") if n else "{}"
         try:
             data = json.loads(body)
-        except:
+        except Exception:  # body 不是 JSON 就空 dict 处理
             data = {}
         if p == "/api/send":
             sid = data.get("sessionId", "")
@@ -918,5 +918,13 @@ class ThreadingServer(socketserver.ThreadingMixIn, HTTPServer):
 
 
 if __name__ == "__main__":
+    # 启动清理：/tmp/console-send-*.log 超过 7 天的删掉（避免日志累积）
+    try:
+        cutoff = time.time() - 7 * 86400
+        for f in Path("/tmp").glob("console-send-*.log"):
+            if f.stat().st_mtime < cutoff:
+                f.unlink()
+    except Exception:
+        pass  # 清理是 best-effort，失败不影响启动
     print(f"console: http://127.0.0.1:{PORT} (frontend={FRONTEND}, agent={AGENT_DIR})")
     ThreadingServer(("127.0.0.1", PORT), H).serve_forever()
