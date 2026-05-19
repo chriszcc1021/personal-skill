@@ -93,6 +93,10 @@
   .proj-thread.running .thread-name{color:var(--fg)}
   .proj-thread .thread-tok{font-size:var(--fs-10);color:var(--fg3);font-variant-numeric:tabular-nums;flex-shrink:0;font-family:var(--ff-mono)}
   .proj-thread .thread-time{font-size:var(--fs-10);color:var(--fg3);font-family:var(--ff-mono);font-variant-numeric:tabular-nums;margin-left:6px}
+  .proj-thread.unread .thread-name{font-weight:600;color:var(--fg)}
+  .proj-thread .unread-dot{width:6px;height:6px;border-radius:50%;background:#ff6a3d;flex-shrink:0;margin-right:2px;box-shadow:0 0 6px rgba(255,106,61,.6)}
+  .session-item .unread-dot{width:6px;height:6px;border-radius:50%;background:#ff6a3d;flex-shrink:0;box-shadow:0 0 6px rgba(255,106,61,.6)}
+  .session-item.unread .label{font-weight:600;color:var(--fg)}
 
   /* ===== Session list (类别 tabs 下) ===== */
   .sessions{flex:1;overflow-y:auto;padding:4px 0;-webkit-overflow-scrolling:touch;background:var(--bg3)}
@@ -379,9 +383,13 @@ function renderProjects(){
           ${p.threads.map(t=>{
             const active = state.current?.sessionId === t.sessionId ? ' active' : '';
             const running = state.running && state.running[t.sessionId] ? ' running' : '';
+            const unread = state.unread && state.unread[t.sessionId] ? ' unread' : '';
             const name = t.alias || ('thread · ' + t.sessionId.slice(0,6));
             const tok = t.totalTokens ? fmt(t.totalTokens) : '—';
-            return `<div class="proj-thread${active}${running}" data-sid="${escapeHTML(t.sessionId)}"><span class="thread-dot"></span><span class="thread-name">${escapeHTML(name)}</span><span class="thread-tok">${tok}</span></div>`;
+            let lead = '<span class="thread-dot"></span>';
+            if (running) lead = '<span class="thread-dot"></span>'; // running 状态 CSS 接管
+            else if (unread) lead = '<span class="unread-dot"></span>';
+            return `<div class="proj-thread${active}${running}${unread}" data-sid="${escapeHTML(t.sessionId)}">${lead}<span class="thread-name">${escapeHTML(name)}</span><span class="thread-tok">${tok}</span></div>`;
           }).join('') || '<div style="padding:6px 14px 6px 14px;font-size:var(--fs-11);color:var(--fg3)">空</div>'}
         </div>
       </div>`;
@@ -565,8 +573,9 @@ function renderSessions(){
     const d = document.createElement('div');
     const sel = state.selectedIds.has(s.sessionId);
     const running = state.running && state.running[s.sessionId];
-    d.className = 'session-item' + (state.current?.sessionId===s.sessionId ? ' active':'') + (s.archived?' archived':'') + (sel?' selected':'') + (running?' running':'');
-    const runDot = running ? '<span class="running-dot"></span>' : '';
+    const unread = state.unread && state.unread[s.sessionId];
+    d.className = 'session-item' + (state.current?.sessionId===s.sessionId ? ' active':'') + (s.archived?' archived':'') + (sel?' selected':'') + (running?' running':'') + (unread?' unread':'');
+    const runDot = running ? '<span class="running-dot"></span>' : (unread ? '<span class="unread-dot"></span>' : '');
     const externalChans = new Set(['seatalk','telegram','whatsapp','signal','discord','slack','imessage','feishu','messenger','line','wechat','matrix','irc','msteams','mattermost','qqbot','twitch','nostr']);
     const chan = externalChans.has(s.channel) ? s.channel : '';
     const chanTag = chan ? `<span class="chan-tag">${escapeHTML(chan)}</span>` : '';
@@ -668,6 +677,7 @@ async function updateMeta(sid, patch){
 
 async function selectSession(s){
   state.current = s;
+  clearUnread(s.sessionId);
   renderSessions();
   renderProjects();
   // 显示所属项目 + cwd
@@ -1146,21 +1156,18 @@ function updateStatusBar(){
   }
 }
 function notifyDone(label, dur, sid){
-  // 页内 banner
-  const b = document.createElement('div');
-  b.className = 'done-banner';
-  b.innerHTML = `<div><div class="db-title">完成 · ${escapeHTML(label)}</div><div class="db-sub">耗时 ${dur}s</div></div><button class="db-go">查看</button><button class="db-x">关闭</button>`;
-  document.body.appendChild(b);
-  requestAnimationFrame(()=>b.classList.add('show'));
-  const close=()=>{ b.classList.remove('show'); setTimeout(()=>b.remove(),300) };
-  b.querySelector('.db-x').onclick=close;
-  b.querySelector('.db-go').onclick=()=>{ const s=state.sessions?.find(x=>x.sessionId===sid); if (s) selectSession(s); close() };
-  setTimeout(close, 8000);
-  // 原生通知
+  // 标记未读 · 仅未选中该 sid 时设未读
+  if (state.current?.sessionId !== sid){
+    state.unread = state.unread || {};
+    state.unread[sid] = {label, dur, ts: Date.now()};
+    saveUnread();
+    renderProjects();
+    renderSessions();
+  }
+  // 原生通知（仅后台 / 移动端隐藏时）
   if (window.Notification && Notification.permission === 'granted' && document.visibilityState !== 'visible'){
     try{ new Notification('OpenClaw · ' + label, {body: `任务完成 · 耗时 ${dur}s`, tag: 'oc-'+sid}) }catch(e){}
   }
-  // 声音 (轻)
   try{
     const ac = new (window.AudioContext||window.webkitAudioContext)();
     const o = ac.createOscillator(); const g = ac.createGain();
@@ -1169,6 +1176,12 @@ function notifyDone(label, dur, sid){
     setTimeout(()=>{ o.stop(); ac.close() }, 120);
   }catch(e){}
 }
+function saveUnread(){ try{ localStorage.setItem('console.unread', JSON.stringify(state.unread||{})) }catch(e){} }
+function clearUnread(sid){
+  if (state.unread && state.unread[sid]){ delete state.unread[sid]; saveUnread(); renderProjects(); renderSessions() }
+}
+// init unread from storage
+try{ state.unread = JSON.parse(localStorage.getItem('console.unread')||'{}') }catch(e){ state.unread = {} }
 // 申请通知权限
 if (window.Notification && Notification.permission === 'default'){
   setTimeout(()=>Notification.requestPermission().catch(()=>{}), 2000);
