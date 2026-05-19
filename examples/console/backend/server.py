@@ -20,6 +20,21 @@ MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 META_DIR = Path(__file__).resolve().parent / "meta"
 META_DIR.mkdir(parents=True, exist_ok=True)
 SESSION_META_FILE = META_DIR / "session-meta.json"  # {sessionId: {pinned, archived, alias}}
+PROJECTS_FILE = META_DIR / "projects.json"  # {projectId: {name, sessionIds: []}}
+_PROJ_LOCK = threading.Lock()
+
+
+def _load_projects() -> dict:
+    if not PROJECTS_FILE.exists():
+        return {}
+    try:
+        return json.loads(PROJECTS_FILE.read_text("utf-8") or "{}")
+    except Exception:
+        return {}
+
+
+def _save_projects(d: dict):
+    PROJECTS_FILE.write_text(json.dumps(d, ensure_ascii=False, indent=2), "utf-8")
 _META_LOCK = threading.Lock()
 
 
@@ -400,6 +415,80 @@ def api_running(session_id: str):
     return {"running": bool(info), "info": info}
 
 
+# ============= Projects =============
+
+def api_projects():
+    projs = _load_projects()
+    # 补 sessionIds 详情（仅 alias + lastUpdated）
+    meta = _load_meta()
+    idx_sessions = {s.get("sessionId"): s for s in _load_sessions_index()}
+    out = []
+    for pid, p in projs.items():
+        threads = []
+        for sid in p.get("sessionIds", []):
+            s = idx_sessions.get(sid) or {}
+            m = meta.get(sid, {})
+            threads.append({
+                "sessionId": sid,
+                "alias": m.get("alias"),
+                "updatedAt": s.get("updatedAt"),
+                "totalTokens": s.get("totalTokens", 0),
+                "hint": _extract_session_info(sid).get("hint", "") if sid else "",
+            })
+        threads.sort(key=lambda t: -(t.get("updatedAt") or 0))
+        out.append({"projectId": pid, "name": p.get("name") or pid, "threads": threads})
+    out.sort(key=lambda x: x["name"])
+    return {"projects": out}
+
+
+def api_project_upsert(project_id: str, name: str):
+    with _PROJ_LOCK:
+        projs = _load_projects()
+        if project_id not in projs:
+            projs[project_id] = {"name": name or project_id, "sessionIds": []}
+        else:
+            projs[project_id]["name"] = name or projs[project_id].get("name", project_id)
+        _save_projects(projs)
+        return {"ok": True, "project": projs[project_id]}
+
+
+def api_project_delete(project_id: str):
+    with _PROJ_LOCK:
+        projs = _load_projects()
+        existed = project_id in projs
+        projs.pop(project_id, None)
+        _save_projects(projs)
+        return {"ok": True, "existed": existed}
+
+
+def api_thread_assign(project_id: str, session_id: str):
+    """将 sessionId 划入 project（先从其它 project 移除）。project_id=None/'' 表示从所有 project 移除。"""
+    with _PROJ_LOCK:
+        projs = _load_projects()
+        for pid, p in projs.items():
+            if session_id in p.get("sessionIds", []):
+                p["sessionIds"] = [s for s in p["sessionIds"] if s != session_id]
+        if project_id and project_id in projs:
+            if session_id not in projs[project_id]["sessionIds"]:
+                projs[project_id]["sessionIds"].append(session_id)
+        _save_projects(projs)
+        return {"ok": True}
+
+
+def api_thread_new(project_id: str, alias: str = ""):
+    """创建一个新 thread（sessionId），可选挂到 project，可选 alias。返回 sessionId。"""
+    new_sid = str(uuid.uuid4())
+    # 写 alias到 meta
+    if alias:
+        with _META_LOCK:
+            meta = _load_meta()
+            meta[new_sid] = {"alias": alias[:80]}
+            _save_meta(meta)
+    if project_id:
+        api_thread_assign(project_id, new_sid)
+    return {"ok": True, "sessionId": new_sid}
+
+
 def api_stop(session_id: str):
     """发 SIGTERM 给 openclaw agent 进程。"""
     import signal
@@ -489,6 +578,8 @@ class H(BaseHTTPRequestHandler):
         if p == "/api/running":
             sid = (qs.get("sessionId") or [""])[0]
             return self._json(200, api_running(sid))
+        if p == "/api/projects":
+            return self._json(200, api_projects())
         return self._serve_static(p)
 
     def _sse_stream(self, session_id: str):
@@ -606,6 +697,25 @@ class H(BaseHTTPRequestHandler):
                     meta.pop(sid, None)
                 _save_meta(meta)
             return self._json(200, {"ok": True, "meta": cur})
+        if p == "/api/project-upsert":
+            pid = (data.get("projectId") or "").strip() or str(uuid.uuid4())
+            name = (data.get("name") or "").strip()
+            return self._json(200, api_project_upsert(pid, name))
+        if p == "/api/project-delete":
+            pid = (data.get("projectId") or "").strip()
+            if not pid:
+                return self._json(400, {"error": "projectId required"})
+            return self._json(200, api_project_delete(pid))
+        if p == "/api/thread-assign":
+            sid = (data.get("sessionId") or "").strip()
+            pid = (data.get("projectId") or "").strip()
+            if not sid:
+                return self._json(400, {"error": "sessionId required"})
+            return self._json(200, api_thread_assign(pid, sid))
+        if p == "/api/thread-new":
+            pid = (data.get("projectId") or "").strip()
+            alias = (data.get("alias") or "").strip()
+            return self._json(200, api_thread_new(pid, alias))
         return self._json(404, {"error": "not found"})
 
     def _handle_upload(self, body: str):
