@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>Console</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Squid">
+<link rel="apple-touch-icon" href="icons/console-icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/console-icon-32.png">
+<link rel="icon" type="image/svg+xml" href="icons/console-icon.svg">
 <style>
   :root{
     --fs-9:9px; --fs-10:10px; --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-14:14px; --fs-15:15px; --fs-17:17px;
@@ -50,7 +58,7 @@
 
   .app{display:grid;grid-template-columns:280px 1fr;grid-template-rows:100dvh;height:100dvh}
   .sidebar{border-right:1px solid var(--br);background:var(--bg3);display:flex;flex-direction:column;min-width:0}
-  .sb-head{padding:18px 16px 12px;border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center}
+  .sb-head{padding:18px 16px 12px;border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center;padding-top:max(18px, env(safe-area-inset-top));padding-left:max(16px, env(safe-area-inset-left))}
   .sb-head h1{margin:0;font-size:var(--fs-15);font-weight:600;letter-spacing:-.01em}
   .sb-head .actions{display:flex;gap:4px}
   .sb-head button{padding:4px 8px;font-size:var(--fs-12);color:var(--fg2);border-radius:6px}
@@ -195,7 +203,7 @@
 
   .main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg);overflow:hidden}
   .chat{flex:1 1 0;overflow-y:auto;padding:24px 0;min-height:0}
-  .topbar{height:48px;border-bottom:1px solid var(--br);display:flex;align-items:center;padding:0 20px;justify-content:space-between;font-size:var(--fs-13);color:var(--fg2);gap:12px}
+  .topbar{height:48px;border-bottom:1px solid var(--br);display:flex;align-items:center;padding:0 20px;justify-content:space-between;font-size:var(--fs-13);color:var(--fg2);gap:12px;padding-top:env(safe-area-inset-top);padding-left:max(20px, env(safe-area-inset-left));padding-right:max(20px, env(safe-area-inset-right));box-sizing:content-box}
   .topbar .title{color:var(--fg);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .topbar .ctx{font-variant-numeric:tabular-nums;font-size:var(--fs-11)}
   .topbar .ctx b{color:var(--fg)}
@@ -285,7 +293,7 @@
     .tool-head{padding:7px 10px;gap:8px}
     .tool-name{min-width:auto}
     .tool-hint{max-width:160px}
-    .topbar{padding:10px 14px}
+    .topbar{padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));padding-left:max(14px, env(safe-area-inset-left));padding-right:max(14px, env(safe-area-inset-right));height:auto;box-sizing:content-box}
     .topbar h2{font-size:var(--fs-14)}
     .topbar .ctx{font-size:var(--fs-11)}
     .sb-head h1{font-size:var(--fs-15)}
@@ -298,7 +306,7 @@
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sb-head">
-      <h1>OpenClaw</h1>
+      <h1>张鱼哥你好</h1>
       <div class="actions">
         <button id="refresh" title="刷新">↻</button>
         <button id="theme" title="主题">◐</button>
@@ -773,19 +781,21 @@ function startPolling(sid){
   if (state.es){ try{ state.es.close() }catch(e){} state.es=null }
   state.streamMode = 'poll';
   if (state.pollTimer) clearInterval(state.pollTimer);
-  let lastCount = document.querySelectorAll('.msg-wrap .turn-card').length;
+  // 记住最后一条 entry 的状态指纹，任何变动都重绘
+  let lastSig = '';
   state.pollTimer = setInterval(async ()=>{
     if (!state.current || state.current.sessionId !== sid){ clearInterval(state.pollTimer); state.pollTimer=null; return }
-    // 发送中不重绘，避免冲掉 optimistic turn
     if (state.sending) return;
     try{
       const r = await fetch(`api/messages?sessionId=${encodeURIComponent(sid)}&limit=80`).then(r=>r.json());
       const msgs = r.messages||[];
-      const userN = msgs.filter(m=>m.role==='user').length;
-      const turnN = document.querySelectorAll('.msg-wrap .turn-card').length;
-      if (userN > turnN){
+      if (!msgs.length) return;
+      // 签名：总条数 + 最后一条的 ts/role/文本长度
+      const last = msgs[msgs.length-1];
+      const sig = `${msgs.length}|${last.timestamp||last.ts||''}|${last.role||''}|${(last.text||'').length}`;
+      if (sig !== lastSig){
+        lastSig = sig;
         renderMessages(msgs);
-        lastCount = userN;
         if (state.sending){ state.sending=false; $('#hint').textContent=''; updateSendBtn() }
       }
     }catch(e){}
@@ -1341,7 +1351,7 @@ function notifyDone(label, dur, sid){
   }
   // 原生通知(仅后台 / 移动端隐藏时)
   if (window.Notification && Notification.permission === 'granted' && document.visibilityState !== 'visible'){
-    try{ new Notification('OpenClaw · ' + label, {body: `任务完成 · 耗时 ${dur}s`, tag: 'oc-'+sid}) }catch(e){}
+    try{ new Notification('Squid · ' + label, {body: `任务完成 · 耗时 ${dur}s`, tag: 'oc-'+sid}) }catch(e){}
   }
   try{
     const ac = new (window.AudioContext||window.webkitAudioContext)();
