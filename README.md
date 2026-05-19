@@ -12,7 +12,7 @@
 │   └── pitch-skill/           # 数据型 pitch / 商业机会 deck skill
 └── examples/                  # 实战案例
     ├── appliance-guide/       # 家电选购指南（含登山包）
-    └── console/               # OpenClaw Console — agent 多项目控制台
+    └── console/               # Squid Console — agent 多项目控制台
 ```
 
 ## 🧰 Skills
@@ -68,7 +68,7 @@
 
 详见 [`skills/pitch-skill/SKILL.md`](skills/pitch-skill/SKILL.md)。
 
-### openclaw-console-skill
+### squid-console-skill
 为 CLI 驱动的 agent runtime（OpenClaw / Codex / Claude Code）打造 IM 风格浏览器控制台的方法论。
 
 **用途：**
@@ -83,12 +83,12 @@
 - jsonl 作为所有持久化源，元数据外挂 JSON
 - 配 cloudflared tunnel + nginx 远程访问
 
-详见 [`skills/openclaw-console-skill/SKILL.md`](skills/openclaw-console-skill/SKILL.md)，参考实现在 [`examples/console/`](examples/console)。
+详见 [`skills/squid-console-skill/SKILL.md`](skills/squid-console-skill/SKILL.md)，参考实现在 [`examples/console/`](examples/console)。
 
 ## 📚 Examples
 
 ### console
-OpenClaw Console — 多项目多线程并行的浏览器 agent 控制台。
+Squid Console — 多项目多线程并行的浏览器 agent 控制台。
 
 - Codex 风格对话渲染
 - IM 来源 channel tag（seatalk蓝 / telegram青 / discord紫 ...）

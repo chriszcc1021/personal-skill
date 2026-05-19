@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenClaw Console - 纯 stdlib HTTP 服务器"""
+"""Squid Console - 纯 stdlib HTTP 服务器"""
 import os, json, subprocess, time, re, uuid, base64
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -654,7 +654,7 @@ class H(BaseHTTPRequestHandler):
         p = u.path
         qs = parse_qs(u.query or "")
         # 兼容 /console/ 前缀
-        for prefix in ("/console", "/openclaw-console"):
+        for prefix in ("/console", "/squid-console"):
             if p.startswith(prefix):
                 p = p[len(prefix):] or "/"
                 break
@@ -752,7 +752,7 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         u = urlparse(self.path)
         p = u.path
-        for prefix in ("/console", "/openclaw-console"):
+        for prefix in ("/console", "/squid-console"):
             if p.startswith(prefix):
                 p = p[len(prefix):] or "/"
                 break

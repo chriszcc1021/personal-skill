@@ -1,5 +1,5 @@
 ---
-name: openclaw-console-skill
+name: squid-console-skill
 description: |
   Build a personal IM-style web console on top of any agent runtime that
   writes session jsonl files. Covers project/thread hierarchy, Codex-style
@@ -10,7 +10,9 @@ description: |
   a browser.
 ---
 
-# Build Your Own Agent Console
+# Squid Console — Build Your Own Agent Console
+
+> 🦑 _"多触手、快送达、重叠隐书色"_ —— 为 CLI 驱动的 agent runtime 打造的浏览器 IM 控制台。
 
 把任意 "会话即 jsonl 文件 + CLI 是唯一写入口" 的 agent runtime（OpenClaw / Codex / Claude Code / Aider 等）包装成一个**多项目并行的浏览器控制台**。
 完整可运行的参考实现：[`examples/console`](../../examples/console)。

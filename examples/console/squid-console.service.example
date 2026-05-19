@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenClaw Console backend
+Description=Squid Console backend
 After=network.target
 
 [Service]

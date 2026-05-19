@@ -1,6 +1,6 @@
 [Unit]
 Description=Reverse SSH tunnel for console (43.134.32.223:18791 -> 127.0.0.1:8088)
-After=network-online.target openclaw-console.service
+After=network-online.target squid-console.service
 
 [Service]
 Type=simple

@@ -1,6 +1,6 @@
-# OpenClaw Console
+# Squid Console
 
-> 单人多项目 AI Agent 控制台 — 浏览器里看 / 发 / 管你的 OpenClaw 会话。
+> 🦑 多项目多线程并行的浏览器 AI Agent 控制台 — 多触手、快进、不袭击其它 session。
 > 5 分钟在自己机器跑起来，远程通过 cloudflared 隧道访问。
 
 ![Codex-style turn rendering](docs/screenshot.png)
@@ -63,10 +63,10 @@ python3 server.py
 
 ```bash
 # 1. 装 service（按需改用户/路径）
-cp openclaw-console.service.example /etc/systemd/system/openclaw-console.service
-cp openclaw-console-tunnel.service.example /etc/systemd/system/openclaw-console-tunnel.service
+cp squid-console.service.example /etc/systemd/system/squid-console.service
+cp squid-console-tunnel.service.example /etc/systemd/system/squid-console-tunnel.service
 systemctl daemon-reload
-systemctl enable --now openclaw-console openclaw-console-tunnel
+systemctl enable --now squid-console squid-console-tunnel
 
 # 2. 配 nginx 反代 /console/ → http://127.0.0.1:8088
 # 3. cloudflared 给一个 tryclouflare URL 或自定义域
@@ -103,12 +103,12 @@ frontend/
   index.html             # 单文件 UI
 data/
   group-names.json       # 群名手工映射
-openclaw-console.service.example
-openclaw-console-tunnel.service.example
+squid-console.service.example
+squid-console-tunnel.service.example
 ```
 
 ## 如何复刻
 
-如果你也想给自己的 agent 装个类似的 IM 控制台，本目录就是完整可参考的实现，配合根目录 [`docs/console-skill.md`](../../skills/openclaw-console-skill/SKILL.md) 看方法论。
+如果你也想给自己的 agent 装个类似的 IM 控制台，本目录就是完整可参考的实现，配合根目录 [`docs/console-skill.md`](../../skills/squid-console-skill/SKILL.md) 看方法论。
 
 核心理念：**会话 = 文件**（jsonl 一行一 entry）+ **CLI = 唯一写入口**，前端只是把这两者编排好。后端不到 1000 行，前端不到 1500 行，没有数据库、没有 ORM、没有依赖。
