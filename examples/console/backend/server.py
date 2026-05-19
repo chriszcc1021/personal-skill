@@ -237,21 +237,99 @@ def api_usage_today():
     }
 
 
+def _entry_to_sse(e: dict):
+    """将 jsonl entry 压缩为 SSE 轻量 payload。返回 None 表示跳过。"""
+    m = e.get("message", {}) or {}
+    role = m.get("role")
+    ts = e.get("timestamp") or m.get("timestamp") or ""
+    if role == "assistant":
+        parts = []
+        for c in m.get("content", []) or []:
+            if not isinstance(c, dict):
+                continue
+            t = c.get("type")
+            if t == "text":
+                parts.append({"type": "text", "text": c.get("text", "")})
+            elif t == "thinking":
+                parts.append({"type": "thinking", "text": c.get("text", "") or c.get("thinking", "")})
+            elif t == "toolCall":
+                args = c.get("arguments", {}) or {}
+                parts.append({
+                    "type": "toolCall",
+                    "id": c.get("id"),
+                    "name": c.get("name"),
+                    "arguments": args,
+                })
+        usage = m.get("usage", {}) or {}
+        return {"role": "assistant", "ts": ts, "parts": parts, "usage": {"input": usage.get("input", 0), "output": usage.get("output", 0), "total": usage.get("totalTokens", 0)}}
+    if role == "user":
+        c = m.get("content", "")
+        if isinstance(c, list):
+            txt = ""
+            for x in c:
+                if isinstance(x, dict) and x.get("type") == "text":
+                    txt += x.get("text", "")
+            c = txt
+        return {"role": "user", "ts": ts, "text": str(c)[:4000]}
+    if role == "toolResult":
+        details = m.get("details", {}) or {}
+        agg = details.get("aggregated", "") or ""
+        content_txt = ""
+        for x in m.get("content", []) or []:
+            if isinstance(x, dict) and x.get("type") == "text":
+                content_txt += x.get("text", "")
+        return {
+            "role": "toolResult",
+            "ts": ts,
+            "toolCallId": m.get("toolCallId"),
+            "toolName": m.get("toolName"),
+            "status": details.get("status"),
+            "exitCode": details.get("exitCode"),
+            "durationMs": details.get("durationMs"),
+            "isError": m.get("isError", False),
+            "text": (agg or content_txt)[:4000],
+        }
+    return None
+
+
+_SEND_LOCK = threading.Lock()
+_RUNNING: dict = {}  # sessionId -> {pid, started}
+
+
 def api_send(session_id: str, message: str):
-    cmd = ["openclaw", "agent", "--session-id", session_id, "--message", message, "--json", "--timeout", "300"]
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=320)
-        out = r.stdout
-        err = r.stderr
+    """同步跳进后台，立即返回；agent 走 jsonl 追加 → SSE 推。"""
+    with _SEND_LOCK:
+        existing = _RUNNING.get(session_id)
+        if existing:
+            return {"ok": False, "error": "already running", "runningSince": existing["started"]}
+        cmd = ["openclaw", "agent", "--session-id", session_id, "--message", message, "--json", "--timeout", "300"]
+        log_path = Path("/tmp") / f"console-send-{session_id[:8]}.log"
+        logf = log_path.open("ab")
         try:
-            result = json.loads(out)
-        except:
-            result = {"raw": out[-4000:]}
-        return {"ok": r.returncode == 0, "result": result, "stderr": err[-2000:] if err else ""}
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "timeout"}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+            proc = subprocess.Popen(cmd, stdout=logf, stderr=logf, stdin=subprocess.DEVNULL)
+        except FileNotFoundError as e:
+            logf.close()
+            return {"ok": False, "error": f"openclaw CLI not found in PATH: {e}"}
+        _RUNNING[session_id] = {"pid": proc.pid, "started": int(time.time())}
+
+        def _wait():
+            try:
+                proc.wait(timeout=360)
+            except Exception:
+                proc.kill()
+            finally:
+                logf.close()
+                with _SEND_LOCK:
+                    _RUNNING.pop(session_id, None)
+
+        threading.Thread(target=_wait, daemon=True).start()
+        return {"ok": True, "pid": proc.pid, "started": _RUNNING[session_id]["started"]}
+
+
+def api_running(session_id: str):
+    with _SEND_LOCK:
+        info = _RUNNING.get(session_id)
+    return {"running": bool(info), "info": info}
 
 
 CONTENT_TYPES = {
@@ -316,7 +394,79 @@ class H(BaseHTTPRequestHandler):
             return self._json(200, r)
         if p == "/api/health":
             return self._json(200, {"ok": True, "ts": int(time.time())})
+        if p == "/api/stream":
+            sid = (qs.get("sessionId") or [""])[0]
+            return self._sse_stream(sid)
+        if p == "/api/running":
+            sid = (qs.get("sessionId") or [""])[0]
+            return self._json(200, api_running(sid))
         return self._serve_static(p)
+
+    def _sse_stream(self, session_id: str):
+        f = SESSIONS_DIR / f"{session_id}.jsonl"
+        if not f.exists():
+            self.send_response(404)
+            self.end_headers()
+            return
+        self.send_response(200)
+        self.send_header("content-type", "text/event-stream; charset=utf-8")
+        self.send_header("cache-control", "no-cache")
+        self.send_header("x-accel-buffering", "no")  # nginx不缓冲
+        self.send_header("connection", "keep-alive")
+        self.end_headers()
+        try:
+            # 从末尾开始 tail，不重发历史
+            pos = f.stat().st_size
+            last_ping = time.time()
+            try:
+                self.wfile.write(b"event: hello\ndata: {\"ok\":true}\n\n")
+                self.wfile.flush()
+            except Exception:
+                return
+            while True:
+                time.sleep(0.4)
+                try:
+                    size = f.stat().st_size
+                except FileNotFoundError:
+                    break
+                if size < pos:
+                    pos = 0  # 文件被重写
+                if size > pos:
+                    with f.open("rb") as fp:
+                        fp.seek(pos)
+                        chunk = fp.read(size - pos).decode("utf-8", errors="replace")
+                        pos = size
+                    for line in chunk.splitlines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            e = json.loads(line)
+                        except Exception:
+                            continue
+                        payload = _entry_to_sse(e)
+                        if payload is None:
+                            continue
+                        data = json.dumps(payload, ensure_ascii=False)
+                        try:
+                            self.wfile.write(f"event: entry\ndata: {data}\n\n".encode("utf-8"))
+                            self.wfile.flush()
+                        except (BrokenPipeError, ConnectionResetError):
+                            return
+                # keepalive ping 每 20s
+                now = time.time()
+                if now - last_ping > 20:
+                    try:
+                        self.wfile.write(b": ping\n\n")
+                        self.wfile.flush()
+                    except Exception:
+                        return
+                    last_ping = now
+        except Exception as ex:
+            try:
+                self.wfile.write(f"event: error\ndata: {json.dumps({'error': str(ex)})}\n\n".encode("utf-8"))
+            except Exception:
+                pass
 
     def do_POST(self):
         u = urlparse(self.path)

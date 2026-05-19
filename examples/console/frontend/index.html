@@ -80,6 +80,20 @@
   .msg .tools{font-size:12px;color:var(--tool-fg);background:var(--tool-bg);padding:6px 10px;border-radius:8px;margin-top:6px;font-family:ui-monospace,Menlo,Consolas;max-width:100%;overflow-x:auto}
   .msg .tools .tc{margin:2px 0}
   .msg .tools .tname{color:var(--acc)}
+  .tool-card{margin:6px 0;border:1px solid var(--br);border-radius:8px;background:var(--bg2);font-size:12px;overflow:hidden;font-family:ui-monospace,Menlo,Consolas}
+  .tool-head{display:flex;gap:8px;align-items:center;padding:7px 10px;background:var(--bg3)}
+  .tool-status{width:18px;text-align:center}
+  .tool-name{color:var(--acc);font-weight:600;min-width:60px}
+  .tool-hint{color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .tool-dur{color:var(--fg3);font-size:11px}
+  .tool-card details{padding:0 10px 8px}
+  .tool-card details summary{cursor:pointer;color:var(--fg3);font-size:11px;padding:4px 0}
+  .tool-card pre{margin:4px 0;padding:8px 10px;background:var(--bg);border-radius:6px;overflow-x:auto;font-size:11px;line-height:1.45;max-height:300px}
+  .tool-result{padding:0 10px 8px}
+  .thinking{margin:4px 0;font-size:12px;color:var(--fg3)}
+  .thinking summary{cursor:pointer}
+  .thinking pre{background:var(--bg2);padding:8px;border-radius:6px;white-space:pre-wrap;max-height:240px;overflow-y:auto}
+  .hint-small{font-size:12px;color:var(--fg3);font-style:italic;padding:8px 0}
   .msg .meta{font-size:11px;color:var(--fg3);font-variant-numeric:tabular-nums}
   .msg pre{background:var(--bg2);padding:12px;border-radius:8px;overflow-x:auto;font:12px/1.5 ui-monospace,Menlo,Consolas;margin:8px 0}
   .msg code{background:var(--bg2);padding:1px 5px;border-radius:3px;font:12px ui-monospace,Menlo,Consolas}
@@ -256,10 +270,94 @@ async function selectSession(s){
   $('#chat').innerHTML = '<div class="empty">加载中…</div>';
   $('#send').disabled = false;
   if (window.innerWidth < 720) closeSidebar();
+  // 关闭旧 SSE
+  if (state.es){ try{ state.es.close() }catch(e){} state.es = null }
   try{
     const r = await fetch(`api/messages?sessionId=${encodeURIComponent(s.sessionId)}&limit=80`).then(r=>r.json());
     renderMessages(r.messages);
   }catch(e){ $('#chat').innerHTML = '<div class="empty">加载失败</div>' }
+  // 连 SSE 追新消息
+  try{
+    const es = new EventSource(`api/stream?sessionId=${encodeURIComponent(s.sessionId)}`);
+    state.es = es;
+    es.addEventListener('entry', ev=>{
+      try{ appendStreamEntry(JSON.parse(ev.data)) }catch(e){}
+    });
+    es.addEventListener('error', ()=>{ /* EventSource 自动重连 */ });
+  }catch(e){}
+}
+
+function appendStreamEntry(entry){
+  const c = $('#chat');
+  let wrap = c.querySelector('.msg-wrap');
+  if (!wrap){ wrap = document.createElement('div'); wrap.className='msg-wrap'; c.innerHTML=''; c.appendChild(wrap) }
+  const d = document.createElement('div');
+  if (entry.role === 'user'){
+    d.className = 'msg user';
+    d.innerHTML = `<div class="bubble">${renderMd(stripMeta(entry.text))}</div>`;
+  }else if (entry.role === 'assistant'){
+    d.className = 'msg assistant';
+    const parts = entry.parts || [];
+    let html = '';
+    for (const p of parts){
+      if (p.type === 'text' && p.text) html += `<div class="bubble">${renderMd(p.text)}</div>`;
+      else if (p.type === 'thinking' && p.text) html += `<details class="thinking"><summary>💭 思考</summary><pre>${escapeHTML(p.text)}</pre></details>`;
+      else if (p.type === 'toolCall') html += renderToolCall(p);
+    }
+    if (!html) html = '<div class="hint-small">🤐 静默（无文本输出）</div>';
+    d.innerHTML = html;
+    // 取消 sending 状态
+    if (state.sending){ state.sending=false; $('#hint').textContent=''; $('#send').disabled = !input.value.trim() }
+  }else if (entry.role === 'toolResult'){
+    // 找到对应 toolCall 卡片贴 result
+    const card = wrap.querySelector(`.tool-card[data-tcid="${entry.toolCallId}"]`);
+    if (card){
+      const body = card.querySelector('.tool-result');
+      if (body){
+        body.style.display = 'block';
+        body.innerHTML = `<pre>${escapeHTML(entry.text||'(空)')}</pre>`;
+      }
+      const icon = card.querySelector('.tool-status');
+      if (icon) icon.textContent = entry.isError ? '❌' : '✅';
+      const dur = card.querySelector('.tool-dur');
+      if (dur && entry.durationMs) dur.textContent = (entry.durationMs/1000).toFixed(1) + 's';
+    }
+    return;
+  }else{ return }
+  wrap.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+function renderToolCall(p){
+  const args = p.arguments || {};
+  // 提取 hint
+  let hint = '';
+  if (args.command) hint = String(args.command).slice(0,80);
+  else if (args.path) hint = args.path;
+  else if (args.url) hint = args.url;
+  else if (args.message) hint = String(args.message).slice(0,80);
+  else hint = JSON.stringify(args).slice(0,80);
+  const argsJson = escapeHTML(JSON.stringify(args, null, 2));
+  return `<div class="tool-card" data-tcid="${escapeHTML(p.id||'')}">
+    <div class="tool-head">
+      <span class="tool-status">⏳</span>
+      <span class="tool-name">${escapeHTML(p.name||'tool')}</span>
+      <span class="tool-hint">${escapeHTML(hint)}</span>
+      <span class="tool-dur"></span>
+    </div>
+    <details class="tool-detail"><summary>参数</summary><pre>${argsJson}</pre></details>
+    <div class="tool-result" style="display:none"></div>
+  </div>`;
+}
+
+function stripMeta(t){
+  if (!t) return '';
+  // 去掉 Conversation info / Sender metadata block
+  let s = String(t);
+  s = s.replace(/Conversation info[^\n]*\n+```json[\s\S]*?```/g, '');
+  s = s.replace(/Sender[^\n]*\n+```json[\s\S]*?```/g, '');
+  s = s.replace(/^\s*\[Quoted from[\s\S]*?\]\s*$/gm, '');
+  return s.trim();
 }
 
 function renderMessages(msgs){
@@ -316,31 +414,31 @@ async function send(){
   const msg = input.value.trim();
   if (!msg) return;
   state.sending = true;
+  state.sendStartedAt = Date.now();
   $('#send').disabled = true;
-  $('#hint').textContent = '发送中…';
-  // optimistic
-  const wrap = $('#chat .msg-wrap') || (()=>{ const w=document.createElement('div'); w.className='msg-wrap'; $('#chat').innerHTML=''; $('#chat').appendChild(w); return w; })();
-  const d = document.createElement('div'); d.className = 'msg user';
-  d.innerHTML = `<div class="bubble">${renderMd(msg)}</div>`;
-  wrap.appendChild(d);
+  $('#hint').textContent = '发送中…agent 运行中';
   input.value = ''; input.style.height='auto';
-  $('#chat').scrollTop = $('#chat').scrollHeight;
   try{
     const r = await fetch('api/send', {
       method:'POST', headers:{'content-type':'application/json'},
       body: JSON.stringify({ sessionId: state.current.sessionId, message: msg })
     }).then(r=>r.json());
-    if (r.ok){
-      $('#hint').textContent = '已发送，刷新中…';
-      await refresh();
-      await selectSession(state.sessions.find(s=>s.sessionId===state.current.sessionId) || state.current);
-      $('#hint').textContent = '';
-    }else{
+    if (!r.ok){
       toast('发送失败: '+(r.error||'unknown'));
       $('#hint').textContent = '失败 · ' + (r.error||'');
+      state.sending = false;
+      $('#send').disabled = !input.value.trim();
+      return;
     }
-  }catch(e){ toast('网络错误: '+e.message); $('#hint').textContent='错误' }
-  finally{ state.sending = false; $('#send').disabled = !input.value.trim() }
+    // 启动 30s NO_REPLY watchdog：SSE 收到 assistant 会清掉 state.sending
+    setTimeout(()=>{
+      if (state.sending){
+        $('#hint').textContent = '🤐 agent 静默（无文本输出）';
+        state.sending = false;
+        $('#send').disabled = !input.value.trim();
+      }
+    }, 90000);
+  }catch(e){ toast('网络错误: '+e.message); $('#hint').textContent='错误'; state.sending = false; $('#send').disabled = !input.value.trim() }
 }
 
 // sidebar mobile
