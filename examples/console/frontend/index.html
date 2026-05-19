@@ -276,15 +276,47 @@ async function selectSession(s){
     const r = await fetch(`api/messages?sessionId=${encodeURIComponent(s.sessionId)}&limit=80`).then(r=>r.json());
     renderMessages(r.messages);
   }catch(e){ $('#chat').innerHTML = '<div class="empty">加载失败</div>' }
-  // 连 SSE 追新消息
+  // 连 SSE 追新消息（带 polling fallback，适配 cloudflare quick tunnel）
+  state.streamMode = 'connecting';
+  state.lastTs = 0;
+  state.pollTimer && clearInterval(state.pollTimer); state.pollTimer = null;
   try{
     const es = new EventSource(`api/stream?sessionId=${encodeURIComponent(s.sessionId)}`);
     state.es = es;
+    let gotHello = false;
+    es.addEventListener('hello', ()=>{ gotHello = true; state.streamMode = 'sse' });
     es.addEventListener('entry', ev=>{
+      gotHello = true; state.streamMode = 'sse';
       try{ appendStreamEntry(JSON.parse(ev.data)) }catch(e){}
     });
-    es.addEventListener('error', ()=>{ /* EventSource 自动重连 */ });
-  }catch(e){}
+    es.addEventListener('error', ()=>{
+      if (!gotHello && state.streamMode !== 'poll'){
+        // SSE 不通，走 polling fallback
+        startPolling(s.sessionId);
+      }
+    });
+    // 3s 仍未 hello → fallback
+    setTimeout(()=>{ if (!gotHello && state.es === es){ startPolling(s.sessionId) } }, 3500);
+  }catch(e){ startPolling(s.sessionId) }
+}
+
+function startPolling(sid){
+  if (state.es){ try{ state.es.close() }catch(e){} state.es=null }
+  state.streamMode = 'poll';
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  let lastCount = document.querySelectorAll('.msg-wrap .msg').length;
+  state.pollTimer = setInterval(async ()=>{
+    if (!state.current || state.current.sessionId !== sid){ clearInterval(state.pollTimer); state.pollTimer=null; return }
+    try{
+      const r = await fetch(`api/messages?sessionId=${encodeURIComponent(sid)}&limit=80`).then(r=>r.json());
+      const msgs = r.messages||[];
+      if (msgs.length > lastCount){
+        renderMessages(msgs);
+        lastCount = msgs.length;
+        if (state.sending){ state.sending=false; $('#hint').textContent=''; $('#send').disabled = !input.value.trim() }
+      }
+    }catch(e){}
+  }, 2000);
 }
 
 function appendStreamEntry(entry){
