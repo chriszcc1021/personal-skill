@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Squid Console - 纯 stdlib HTTP 服务器"""
+"""OpenClaw Console - 纯 stdlib HTTP 服务器"""
 import os, json, subprocess, time, re, uuid, base64
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -312,14 +312,14 @@ def api_get_messages(session_id: str, limit: int = 100):
 
 def api_usage_today():
     today_sgt = datetime.now(SGT).date()
-    total_in = total_out = total_tok = 0
+    total_in = total_out = total_cr = total_cw = total_tok = 0
     per_session = []
     for s in _load_sessions_index():
         sid = s.get("sessionId")
         f = SESSIONS_DIR / f"{sid}.jsonl"
         if not f.exists():
             continue
-        s_in = s_out = s_tok = 0
+        s_in = s_out = s_cr = s_cw = s_tok = 0
         try:
             with f.open() as fp:
                 for line in fp:
@@ -341,23 +341,33 @@ def api_usage_today():
                     u = (e.get("message") or {}).get("usage") or {}
                     s_in += u.get("input", 0)
                     s_out += u.get("output", 0)
+                    s_cr += u.get("cacheRead", 0)
+                    s_cw += u.get("cacheWrite", 0)
                     s_tok += u.get("totalTokens", 0)
         except Exception:
             continue
         if s_tok > 0:
-            per_session.append({"key": s.get("key"), "label": _short_label(s), "tokens": s_tok, "input": s_in, "output": s_out})
+            per_session.append({"key": s.get("key"), "label": _short_label(s), "tokens": s_tok, "input": s_in, "output": s_out, "cacheRead": s_cr, "cacheWrite": s_cw})
             total_in += s_in
             total_out += s_out
+            total_cr += s_cr
+            total_cw += s_cw
             total_tok += s_tok
-    cost_in_usd = total_in * 15 / 1_000_000 * 0.282
-    cost_out_usd = total_out * 75 / 1_000_000 * 0.282
+    # Opus 4 价格（per Mtok）：input $15 / output $75 / cacheRead $1.5 / cacheWrite $18.75
+    # Garena gateway 折扣 0.282
+    DISCOUNT = 0.282
+    list_usd = (total_in*15 + total_out*75 + total_cr*1.5 + total_cw*18.75) / 1_000_000
+    cost_usd = list_usd * DISCOUNT
     per_session.sort(key=lambda x: x["tokens"], reverse=True)
     return {
         "date": str(today_sgt),
         "totalInput": total_in,
         "totalOutput": total_out,
+        "totalCacheRead": total_cr,
+        "totalCacheWrite": total_cw,
         "totalTokens": total_tok,
-        "estimatedCostUSD": round(cost_in_usd + cost_out_usd, 4),
+        "listPriceUSD": round(list_usd, 4),
+        "estimatedCostUSD": round(cost_usd, 4),
         "perSession": per_session[:20],
     }
 
@@ -654,7 +664,7 @@ class H(BaseHTTPRequestHandler):
         p = u.path
         qs = parse_qs(u.query or "")
         # 兼容 /console/ 前缀
-        for prefix in ("/console", "/squid-console"):
+        for prefix in ("/console", "/openclaw-console"):
             if p.startswith(prefix):
                 p = p[len(prefix):] or "/"
                 break
@@ -752,7 +762,7 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         u = urlparse(self.path)
         p = u.path
-        for prefix in ("/console", "/squid-console"):
+        for prefix in ("/console", "/openclaw-console"):
             if p.startswith(prefix):
                 p = p[len(prefix):] or "/"
                 break

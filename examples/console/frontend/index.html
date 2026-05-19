@@ -299,7 +299,8 @@
     </div>
     <div class="usage" id="usage">
       <div class="row"><span>今日 tokens</span><span class="num" id="u-tok">-</span></div>
-      <div class="row"><span>估算花费</span><span class="num" id="u-cost">-</span></div>
+      <div class="row"><span>估费（折扣后）</span><span class="num" id="u-cost">-</span></div>
+      <div class="row"><span>估费（list）</span><span class="num" id="u-cost-list">-</span></div>
       <div class="row"><span>活跃 sessions</span><span class="num" id="u-sess">-</span></div>
     </div>
     <div class="sb-tabs" id="sbtabs"></div>
@@ -546,7 +547,8 @@ function showThreadMenu(ev, sid, pid){
 
 function renderUsage(u){
   $('#u-tok').textContent = fmt(u.totalTokens);
-  $('#u-cost').textContent = '$' + (u.estimatedCostUSD || 0).toFixed(3);
+  $('#u-cost').textContent = '$' + (u.estimatedCostUSD || 0).toFixed(2);
+  const lst = $('#u-cost-list'); if (lst) lst.textContent = '$' + (u.listPriceUSD || 0).toFixed(2);
   $('#u-sess').textContent = (u.perSession || []).length;
 }
 
