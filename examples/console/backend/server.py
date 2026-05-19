@@ -433,6 +433,12 @@ def api_running(session_id: str):
     return {"running": bool(info), "info": info}
 
 
+def api_running_all():
+    with _SEND_LOCK:
+        out = {sid: {"pid": info["pid"], "started": info["started"]} for sid, info in _RUNNING.items()}
+    return {"running": out}
+
+
 # ============= Projects =============
 
 def api_projects():
@@ -619,6 +625,8 @@ class H(BaseHTTPRequestHandler):
             return self._json(200, api_running(sid))
         if p == "/api/projects":
             return self._json(200, api_projects())
+        if p == "/api/running-all":
+            return self._json(200, api_running_all())
         return self._serve_static(p)
 
     def _sse_stream(self, session_id: str):
