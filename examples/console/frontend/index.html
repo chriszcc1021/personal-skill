@@ -233,11 +233,18 @@
   .empty{display:flex;align-items:center;justify-content:center;flex:1;color:var(--fg3);font-size:var(--fs-14)}
 
   .inbox{border-top:1px solid var(--br);padding:14px 20px 18px;background:var(--bg);position:sticky;bottom:0}
-  .inbox-inner{max-width:780px;margin:0 auto;display:flex;gap:10px;align-items:flex-end;border:1px solid var(--br2);border-radius:14px;padding:8px 10px 8px 14px;background:var(--bg)}
+  .inbox-inner{max-width:780px;margin:0 auto;display:flex;gap:8px;align-items:flex-end;border:1px solid var(--br2);border-radius:14px;padding:8px 10px 8px 10px;background:var(--bg)}
   .inbox-inner:focus-within{border-color:var(--acc)}
+  .inbox button.attach{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:transparent;color:var(--fg2);font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer}
+  .inbox button.attach:hover{background:var(--bg2);color:var(--fg)}
+  .inbox button.attach:disabled{opacity:.3;cursor:not-allowed}
+  .inbox input[type=file].hidden-file{display:none}
   textarea#input{resize:none;min-height:24px;max-height:200px;padding:6px 0;font-size:var(--fs-14);line-height:var(--lh-base)}
   .inbox button.send{padding:8px 14px;background:var(--acc);color:#fff;border-radius:10px;font-size:var(--fs-13);font-weight:500;white-space:nowrap}
   .inbox button.send:disabled{opacity:.3;cursor:not-allowed}
+  .inbox button.inbox-stop{padding:8px 12px;background:transparent;color:var(--fg2);border:1px solid var(--br2);border-radius:10px;font-size:var(--fs-12);font-weight:500;font-family:var(--ff-mono);letter-spacing:var(--ls-wide);white-space:nowrap;cursor:pointer}
+  .inbox button.inbox-stop:hover{background:var(--bg2);color:var(--fg);border-color:var(--fg2)}
+  .inbox .queue-badge{font-size:var(--fs-11);color:var(--fg2);font-family:var(--ff-mono);letter-spacing:var(--ls-wide);align-self:center;padding:0 4px}
   .inbox .hint{font-size:var(--fs-11);color:var(--fg3);max-width:780px;margin:6px auto 0;text-align:right}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:var(--fs-13);opacity:0;transition:opacity .2s;pointer-events:none;z-index:100}
@@ -323,7 +330,11 @@
     <div class="inbox">
       <div id="paste-preview" class="paste-preview" style="display:none"></div>
       <div class="inbox-inner">
-        <textarea id="input" placeholder="输入消息,Enter 发送,Shift+Enter 换行、Cmd/Ctrl+V 粘贴图" rows="1"></textarea>
+        <button class="attach" id="attach" title="添加图片" aria-label="添加图片">+</button>
+        <input type="file" id="file-input" class="hidden-file" accept="image/*" multiple>
+        <textarea id="input" placeholder="输入消息,Enter 发送,Shift+Enter 换行" rows="1"></textarea>
+        <span class="queue-badge" id="queue-badge" style="display:none"></span>
+        <button class="inbox-stop" id="inbox-stop" style="display:none" title="停止当前 agent (保留队列)">STOP</button>
         <button class="send" id="send" disabled>发送</button>
       </div>
       <div class="hint" id="hint"></div>
@@ -718,6 +729,7 @@ async function selectSession(s){
   $('#ctx').innerHTML = `<b>${fmt(s.totalTokens)}</b> / ${fmt(s.contextTokens)} (${ctxPct}%) · ${s.model||'?'}`;
   $('#chat').innerHTML = '<div class="empty">加载中...</div>';
   $('#send').disabled = false;
+  updateInboxStop();
   if (window.innerWidth < 720) closeSidebar();
   // 关闭旧 SSE
   if (state.es){ try{ state.es.close() }catch(e){} state.es = null }
@@ -854,22 +866,14 @@ function newTurnCard(entry){
       <span class="turn-status"></span>
       <span class="turn-title">思考中</span>
       <span class="turn-meta"><span class="turn-timer">0s</span></span>
-      <button class="turn-stop" title="停止 agent">STOP</button>
     </div>
     <div class="turn-body"></div>
     <div class="turn-assistant"></div>
   `;
   turn.classList.add('open');
-  turn.querySelector('.turn-head').addEventListener('click', (e)=>{
-    if (e.target.closest('.turn-stop')) return;
+  turn.querySelector('.turn-head').addEventListener('click', ()=>{
     turn.classList.toggle('open');
   });
-  turn.querySelector('.turn-stop').onclick = async ()=>{
-    if (!confirm('停止当前 agent?')) return;
-    const r = await fetch('api/stop', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({sessionId: sid})}).then(r=>r.json());
-    if (r.ok){ toast('已发 SIGTERM'); turn.classList.remove('running'); turn.classList.add('stopped'); }
-    else toast('停止失败: '+(r.error||''));
-  };
   // 计时器
   const timer = turn.querySelector('.turn-timer');
   const tick = setInterval(()=>{
@@ -1106,7 +1110,7 @@ function renderPastePreview(){
 }
 
 function updateSendBtn(){
-  $('#send').disabled = (!input.value.trim() && !state.pendingMedia.length) || !state.current || state.sending;
+  $('#send').disabled = (!input.value.trim() && !state.pendingMedia.length) || !state.current;
 }
 
 input.addEventListener('input', ()=>{
@@ -1120,6 +1124,11 @@ input.addEventListener('keydown', e=>{
     if (!$('#send').disabled) send();
   }
 });
+async function addImageFile(f){
+  if (!f || !f.type.startsWith('image/')) return;
+  const dataUrl = await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(f) });
+  state.pendingMedia.push({dataUrl, mime: f.type, name: f.name || 'image.png'});
+}
 input.addEventListener('paste', async (e)=>{
   const items = e.clipboardData?.items;
   if (!items) return;
@@ -1128,23 +1137,64 @@ input.addEventListener('paste', async (e)=>{
       e.preventDefault();
       const f = it.getAsFile();
       if (!f) continue;
-      const dataUrl = await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(f) });
-      state.pendingMedia.push({dataUrl, mime: it.type, name: f.name || 'paste.png'});
+      await addImageFile(f);
       renderPastePreview();
       updateSendBtn();
     }
   }
 });
+$('#attach').onclick = ()=>{ $('#file-input').click() };
+$('#file-input').addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files || []);
+  for (const f of files){ await addImageFile(f) }
+  renderPastePreview();
+  updateSendBtn();
+  e.target.value = '';
+});
 $('#send').onclick = send;
+
+// inbox STOP button
+$('#inbox-stop').onclick = async ()=>{
+  if (!state.current) return;
+  const sid = state.current.sessionId;
+  const r = await fetch('api/stop', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({sessionId: sid})}).then(r=>r.json());
+  if (r.ok){ toast('已发 SIGTERM'); }
+  else toast('停止失败: '+(r.error||''));
+};
+
+function updateInboxStop(){
+  const cur = state.current?.sessionId;
+  const btn = $('#inbox-stop');
+  const badge = $('#queue-badge');
+  if (!btn || !badge) return;
+  const isRun = cur && state.running[cur];
+  const qLen = cur && state.queues ? (state.queues[cur] || 0) : 0;
+  btn.style.display = isRun ? '' : 'none';
+  if (qLen > 0){
+    badge.style.display = '';
+    badge.textContent = `+${qLen} queued`;
+    badge.title = '点击清空队列';
+    badge.style.cursor = 'pointer';
+    badge.onclick = async ()=>{
+      if (!confirm(`清空队列中的 ${qLen} 条消息？`)) return;
+      await fetch('api/queue-clear', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({sessionId: cur})});
+      pollRunning();
+    };
+  } else {
+    badge.style.display = 'none';
+    badge.onclick = null;
+  }
+}
 
 async function send(){
   if (!state.current) return;
   const msg = input.value.trim();
   const hasMedia = state.pendingMedia.length > 0;
   if (!msg && !hasMedia) return;
+  const sid = state.current.sessionId;
+  const isQueueing = !!state.running[sid];
   state.sending = true;
   state.sendStartedAt = Date.now();
-  $('#send').disabled = true;
   // 立即清输入 + 起 optimistic turn（不要等 upload）
   const pendingCopy = state.pendingMedia.slice();
   input.value = ''; input.style.height='auto';
@@ -1157,10 +1207,16 @@ async function send(){
     optimisticTurn = newTurnCard({text: msg || ''});
     const ubub = optimisticTurn.querySelector('.turn-user .ubub');
     if (ubub) ubub.textContent = msg || `(${pendingCopy.length} 张图片)`;
+    if (isQueueing){
+      optimisticTurn.classList.remove('running');
+      optimisticTurn.classList.add('queued');
+      const title = optimisticTurn.querySelector('.turn-title');
+      if (title) title.textContent = '排队中';
+    }
     wrap.appendChild(optimisticTurn);
     c.scrollTop = c.scrollHeight;
   }
-  $('#hint').textContent = hasMedia ? '上传图片中' : 'agent 处理中';
+  $('#hint').textContent = isQueueing ? '已排队' : (hasMedia ? '上传图片中' : 'agent 处理中');
   // 上传 media
   const mediaPaths = [];
   try{
@@ -1174,12 +1230,11 @@ async function send(){
     const ubub = optimisticTurn?.querySelector('.turn-user .ubub');
     if (ubub) ubub.textContent = (msg || '') + '\n\n' + mediaPaths.map(p=>`📎 ${p.split('/').pop()}`).join('\n');
   }
-  $('#hint').textContent = 'agent 处理中';
-  // optimistic 已在函数顶部添加
+  if (!isQueueing) $('#hint').textContent = 'agent 处理中';
   try{
     const r = await fetch('api/send', {
       method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ sessionId: state.current.sessionId, message: msg, mediaPaths })
+      body: JSON.stringify({ sessionId: sid, message: msg, mediaPaths })
     }).then(r=>r.json());
     if (!r.ok){
       toast('发送失败: '+(r.error||'unknown'));
@@ -1188,7 +1243,13 @@ async function send(){
       updateSendBtn();
       return;
     }
-    // 启动 30s NO_REPLY watchdog:SSE 收到 assistant 会清掉 state.sending
+    if (r.queued){
+      $('#hint').textContent = `已排队 · #${r.queueLen}`;
+    }
+    state.sending = false;
+    updateSendBtn();
+    // 立即拉一次状态，让 STOP 按钮 / queue badge 马上刷新
+    pollRunning();
     setTimeout(()=>{
       if (state.sending){
         $('#hint').textContent = 'agent 已静默返回(无文本输出)';
@@ -1223,7 +1284,9 @@ async function pollRunning(){
       }
     }
     state.running = now;
+    state.queues = r.queues || {};
     updateStatusBar();
+    updateInboxStop();
     // 更新 sidebar 运行状态 (轻量 rerender)
     renderProjects();
     markSessionRunning();

@@ -13,6 +13,8 @@
 - **运行状态 + 完成通知**：sidebar 实时 ● 蓝点脉冲（running）/ ● 橙点（完成未读）/ ○ 灰圈（idle），完成时浏览器系统通知 + 880Hz 短提示音
 - **token + 估算花费**：当日总 token，按 Garena gateway 0.282 折扣换算 USD
 - **黏在哪里就发到哪里**：底部输入框直接调 `openclaw agent --session-id <sid>`，发往同一个 session 上下文
+- **发图友好（PC + 移动端）**：输入框左侧 `+` 调原生 file picker（移动端给「相册/拍照/文件」三选一），PC 仍可 Cmd/Ctrl+V 直接粘贴截图
+- **消息可排队 + 一键 STOP**：agent 跑着也能继续发，自动入队按序执行；STOP 按钮挪到输入框旁，运行时才显形，停的只是当前 turn 不清队列；右下角 `+N queued` 一键清空
 
 ## 架构
 

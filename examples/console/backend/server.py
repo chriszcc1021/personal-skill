@@ -429,17 +429,15 @@ def _entry_to_sse(e: dict):
 
 _SEND_LOCK = threading.Lock()
 _RUNNING: dict = {}  # sessionId -> {pid, started}
+_QUEUE: dict = {}    # sessionId -> list[{message, mediaPaths, enqueuedAt}]
 
 
-def api_send(session_id: str, message: str, media_paths: list = None):
-    """同步跳进后台，立即返回；agent 走 jsonl 追加 → SSE 推。"""
+def _build_full_message(session_id: str, message: str, media_paths: list = None):
+    """拼接 media 前缀 + 项目上下文注入。返回 (full_msg, work_cwd)。"""
     full_msg = message
     if media_paths:
         prefix = "[media attached: " + " | ".join(media_paths) + "]\n"
         full_msg = prefix + full_msg
-    # 项目上下文注入（对齐 Codex）：
-    # - 首次 send：注入 prompt + cwd 说明作为 system-like 上下文
-    # - 后续 send：只带一行轻量 cwd 提醒，避免占 token
     proj = _project_for_session(session_id)
     work_cwd = None
     if proj:
@@ -460,35 +458,77 @@ def api_send(session_id: str, message: str, media_paths: list = None):
             full_msg = "\n\n".join(pieces) + "\n\n---\n\n" + full_msg
         elif work_cwd:
             full_msg = f"[cwd: {work_cwd}]\n" + full_msg
-    with _SEND_LOCK:
-        existing = _RUNNING.get(session_id)
-        if existing:
-            return {"ok": False, "error": "already running", "runningSince": existing["started"]}
-        cmd = ["openclaw", "agent", "--session-id", session_id, "--message", full_msg, "--json", "--timeout", "300"]
-        log_path = Path("/tmp") / f"console-send-{session_id[:8]}.log"
-        logf = log_path.open("ab")
+    return full_msg, work_cwd
+
+
+def _spawn_agent_locked(session_id: str, full_msg: str, work_cwd: str):
+    """起 subprocess。调用时必须已持有 _SEND_LOCK。"""
+    cmd = ["openclaw", "agent", "--session-id", session_id, "--message", full_msg, "--json", "--timeout", "300"]
+    log_path = Path("/tmp") / f"console-send-{session_id[:8]}.log"
+    logf = log_path.open("ab")
+    try:
+        proc = subprocess.Popen(
+            cmd, stdout=logf, stderr=logf, stdin=subprocess.DEVNULL,
+            start_new_session=True, cwd=work_cwd,
+        )
+    except FileNotFoundError as e:
+        logf.close()
+        return {"ok": False, "error": f"openclaw CLI not found in PATH: {e}"}
+    _RUNNING[session_id] = {"pid": proc.pid, "started": int(time.time()), "cwd": work_cwd}
+
+    def _wait():
         try:
-            proc = subprocess.Popen(
-                cmd, stdout=logf, stderr=logf, stdin=subprocess.DEVNULL,
-                start_new_session=True, cwd=work_cwd,
-            )
-        except FileNotFoundError as e:
+            proc.wait(timeout=360)
+        except Exception:
+            proc.kill()
+        finally:
             logf.close()
-            return {"ok": False, "error": f"openclaw CLI not found in PATH: {e}"}
-        _RUNNING[session_id] = {"pid": proc.pid, "started": int(time.time()), "cwd": work_cwd}
+            # 当前 turn 结束后，看队列里有没有下一条要起
+            with _SEND_LOCK:
+                _RUNNING.pop(session_id, None)
+                q = _QUEUE.get(session_id) or []
+                if q:
+                    nxt = q.pop(0)
+                    if not q:
+                        _QUEUE.pop(session_id, None)
+                    nxt_full, nxt_cwd = _build_full_message(session_id, nxt["message"], nxt.get("mediaPaths"))
+                    _spawn_agent_locked(session_id, nxt_full, nxt_cwd)
 
-        def _wait():
-            try:
-                proc.wait(timeout=360)
-            except Exception:
-                proc.kill()
-            finally:
-                logf.close()
-                with _SEND_LOCK:
-                    _RUNNING.pop(session_id, None)
+    threading.Thread(target=_wait, daemon=True).start()
+    return {"ok": True, "pid": proc.pid, "started": _RUNNING[session_id]["started"]}
 
-        threading.Thread(target=_wait, daemon=True).start()
-        return {"ok": True, "pid": proc.pid, "started": _RUNNING[session_id]["started"]}
+
+def api_send(session_id: str, message: str, media_paths: list = None):
+    """有队列的 send：若 sid 正在跑，入队；否则立即起。"""
+    with _SEND_LOCK:
+        if _RUNNING.get(session_id):
+            _QUEUE.setdefault(session_id, []).append({
+                "message": message,
+                "mediaPaths": media_paths or [],
+                "enqueuedAt": int(time.time()),
+            })
+            return {"ok": True, "queued": True, "queueLen": len(_QUEUE[session_id])}
+        full_msg, work_cwd = _build_full_message(session_id, message, media_paths)
+        return _spawn_agent_locked(session_id, full_msg, work_cwd)
+
+
+def api_queue(session_id: str):
+    with _SEND_LOCK:
+        q = list(_QUEUE.get(session_id) or [])
+    return {"queue": q, "len": len(q)}
+
+
+def api_queue_all():
+    with _SEND_LOCK:
+        out = {sid: len(q) for sid, q in _QUEUE.items() if q}
+    return {"queues": out}
+
+
+def api_queue_clear(session_id: str):
+    with _SEND_LOCK:
+        n = len(_QUEUE.get(session_id) or [])
+        _QUEUE.pop(session_id, None)
+    return {"ok": True, "cleared": n}
 
 
 def api_running(session_id: str):
@@ -500,7 +540,8 @@ def api_running(session_id: str):
 def api_running_all():
     with _SEND_LOCK:
         out = {sid: {"pid": info["pid"], "started": info["started"]} for sid, info in _RUNNING.items()}
-    return {"running": out}
+        queues = {sid: len(q) for sid, q in _QUEUE.items() if q}
+    return {"running": out, "queues": queues}
 
 
 # ============= Projects =============
@@ -784,6 +825,11 @@ class H(BaseHTTPRequestHandler):
             if not sid:
                 return self._json(400, {"error": "sessionId required"})
             return self._json(200, api_stop(sid))
+        if p == "/api/queue-clear":
+            sid = data.get("sessionId", "")
+            if not sid:
+                return self._json(400, {"error": "sessionId required"})
+            return self._json(200, api_queue_clear(sid))
         if p == "/api/upload":
             return self._handle_upload(body)
         if p == "/api/session-meta":
