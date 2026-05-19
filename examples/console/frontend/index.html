@@ -666,7 +666,15 @@ async function selectSession(s){
   state.current = s;
   renderSessions();
   renderProjects();
-  $('#title').textContent = s.label;
+  // 显示所属项目 + cwd
+  const projOf = (state.projects||[]).find(p=>p.threads.some(t=>t.sessionId===s.sessionId));
+  const tAlias = projOf?.threads.find(t=>t.sessionId===s.sessionId)?.alias;
+  if (projOf){
+    const cwdHint = projOf.cwd ? ` <span style="color:var(--fg3);font-family:var(--ff-mono);font-size:var(--fs-11)">· ${escapeHTML(projOf.cwd)}</span>` : '';
+    $('#title').innerHTML = `<span style="color:var(--fg)">${escapeHTML(tAlias || s.label)}</span> <span style="color:var(--fg3);font-size:var(--fs-12)">· ${escapeHTML(projOf.name)}</span>${cwdHint}`;
+  }else{
+    $('#title').textContent = s.label;
+  }
   const ctxPct = s.contextTokens ? Math.round((s.totalTokens||0)/s.contextTokens*100) : 0;
   $('#ctx').innerHTML = `<b>${fmt(s.totalTokens)}</b> / ${fmt(s.contextTokens)} (${ctxPct}%) · ${s.model||'?'}`;
   $('#chat').innerHTML = '<div class="empty">加载中…</div>';
@@ -676,8 +684,16 @@ async function selectSession(s){
   if (state.es){ try{ state.es.close() }catch(e){} state.es = null }
   try{
     const r = await fetch(`api/messages?sessionId=${encodeURIComponent(s.sessionId)}&limit=80`).then(r=>r.json());
-    renderMessages(r.messages);
-  }catch(e){ $('#chat').innerHTML = '<div class="empty">加载失败</div>' }
+    if (r && r.error){
+      // 空 thread / 还没有 jsonl
+      const projThread = (state.projects||[]).flatMap(p=>p.threads).find(t=>t.sessionId===s.sessionId);
+      const projName = (state.projects||[]).find(p=>p.threads.some(t=>t.sessionId===s.sessionId))?.name;
+      const hint = projThread ? `<div style="font-size:var(--fs-12);color:var(--fg2);margin-top:6px">线程· ${escapeHTML(projThread.alias||'')}${projName?` <span style="color:var(--fg3)">· ${escapeHTML(projName)}</span>`:''}</div>` : '';
+      $('#chat').innerHTML = `<div class="empty"><div style="font-size:var(--fs-14);color:var(--fg)">空线程</div>${hint}<div style="font-size:var(--fs-12);color:var(--fg3);margin-top:10px">发送一条消息开始。项目 context / cwd 会在首条自动注入。</div></div>`;
+    }else{
+      renderMessages(r.messages || []);
+    }
+  }catch(e){ $('#chat').innerHTML = '<div class="empty">加载失败 · '+escapeHTML(e.message||'')+'</div>' }
   // 连 SSE 追新消息（带 polling fallback，适配 cloudflare quick tunnel）
   state.streamMode = 'connecting';
   state.lastTs = 0;

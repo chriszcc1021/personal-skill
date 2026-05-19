@@ -380,7 +380,9 @@ def api_send(session_id: str, message: str, media_paths: list = None):
     if media_paths:
         prefix = "[media attached: " + " | ".join(media_paths) + "]\n"
         full_msg = prefix + full_msg
-    # 项目上下文：首次 send 注入 prompt + cwd 提示
+    # 项目上下文注入（对齐 Codex）：
+    # - 首次 send：注入 prompt + cwd 说明作为 system-like 上下文
+    # - 后续 send：只带一行轻量 cwd 提醒，避免占 token
     proj = _project_for_session(session_id)
     work_cwd = None
     if proj:
@@ -389,13 +391,18 @@ def api_send(session_id: str, message: str, media_paths: list = None):
             if cw.exists() and cw.is_dir():
                 work_cwd = str(cw)
         if not _session_has_history(session_id):
-            pieces = []
+            pieces = [f"[项目上下文 · {proj.get('name','')}]"]
             if proj.get("prompt"):
-                pieces.append(f"[项目上下文 · {proj.get('name','')}]\n{proj['prompt'].strip()}")
+                pieces.append(proj['prompt'].strip())
             if work_cwd:
-                pieces.append(f"[项目工作目录] {work_cwd}\n后续 exec/read/write/edit 默认在此目录下进行（openclaw cwd 为 workspace，需显式 cd 或使用绝对路径）。")
-            if pieces:
-                full_msg = "\n\n".join(pieces) + "\n\n---\n\n" + full_msg
+                pieces.append(
+                    f"[项目工作目录] {work_cwd}\n"
+                    "后续所有 exec/read/write/edit 默认在此目录下。"
+                    "openclaw 运行 cwd 是 workspace，你需要在 exec 里显式 cd 或使用绝对路径。"
+                )
+            full_msg = "\n\n".join(pieces) + "\n\n---\n\n" + full_msg
+        elif work_cwd:
+            full_msg = f"[cwd: {work_cwd}]\n" + full_msg
     with _SEND_LOCK:
         existing = _RUNNING.get(session_id)
         if existing:
