@@ -11,7 +11,8 @@
 │   ├── project-contribution-report/  # 仓库贡献画像 skill
 │   └── pitch-skill/           # 数据型 pitch / 商业机会 deck skill
 └── examples/                  # 实战案例
-    └── appliance-guide/       # 家电选购指南（含登山包）
+    ├── appliance-guide/       # 家电选购指南（含登山包）
+    └── console/               # OpenClaw Console — agent 多项目控制台
 ```
 
 ## 🧰 Skills
@@ -67,7 +68,34 @@
 
 详见 [`skills/pitch-skill/SKILL.md`](skills/pitch-skill/SKILL.md)。
 
+### openclaw-console-skill
+为 CLI 驱动的 agent runtime（OpenClaw / Codex / Claude Code）打造 IM 风格浏览器控制台的方法论。
+
+**用途：**
+- 多项目 / 多线程并行管理你的 agent 会话
+- 给只能本地跑的 agent 加上远程/手机访问能力
+- 在不引入 React/Vue/DB 的前提下实现专业控制台
+
+**特点：**
+- Codex 风格 turn 渲染（右气泡 + 折叠头 + 纯文本回复）
+- 多 channel 来源色签 + 未读 dot 状态机
+- 纯 stdlib 后端（~900 行） + 单文件 HTML 前端（~1500 行）
+- jsonl 作为所有持久化源，元数据外挂 JSON
+- 配 cloudflared tunnel + nginx 远程访问
+
+详见 [`skills/openclaw-console-skill/SKILL.md`](skills/openclaw-console-skill/SKILL.md)，参考实现在 [`examples/console/`](examples/console)。
+
 ## 📚 Examples
+
+### console
+OpenClaw Console — 多项目多线程并行的浏览器 agent 控制台。
+
+- Codex 风格对话渲染
+- IM 来源 channel tag（seatalk蓝 / telegram青 / discord紫 ...）
+- 运行/未读/已读 三态状态机
+- 纯 stdlib + 单文件 HTML + cloudflared
+
+详见 [`examples/console/README.md`](examples/console/README.md)。
 
 ### appliance-guide
 家电选购指南门户网站，部署于 `http://43.134.32.223:8080/appliance-guide/`。

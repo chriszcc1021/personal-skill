@@ -148,11 +148,11 @@
   .turn-card.open .turn-head .turn-chev{transform:rotate(90deg)}
   .turn-card.running .turn-head{color:var(--fg2)}
   .turn-card.running .turn-head .turn-title{color:var(--fg2)}
-  /* 折叠体：tools / thinking */
+  /* 折叠体:tools / thinking */
   .turn-body{display:none;padding:6px 0 4px;background:transparent;border-left:2px solid var(--br2);margin-left:6px;padding-left:14px}
   .turn-card.open .turn-body{display:block}
   .turn-card.running .turn-body{display:block}
-  /* assistant 纯文本（总是可见）*/
+  /* assistant 纯文本(总是可见)*/
   .turn-assistant{margin:6px 0 0;color:var(--fg);font-size:var(--fs-14);line-height:var(--lh-relaxed);white-space:normal;word-wrap:break-word;overflow-wrap:anywhere}
   .turn-assistant p{margin:8px 0}
   .turn-assistant code{background:var(--bg2);padding:1px 6px;border-radius:3px;font-size:var(--fs-mono-xs)}
@@ -298,9 +298,9 @@
       </div>
     </div>
     <div class="usage" id="usage">
-      <div class="row"><span>今日 tokens</span><span class="num" id="u-tok">—</span></div>
-      <div class="row"><span>估算花费</span><span class="num" id="u-cost">—</span></div>
-      <div class="row"><span>活跃 sessions</span><span class="num" id="u-sess">—</span></div>
+      <div class="row"><span>今日 tokens</span><span class="num" id="u-tok">-</span></div>
+      <div class="row"><span>估算花费</span><span class="num" id="u-cost">-</span></div>
+      <div class="row"><span>活跃 sessions</span><span class="num" id="u-sess">-</span></div>
     </div>
     <div class="sb-tabs" id="sbtabs"></div>
     <div id="projects-section"></div>
@@ -322,7 +322,7 @@
     <div class="inbox">
       <div id="paste-preview" class="paste-preview" style="display:none"></div>
       <div class="inbox-inner">
-        <textarea id="input" placeholder="输入消息，Enter 发送，Shift+Enter 换行、Cmd/Ctrl+V 粘贴图" rows="1"></textarea>
+        <textarea id="input" placeholder="输入消息,Enter 发送,Shift+Enter 换行、Cmd/Ctrl+V 粘贴图" rows="1"></textarea>
         <button class="send" id="send" disabled>发送</button>
       </div>
       <div class="hint" id="hint"></div>
@@ -334,7 +334,7 @@
 
 <script>
 const $ = (s)=>document.querySelector(s);
-const fmt = (n)=>n?n.toLocaleString():'—';
+const fmt = (n)=>n?n.toLocaleString():'-';
 let state = { sessions: [], current: null, sending: false, filter: 'main' };
 
 const CATS = [
@@ -405,7 +405,7 @@ function renderProjects(){
             const running = state.running && state.running[t.sessionId] ? ' running' : '';
             const unread = state.unread && state.unread[t.sessionId] ? ' unread' : '';
             const name = t.alias || ('thread · ' + t.sessionId.slice(0,6));
-            const tok = t.totalTokens ? fmt(t.totalTokens) : '—';
+            const tok = t.totalTokens ? fmt(t.totalTokens) : '-';
             let lead = '<span class="thread-dot"></span>';
             if (running) lead = '<span class="thread-dot"></span>'; // running 状态 CSS 接管
             else if (unread) lead = '<span class="unread-dot"></span>';
@@ -468,7 +468,7 @@ function openProjectEditor(p){
       <label class="pm-lab">名称</label><input type="text" class="pm-name" value="${escapeHTML(p.name)}">
       <label class="pm-lab">工作目录 (可选)</label><input type="text" class="pm-cwd" placeholder="/home/openclaw/.openclaw/workspace/projects/..." value="${escapeHTML(p.cwd||'')}">
       <label class="pm-lab">初始 context / system prompt (仅新 thread 首次 send 时注入)</label>
-      <textarea class="pm-prompt" rows="8" placeholder="例如：这是 xxx 项目，使用 React+TS，API 在 backend/…">${escapeHTML(p.prompt||'')}</textarea>
+      <textarea class="pm-prompt" rows="8" placeholder="例如:这是 xxx 项目,使用 React+TS,API 在 backend/...">${escapeHTML(p.prompt||'')}</textarea>
       <div class="pm-btns">
         <button class="pm-cancel">取消</button>
         <button class="pm-save">保存</button>
@@ -506,7 +506,7 @@ function showProjectMenu(ev, pid){
         await refresh();
       }
     }else if (b.dataset.act === 'delete'){
-      if (confirm('删除项目？（thread 不会删，只是从项目脱离）')){
+      if (confirm('删除项目?(thread 不会删,只是从项目脱离)')){
         await fetch('api/project-delete', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({projectId: pid})});
         await refresh();
       }
@@ -529,7 +529,7 @@ function showThreadMenu(ev, sid, pid){
       const v = prompt('线程新名');
       if (v !== null){ await updateMeta(sid, {alias: v.trim()}); await refresh() }
     }else if (b.dataset.act === 'move'){
-      const target = prompt('目标项目 id（现有）:\n' + (state.projects||[]).map(p=>p.projectId).join('\n'));
+      const target = prompt('目标项目 id(现有):\n' + (state.projects||[]).map(p=>p.projectId).join('\n'));
       if (target && target.trim()){
         await fetch('api/thread-assign', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({projectId: target.trim(), sessionId: sid})});
         await refresh();
@@ -575,7 +575,7 @@ function renderSessions(){
     bar.querySelector('#bulk-clear').onclick = ()=>{ state.selectedIds.clear(); renderSessions() };
     bar.querySelector('#bulk-assign').onclick = async ()=>{
       const opts = (state.projects||[]).map(p=>`${p.projectId} (${p.name})`).join('\n') || '暂无项目';
-      const pid = prompt('目标项目 id：\n' + opts);
+      const pid = prompt('目标项目 id:\n' + opts);
       if (!pid || !pid.trim()) return;
       const r = await fetch('api/thread-assign-batch', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({projectId: pid.trim(), sessionIds: [...state.selectedIds]})}).then(r=>r.json());
       toast(`已加入 ${r.count||0} 个`);
@@ -621,7 +621,7 @@ function renderSessions(){
 }
 
 function ageLabel(ms){
-  if (!ms) return '—';
+  if (!ms) return '-';
   const sec = Math.floor(ms/1000);
   if (sec < 60) return sec + 's';
   if (sec < 3600) return Math.floor(sec/60) + 'm';
@@ -632,7 +632,7 @@ function ageLabel(ms){
 function escapeHTML(s){ return (s||'').replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])) }
 
 function prettyLabel(s){
-  // 群聊：服务端如能解出群名（label 不含 sessionId/chat_id hash）优先用
+  // 群聊:服务端如能解出群名(label 不含 sessionId/chat_id hash)优先用
   if (s.category === 'group'){
     const serverLabel = s.label || '';
     const isHashed = /^群\s*·\s*[a-f0-9]{4,}$/i.test(serverLabel) || /^群\s*·\s*[a-z0-9]{6,}$/i.test(serverLabel);
@@ -652,7 +652,7 @@ function prettyLabel(s){
   return s.label;
 }
 
-function truncate(t, n){ return t && t.length > n ? t.slice(0, n) + '…' : (t||'') }
+function truncate(t, n){ return t && t.length > n ? t.slice(0, n) + '...' : (t||'') }
 
 function showSessionMenu(ev, s){
   document.querySelectorAll('.session-menu').forEach(m=>m.remove());
@@ -669,7 +669,7 @@ function showSessionMenu(ev, s){
   m.querySelectorAll('button').forEach(b=>b.onclick=async ()=>{
     const act = b.dataset.act;
     if (act === 'rename'){
-      const v = prompt('设置别名（留空清除）', s.alias || s.label);
+      const v = prompt('设置别名(留空清除)', s.alias || s.label);
       if (v !== null){
         await updateMeta(s.sessionId, {alias: v.trim()});
         await refresh();
@@ -714,7 +714,7 @@ async function selectSession(s){
   }
   const ctxPct = s.contextTokens ? Math.round((s.totalTokens||0)/s.contextTokens*100) : 0;
   $('#ctx').innerHTML = `<b>${fmt(s.totalTokens)}</b> / ${fmt(s.contextTokens)} (${ctxPct}%) · ${s.model||'?'}`;
-  $('#chat').innerHTML = '<div class="empty">加载中…</div>';
+  $('#chat').innerHTML = '<div class="empty">加载中...</div>';
   $('#send').disabled = false;
   if (window.innerWidth < 720) closeSidebar();
   // 关闭旧 SSE
@@ -725,13 +725,13 @@ async function selectSession(s){
       // 空 thread / 还没有 jsonl
       const projThread = (state.projects||[]).flatMap(p=>p.threads).find(t=>t.sessionId===s.sessionId);
       const projName = (state.projects||[]).find(p=>p.threads.some(t=>t.sessionId===s.sessionId))?.name;
-      const hint = projThread ? `<div style="font-size:var(--fs-12);color:var(--fg2);margin-top:8px">线程：${escapeHTML(projThread.alias||'')}${projName?` · ${escapeHTML(projName)}`:''}</div>` : '';
+      const hint = projThread ? `<div style="font-size:var(--fs-12);color:var(--fg2);margin-top:8px">线程:${escapeHTML(projThread.alias||'')}${projName?` · ${escapeHTML(projName)}`:''}</div>` : '';
       $('#chat').innerHTML = `<div class="empty"><div style="font-size:var(--fs-15);color:var(--fg);font-weight:500">空线程</div>${hint}<div style="font-size:var(--fs-12);color:var(--fg3);margin-top:12px">发送一条消息开始。项目 context / cwd 会在首条自动注入。</div></div>`;
     }else{
       renderMessages(r.messages || []);
     }
   }catch(e){ $('#chat').innerHTML = '<div class="empty">加载失败 · '+escapeHTML(e.message||'')+'</div>' }
-  // 连 SSE 追新消息（带 polling fallback，适配 cloudflare quick tunnel）
+  // 连 SSE 追新消息(带 polling fallback,适配 cloudflare quick tunnel)
   state.streamMode = 'connecting';
   state.lastTs = 0;
   state.pollTimer && clearInterval(state.pollTimer); state.pollTimer = null;
@@ -746,7 +746,7 @@ async function selectSession(s){
     });
     es.addEventListener('error', ()=>{
       if (!gotHello && state.streamMode !== 'poll'){
-        // SSE 不通，走 polling fallback
+        // SSE 不通,走 polling fallback
         startPolling(s.sessionId);
       }
     });
@@ -759,15 +759,19 @@ function startPolling(sid){
   if (state.es){ try{ state.es.close() }catch(e){} state.es=null }
   state.streamMode = 'poll';
   if (state.pollTimer) clearInterval(state.pollTimer);
-  let lastCount = document.querySelectorAll('.msg-wrap .msg').length;
+  let lastCount = document.querySelectorAll('.msg-wrap .turn-card').length;
   state.pollTimer = setInterval(async ()=>{
     if (!state.current || state.current.sessionId !== sid){ clearInterval(state.pollTimer); state.pollTimer=null; return }
+    // 发送中不重绘，避免冲掉 optimistic turn
+    if (state.sending) return;
     try{
       const r = await fetch(`api/messages?sessionId=${encodeURIComponent(sid)}&limit=80`).then(r=>r.json());
       const msgs = r.messages||[];
-      if (msgs.length > lastCount){
+      const userN = msgs.filter(m=>m.role==='user').length;
+      const turnN = document.querySelectorAll('.msg-wrap .turn-card').length;
+      if (userN > turnN){
         renderMessages(msgs);
-        lastCount = msgs.length;
+        lastCount = userN;
         if (state.sending){ state.sending=false; $('#hint').textContent=''; updateSendBtn() }
       }
     }catch(e){}
@@ -779,10 +783,10 @@ function appendStreamEntry(entry){
   let wrap = c.querySelector('.msg-wrap');
   if (!wrap){ wrap = document.createElement('div'); wrap.className='msg-wrap'; c.innerHTML=''; c.appendChild(wrap) }
   if (entry.role === 'user'){
-    // 去重：如果最后一个 turn 是 running 且 title 与本条匹配，跳过（optimistic 已起过了）
+    // 去重:如果最后一个 turn 是 running 且 title 与本条匹配,跳过(optimistic 已起过了)
     const last = wrap.querySelector('.turn-card:last-child');
     if (last && last.classList.contains('running')){
-      // 认为是同一条，optimistic + stream 重复
+      // 认为是同一条,optimistic + stream 重复
       return;
     }
     const turn = newTurnCard(entry);
@@ -793,7 +797,7 @@ function appendStreamEntry(entry){
   // 找到最后一个 turn-card作 body
   let body = wrap.querySelector('.turn-card:last-child .turn-body');
   if (!body){
-    // 没有 turn（可能是初始加载后收到 entry），裹一个
+    // 没有 turn(可能是初始加载后收到 entry),裹一个
     const orph = document.createElement('div'); orph.className='turn-card'; orph.innerHTML = '<div class="turn-head"><span class="turn-title">(连续)</span></div><div class="turn-body"></div>';
     wrap.appendChild(orph);
     body = orph.querySelector('.turn-body');
@@ -859,7 +863,7 @@ function newTurnCard(entry){
     turn.classList.toggle('open');
   });
   turn.querySelector('.turn-stop').onclick = async ()=>{
-    if (!confirm('停止当前 agent？')) return;
+    if (!confirm('停止当前 agent?')) return;
     const r = await fetch('api/stop', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({sessionId: sid})}).then(r=>r.json());
     if (r.ok){ toast('已发 SIGTERM'); turn.classList.remove('running'); turn.classList.add('stopped'); }
     else toast('停止失败: '+(r.error||''));
@@ -902,11 +906,11 @@ function attachToolResult(card, entry){
   if (body){
     body.style.display = 'block';
     if (tname === 'exec'){
-      body.innerHTML = `<div class="term"><div class="term-head">exit ${entry.exitCode ?? '?'}  ·  ${((entry.durationMs||0)/1000).toFixed(1)}s</div><pre class="term-body">${escapeHTML(txt || '(no output)')}</pre></div>`;
+      body.innerHTML = `<div class="term"><div class="term-head">exit ${entry.exitCode ?? '?'}  ·  ${((entry.durationMs||0)/1000).toFixed(1)}s</div><pre class="term-body">${escapeHTML(txt || '(no output)')}</pre></div>`;
     }else if (tname === 'edit' || tname === 'write'){
       body.innerHTML = `<pre class="diff">${highlightDiff(txt)}</pre>`;
     }else if (tname === 'read'){
-      body.innerHTML = `<pre class="code-preview">${escapeHTML(txt.slice(0, 2000))}${txt.length>2000?'\n…':''}</pre>`;
+      body.innerHTML = `<pre class="code-preview">${escapeHTML(txt.slice(0, 2000))}${txt.length>2000?'\n...':''}</pre>`;
     }else{
       body.innerHTML = `<pre>${escapeHTML(txt || '(empty)')}</pre>`;
     }
@@ -917,7 +921,7 @@ function attachToolResult(card, entry){
 }
 
 function highlightDiff(s){
-  // 简易 diff 着色：+/- 开头行
+  // 简易 diff 着色:+/- 开头行
   return escapeHTML(s).split('\n').map(line=>{
     if (line.startsWith('+')) return `<span class="d-add">${line}</span>`;
     if (line.startsWith('-')) return `<span class="d-del">${line}</span>`;
@@ -1139,32 +1143,37 @@ async function send(){
   state.sending = true;
   state.sendStartedAt = Date.now();
   $('#send').disabled = true;
-  $('#hint').textContent = hasMedia ? '上传图片中' : 'agent 处理中';
-  // 先上传 media
-  const mediaPaths = [];
-  try{
-    for (const m of state.pendingMedia){
-      const r = await fetch('api/upload', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({dataUrl: m.dataUrl})}).then(r=>r.json());
-      if (!r.ok){ toast('上传失败: '+(r.error||'')); state.sending=false; updateSendBtn(); $('#hint').textContent=''; return }
-      mediaPaths.push(r.path);
-    }
-  }catch(e){ toast('上传错误: '+e.message); state.sending=false; updateSendBtn(); return }
+  // 立即清输入 + 起 optimistic turn（不要等 upload）
+  const pendingCopy = state.pendingMedia.slice();
+  input.value = ''; input.style.height='auto';
   state.pendingMedia = []; renderPastePreview();
-  $('#hint').textContent = 'agent 处理中';
-  // optimistic: 起一个新 turn
+  let optimisticTurn = null;
   {
     const c = $('#chat');
     let wrap = c.querySelector('.msg-wrap');
     if (!wrap){ wrap = document.createElement('div'); wrap.className='msg-wrap'; c.innerHTML=''; c.appendChild(wrap) }
-    const txt = (msg || '') + (mediaPaths.length ? '\n \n' + mediaPaths.map(p=>`📎 ${p.split('/').pop()}`).join('\n') : '');
-    const turn = newTurnCard({text: '[Tue] ' + txt});
-    // 覆盖 turn-user 为真实文本
-    turn.querySelector('.turn-user').innerHTML = renderMd(msg || '');
-    turn.querySelector('.turn-title').textContent = (msg || '(仅图片)').slice(0,80);
-    wrap.appendChild(turn);
+    optimisticTurn = newTurnCard({text: msg || ''});
+    const ubub = optimisticTurn.querySelector('.turn-user .ubub');
+    if (ubub) ubub.textContent = msg || `(${pendingCopy.length} 张图片)`;
+    wrap.appendChild(optimisticTurn);
     c.scrollTop = c.scrollHeight;
   }
-  input.value = ''; input.style.height='auto';
+  $('#hint').textContent = hasMedia ? '上传图片中' : 'agent 处理中';
+  // 上传 media
+  const mediaPaths = [];
+  try{
+    for (const m of pendingCopy){
+      const r = await fetch('api/upload', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({dataUrl: m.dataUrl})}).then(r=>r.json());
+      if (!r.ok){ toast('上传失败: '+(r.error||'')); state.sending=false; updateSendBtn(); $('#hint').textContent=''; if (optimisticTurn) optimisticTurn.remove(); return }
+      mediaPaths.push(r.path);
+    }
+  }catch(e){ toast('上传错误: '+e.message); state.sending=false; updateSendBtn(); if (optimisticTurn) optimisticTurn.remove(); return }
+  if (mediaPaths.length){
+    const ubub = optimisticTurn?.querySelector('.turn-user .ubub');
+    if (ubub) ubub.textContent = (msg || '') + '\n\n' + mediaPaths.map(p=>`📎 ${p.split('/').pop()}`).join('\n');
+  }
+  $('#hint').textContent = 'agent 处理中';
+  // optimistic 已在函数顶部添加
   try{
     const r = await fetch('api/send', {
       method:'POST', headers:{'content-type':'application/json'},
@@ -1177,10 +1186,10 @@ async function send(){
       updateSendBtn();
       return;
     }
-    // 启动 30s NO_REPLY watchdog：SSE 收到 assistant 会清掉 state.sending
+    // 启动 30s NO_REPLY watchdog:SSE 收到 assistant 会清掉 state.sending
     setTimeout(()=>{
       if (state.sending){
-        $('#hint').textContent = 'agent 已静默返回（无文本输出）';
+        $('#hint').textContent = 'agent 已静默返回(无文本输出)';
         state.sending = false;
         updateSendBtn();
       }
@@ -1225,7 +1234,7 @@ function markSessionRunning(){
   });
   for (const sid of Object.keys(state.running)){
     document.querySelectorAll(`.session-item`).forEach(el=>{
-      // 没有 data-sid 索引，简略
+      // 没有 data-sid 索引,简略
     });
   }
 }
@@ -1265,7 +1274,7 @@ function notifyDone(label, dur, sid){
     renderProjects();
     renderSessions();
   }
-  // 原生通知（仅后台 / 移动端隐藏时）
+  // 原生通知(仅后台 / 移动端隐藏时)
   if (window.Notification && Notification.permission === 'granted' && document.visibilityState !== 'visible'){
     try{ new Notification('OpenClaw · ' + label, {body: `任务完成 · 耗时 ${dur}s`, tag: 'oc-'+sid}) }catch(e){}
   }
