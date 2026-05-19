@@ -548,6 +548,17 @@ async function send(){
   }catch(e){ toast('上传错误: '+e.message); state.sending=false; updateSendBtn(); return }
   state.pendingMedia = []; renderPastePreview();
   $('#hint').textContent = '发送中…agent 运行中';
+  // optimistic: 立即显示用户消息
+  {
+    const c = $('#chat');
+    let wrap = c.querySelector('.msg-wrap');
+    if (!wrap){ wrap = document.createElement('div'); wrap.className='msg-wrap'; c.innerHTML=''; c.appendChild(wrap) }
+    const d = document.createElement('div'); d.className = 'msg user pending';
+    const mediaHtml = mediaPaths.map(p=>`<div class="hint-small">📎 ${escapeHTML(p.split('/').pop())}</div>`).join('');
+    d.innerHTML = mediaHtml + (msg ? `<div class="bubble">${renderMd(msg)}</div>` : '');
+    wrap.appendChild(d);
+    c.scrollTop = c.scrollHeight;
+  }
   input.value = ''; input.style.height='auto';
   try{
     const r = await fetch('api/send', {
