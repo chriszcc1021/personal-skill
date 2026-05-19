@@ -35,22 +35,23 @@ def _load_meta() -> dict:
 def _save_meta(d: dict):
     SESSION_META_FILE.write_text(json.dumps(d, ensure_ascii=False, indent=2), "utf-8")
 
-_HINT_CACHE: dict = {}  # {sessionId: (mtime, hint)}
+_HINT_CACHE: dict = {}  # {sessionId: (mtime, {hint, lastSender, recentSenders})}
 
 
-def _last_user_hint(session_id: str) -> str:
-    """抽最近一条用户消息中的实际文字（去 metadata）作为可读 hint"""
+def _extract_session_info(session_id: str) -> dict:
+    """从 jsonl 抽取：hint、最近发言者、最近 3 个发言者。"""
     f = SESSIONS_DIR / f"{session_id}.jsonl"
     if not f.exists():
-        return ""
+        return {"hint": "", "lastSender": "", "recentSenders": []}
     try:
         mt = f.stat().st_mtime
     except Exception:
-        return ""
+        return {"hint": "", "lastSender": "", "recentSenders": []}
     cached = _HINT_CACHE.get(session_id)
     if cached and cached[0] == mt:
         return cached[1]
-    last_user = ""
+    last_hint = ""
+    senders_recent = []
     try:
         with f.open() as fp:
             for line in fp:
@@ -67,21 +68,55 @@ def _last_user_hint(session_id: str) -> str:
                     t = c.get("text", "")
                     if not t:
                         continue
-                    cleaned = re.sub(r'```json.*?```', '', t, flags=re.DOTALL)
-                    cleaned = re.sub(r'Conversation info[^\n]*\n+```json.*?```', '', cleaned, flags=re.DOTALL)
-                    cleaned = re.sub(r'Conversation info.*?(?=\n\n|\Z)', '', cleaned, flags=re.DOTALL)
-                    cleaned = re.sub(r'Sender.*?(?=\n\n|\Z)', '', cleaned, flags=re.DOTALL)
-                    cleaned = re.sub(r'System: \[.*?\] SeaTalk[^:]*:', '', cleaned)
-                    cleaned = re.sub(r'<[a-z\-]+>.*?</[a-z\-]+>', '', cleaned, flags=re.DOTALL)
+                    # 抽 sender
+                    smt = re.search(r'Sender[^\n]*\n+```json\s*({.*?})\s*```', t, re.S)
+                    if not smt:
+                        smt = re.search(r'```json\s*({"label":[^`]*"name":\s*"[^"]+"[^`]*})\s*```', t, re.S)
+                    if smt:
+                        try:
+                            jd = json.loads(smt.group(1))
+                            nm = jd.get("name") or jd.get("label")
+                            if nm:
+                                # 化简：删除 (xxx@xxx)、(82124) 之类
+                                nm = re.sub(r'\s*\([^)]*\)\s*$', '', nm).strip()
+                                nm = re.sub(r'\s*\([^)]*\)\s*', ' ', nm).strip()
+                                if nm:
+                                    senders_recent.append(nm)
+                        except Exception:
+                            pass
+                    # 抽 cleaned hint
+                    cleaned = t
+                    cleaned = re.sub(r'```json[\s\S]*?```', '', cleaned)
+                    cleaned = re.sub(r'Conversation info[^\n]*', '', cleaned)
+                    cleaned = re.sub(r'Sender[^\n]*', '', cleaned)
+                    cleaned = re.sub(r'System: \[[^\]]+\] [A-Za-z]+(?:\[[^\]]+\])?(?: Group\([^)]*\))? from [^:]+:\s*', '', cleaned)
+                    cleaned = re.sub(r'<[a-z\-]+>[\s\S]*?</[a-z\-]+>', '', cleaned)
                     cleaned = re.sub(r'\[media[^\]]*\]', '', cleaned)
                     cleaned = re.sub(r'\[Quoted from[^\]]*\]', '', cleaned)
+                    cleaned = re.sub(r'^\s*\[[A-Z][a-z]+\s+\d{4}-\d{2}-\d{2}[^\]]*\]\s*', '', cleaned)
                     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
                     if cleaned and len(cleaned) > 2:
-                        last_user = cleaned[:50]
+                        last_hint = cleaned[:60]
     except Exception:
         pass
-    _HINT_CACHE[session_id] = (mt, last_user)
-    return last_user
+    # dedupe recent senders, 保最后 3 个不同
+    seen = set()
+    uniq_back = []
+    for nm in reversed(senders_recent):
+        if nm in seen:
+            continue
+        seen.add(nm)
+        uniq_back.append(nm)
+        if len(uniq_back) >= 3:
+            break
+    last_sender = uniq_back[0] if uniq_back else ""
+    info = {"hint": last_hint, "lastSender": last_sender, "recentSenders": uniq_back}
+    _HINT_CACHE[session_id] = (mt, info)
+    return info
+
+
+def _last_user_hint(session_id: str) -> str:
+    return _extract_session_info(session_id).get("hint", "")
 
 
 def _load_sessions_index() -> list:
@@ -146,6 +181,7 @@ def api_list_sessions():
     for s in _load_sessions_index():
         sid = s.get("sessionId")
         m = meta.get(sid, {}) if sid else {}
+        info = _extract_session_info(sid) if sid else {"hint":"","lastSender":"","recentSenders":[]}
         out.append({
             "key": s.get("key"),
             "sessionId": sid,
@@ -153,7 +189,9 @@ def api_list_sessions():
             "alias": m.get("alias"),
             "pinned": bool(m.get("pinned")),
             "archived": bool(m.get("archived")),
-            "hint": _last_user_hint(sid) if sid else "",
+            "hint": info.get("hint", ""),
+            "lastSender": info.get("lastSender", ""),
+            "recentSenders": info.get("recentSenders", []),
             "category": _category(s),
             "kind": s.get("kind"),
             "updatedAt": s.get("updatedAt"),

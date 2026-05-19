@@ -54,6 +54,7 @@
   .session-item.active{background:var(--bg2);border-left-color:var(--acc)}
   .session-item .label{font-size:13px;color:var(--fg);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .session-item .hint-line{font-size:11px;color:var(--fg2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+  .session-item .sender-line{font-size:11px;color:var(--acc);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}
   .session-item .meta{font-size:11px;color:var(--fg3);margin-top:4px;display:flex;justify-content:space-between}
   .session-item .tok{font-variant-numeric:tabular-nums}
   .session-item .pin{color:#f5a623;margin-right:4px}
@@ -256,7 +257,9 @@ function renderSessions(){
     d.className = 'session-item' + (state.current?.sessionId===s.sessionId ? ' active':'') + (s.archived?' archived':'');
     const pinIcon = s.pinned ? '<span class="pin">★</span>' : '';
     const archIcon = s.archived ? '<span class="arch">📁</span>' : '';
-    d.innerHTML = `<div class="label">${pinIcon}${archIcon}${escapeHTML(s.label)}</div>${s.hint?`<div class="hint-line">${escapeHTML(s.hint)}</div>`:''}<div class="meta"><span>${ageLabel(s.ageMs)}</span><span class="tok">${fmt(s.totalTokens)}</span></div>`;
+    const displayLabel = s.alias || prettyLabel(s);
+    const subline = s.alias ? s.label : (s.recentSenders?.length ? s.recentSenders.slice(0,3).join(', ') : '');
+    d.innerHTML = `<div class="label">${pinIcon}${archIcon}${escapeHTML(displayLabel)}</div>${subline?`<div class="sender-line">${escapeHTML(subline)}</div>`:''}${s.hint?`<div class="hint-line">${escapeHTML(s.hint)}</div>`:''}<div class="meta"><span>${ageLabel(s.ageMs)}</span><span class="tok">${fmt(s.totalTokens)}</span></div>`;
     d.onclick = ()=>selectSession(s);
     d.oncontextmenu = (ev)=>{ ev.preventDefault(); showSessionMenu(ev, s) };
     c.appendChild(d);
@@ -274,6 +277,26 @@ function ageLabel(ms){
 }
 
 function escapeHTML(s){ return (s||'').replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])) }
+
+function prettyLabel(s){
+  // 群聊 / 线程：优先用 “群·sid 缩写” 加发言者
+  if (s.category === 'group'){
+    const sid6 = (s.sessionId||'').slice(0,6);
+    if (s.lastSender && s.lastSender !== '82124' && !/chenchen/i.test(s.lastSender) && !/^\d+$/.test(s.lastSender)){
+      return `群·${s.lastSender}`;
+    }
+    if (s.hint) return `群·${sid6} · ${truncate(s.hint, 18)}`;
+    return `群 · ${sid6}`;
+  }
+  if (s.category === 'thread'){
+    const sid6 = (s.sessionId||'').slice(0,6);
+    if (s.hint) return `线程·${sid6} · ${truncate(s.hint, 20)}`;
+    return `线程 · ${sid6}`;
+  }
+  return s.label;
+}
+
+function truncate(t, n){ return t && t.length > n ? t.slice(0, n) + '…' : (t||'') }
 
 function showSessionMenu(ev, s){
   document.querySelectorAll('.session-menu').forEach(m=>m.remove());
