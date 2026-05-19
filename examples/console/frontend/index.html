@@ -26,6 +26,17 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.55 -apple-system,system-ui,"PingFang SC",sans-serif;-webkit-font-smoothing:antialiased}
+  /* 细滚动条 · 不打扰 */
+  *{scrollbar-width:thin;scrollbar-color:transparent transparent}
+  *:hover{scrollbar-color:var(--br2) transparent}
+  *::-webkit-scrollbar{width:6px;height:6px}
+  *::-webkit-scrollbar-track{background:transparent}
+  *::-webkit-scrollbar-thumb{background:transparent;border-radius:3px}
+  *:hover::-webkit-scrollbar-thumb{background:var(--br2)}
+  *::-webkit-scrollbar-thumb:hover{background:var(--fg3)}
+  /* 水平 tabs 隐藏 scrollbar */
+  .sb-tabs::-webkit-scrollbar{display:none}
+  .sb-tabs{scrollbar-width:none}
   button{font:inherit;color:inherit;background:transparent;border:none;cursor:pointer}
   input,textarea{font:inherit;color:inherit;background:transparent;border:none;outline:none;width:100%}
   a{color:var(--acc);text-decoration:none}
@@ -42,7 +53,7 @@
   .usage .num{color:var(--fg);font-weight:500}
   .usage .row{display:flex;justify-content:space-between;margin:3px 0}
 
-  .sb-tabs{display:flex;gap:2px;padding:8px 12px 4px;border-bottom:1px solid var(--br);background:var(--bg3);overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .sb-tabs{display:flex;gap:2px;padding:8px 12px 4px;border-bottom:1px solid var(--br);background:var(--bg3);overflow-x:auto;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)}
   .sb-tabs button{padding:5px 10px;font-size:12px;color:var(--fg2);border-radius:6px;white-space:nowrap}
   .sb-tabs button.active{background:var(--bg);color:var(--fg);font-weight:500}
   .sb-tabs button:hover{color:var(--fg)}
@@ -51,13 +62,13 @@
   .sessions{flex:1;overflow-y:auto;padding:6px 0;-webkit-overflow-scrolling:touch}
   .session-item{padding:10px 16px;cursor:pointer;border-left:2px solid transparent}
   .session-item:hover{background:var(--bg2)}
-  .session-item.active{background:var(--bg2);border-left-color:var(--acc)}
+  .session-item.active{background:var(--bg2);border-left-color:var(--fg)}
   .session-item .label{font-size:13px;color:var(--fg);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .session-item .hint-line{font-size:11px;color:var(--fg2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-  .session-item .sender-line{font-size:11px;color:var(--acc);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}
+  .session-item .sender-line{font-size:11px;color:var(--fg2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}
   .session-item .meta{font-size:11px;color:var(--fg3);margin-top:4px;display:flex;justify-content:space-between}
   .session-item .tok{font-variant-numeric:tabular-nums}
-  .session-item .pin{color:#f5a623;margin-right:4px}
+  .session-item .pin{color:var(--fg);margin-right:4px;font-size:10px}
   .session-item .arch{margin-right:4px;opacity:.6}
   .session-item.archived{opacity:.55}
   .session-menu{position:fixed;background:var(--bg);border:1px solid var(--br);border-radius:8px;padding:4px;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,.18);min-width:140px;font-size:13px}
@@ -67,29 +78,32 @@
   .paste-thumb{position:relative;width:56px;height:56px;border:1px solid var(--br);border-radius:6px;overflow:hidden;background:var(--bg2)}
   .paste-thumb img{width:100%;height:100%;object-fit:cover}
   .paste-thumb .x{position:absolute;top:0;right:0;background:rgba(0,0,0,.65);color:#fff;border:0;width:18px;height:18px;border-radius:0 0 0 6px;cursor:pointer;line-height:16px;font-size:11px;padding:0}
-  .turn-card{margin:14px 0;border:1px solid var(--br);border-radius:10px;background:var(--bg);overflow:hidden}
-  .turn-card.running{border-left:3px solid var(--acc)}
-  .turn-card.done{border-left:3px solid var(--ok,#2ea043)}
-  .turn-card.stopped{border-left:3px solid #d8a52b;opacity:.85}
-  .turn-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);font-size:13px}
-  .turn-status{font-size:14px}
-  .turn-title{flex:1;color:var(--fg);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .turn-meta{color:var(--fg3);font-size:11px;font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,Consolas}
-  .turn-stop{background:transparent;border:1px solid var(--br);color:var(--fg2);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:12px}
-  .turn-stop:hover{background:#fee;color:#c00;border-color:#fcc}
-  .turn-user{padding:8px 14px 12px;border-bottom:1px dashed var(--br);color:var(--fg);font-size:14px;line-height:1.55;background:var(--bg)}
-  .turn-body{padding:8px 14px 12px}
-  .turn-body .msg{margin:6px 0}
-  .turn-body .bubble{padding:0;background:transparent;color:var(--fg);font-size:14px;line-height:1.6}
-  .term{background:#0d1117;color:#c9d1d9;border-radius:6px;overflow:hidden;font-family:ui-monospace,Menlo,Consolas;margin:4px 0}
-  .term-head{padding:4px 10px;background:#161b22;font-size:11px;color:#8b949e;border-bottom:1px solid #21262d}
-  .term-body{padding:8px 10px;font-size:12px;line-height:1.5;max-height:300px;overflow:auto;white-space:pre-wrap;margin:0;color:#c9d1d9}
-  .diff{background:var(--bg);font-family:ui-monospace,Menlo,Consolas;font-size:12px;padding:8px;border-radius:6px;max-height:300px;overflow:auto;white-space:pre}
-  .d-add{color:#2ea043;background:rgba(46,160,67,.08);display:block}
-  .d-del{color:#cf222e;background:rgba(207,34,46,.08);display:block}
-  .d-hunk{color:#0969da;display:block}
-  .code-preview{background:var(--bg2);font-family:ui-monospace,Menlo,Consolas;font-size:12px;padding:8px;border-radius:6px;max-height:300px;overflow:auto}
-  .tool-icon{font-size:14px}
+  .turn-card{margin:18px 0;border:1px solid var(--br);border-radius:6px;background:var(--bg);overflow:hidden;transition:border-color .15s}
+  .turn-card.running{border-color:var(--fg2)}
+  .turn-card.running .turn-status::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg);animation:pulse 1.4s ease-in-out infinite}
+  .turn-card.done .turn-status::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg3)}
+  .turn-card.stopped .turn-status::before{content:'';display:inline-block;width:6px;height:6px;border:1px solid var(--fg2);border-radius:50%}
+  .turn-card.stopped{opacity:.7}
+  @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+  .turn-head{display:flex;align-items:center;gap:12px;padding:10px 16px;background:transparent;font-size:12px;border-bottom:1px solid var(--br)}
+  .turn-status{width:8px;display:inline-flex;align-items:center;justify-content:center}
+  .turn-title{flex:1;color:var(--fg2);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.01em;font-family:ui-monospace,Menlo,Consolas;font-size:11px}
+  .turn-meta{color:var(--fg3);font-size:11px;font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,Consolas;letter-spacing:.02em}
+  .turn-stop{background:transparent;border:1px solid var(--br);color:var(--fg2);border-radius:3px;padding:2px 10px;cursor:pointer;font-size:10px;letter-spacing:.08em;font-family:ui-monospace,Menlo,Consolas;text-transform:uppercase}
+  .turn-stop:hover{border-color:var(--fg2);color:var(--fg)}
+  .turn-user{padding:14px 16px;color:var(--fg);font-size:14px;line-height:1.65}
+  .turn-body{padding:6px 16px 14px;background:var(--bg3)}
+  .turn-body .msg{margin:10px 0}
+  .turn-body .bubble{padding:0;background:transparent;color:var(--fg);font-size:14px;line-height:1.65}
+  .term{background:var(--bg2);color:var(--fg);border-radius:3px;overflow:hidden;font-family:ui-monospace,Menlo,Consolas;margin:6px 0;border:1px solid var(--br)}
+  .term-head{padding:6px 12px;background:var(--bg3);font-size:10px;color:var(--fg3);border-bottom:1px solid var(--br);letter-spacing:.05em;text-transform:uppercase}
+  .term-body{padding:10px 12px;font-size:11px;line-height:1.6;max-height:300px;overflow:auto;white-space:pre-wrap;margin:0;color:var(--fg2)}
+  .diff{background:var(--bg2);font-family:ui-monospace,Menlo,Consolas;font-size:11px;padding:10px 12px;border-radius:3px;max-height:300px;overflow:auto;white-space:pre;color:var(--fg2);border:1px solid var(--br)}
+  .d-add{color:var(--fg);background:transparent;display:block;padding-left:8px;border-left:2px solid var(--fg2)}
+  .d-del{color:var(--fg3);background:transparent;display:block;padding-left:8px;border-left:2px solid var(--fg3);text-decoration:line-through;opacity:.6}
+  .d-hunk{color:var(--fg3);display:block;font-style:italic}
+  .code-preview{background:var(--bg2);font-family:ui-monospace,Menlo,Consolas;font-size:11px;padding:10px 12px;border-radius:3px;max-height:300px;overflow:auto;color:var(--fg2);border:1px solid var(--br)}
+  .tool-icon{display:none}
 
   .sb-foot{padding:12px 16px;border-top:1px solid var(--br);display:flex;gap:8px;align-items:center;font-size:11px;color:var(--fg3)}
   .sb-foot button{padding:6px 10px;border-radius:6px;font-size:12px;color:var(--fg2);background:var(--bg2)}
@@ -114,15 +128,17 @@
   .msg .tools{font-size:12px;color:var(--tool-fg);background:var(--tool-bg);padding:6px 10px;border-radius:8px;margin-top:6px;font-family:ui-monospace,Menlo,Consolas;max-width:100%;overflow-x:auto}
   .msg .tools .tc{margin:2px 0}
   .msg .tools .tname{color:var(--acc)}
-  .tool-card{margin:6px 0;border:1px solid var(--br);border-radius:8px;background:var(--bg2);font-size:12px;overflow:hidden;font-family:ui-monospace,Menlo,Consolas}
-  .tool-head{display:flex;gap:8px;align-items:center;padding:7px 10px;background:var(--bg3)}
-  .tool-status{width:18px;text-align:center}
-  .tool-name{color:var(--acc);font-weight:600;min-width:60px}
+  .tool-card{margin:8px 0;border:1px solid var(--br);border-radius:4px;background:var(--bg);font-size:12px;overflow:hidden;font-family:ui-monospace,Menlo,Consolas}
+  .tool-head{display:flex;gap:10px;align-items:center;padding:8px 12px;background:transparent;border-bottom:1px solid var(--br)}
+  .tool-status{width:6px;height:6px;border-radius:50%;background:var(--fg3);flex-shrink:0;display:inline-block}
+  .tool-card[data-status="running"] .tool-status{background:var(--fg);animation:pulse 1.4s ease-in-out infinite}
+  .tool-card[data-status="error"] .tool-status{background:var(--fg);width:6px;height:6px;border-radius:0;transform:rotate(45deg)}
+  .tool-name{color:var(--fg);font-weight:500;min-width:48px;letter-spacing:.01em}
   .tool-hint{color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-  .tool-dur{color:var(--fg3);font-size:11px}
-  .tool-card details{padding:0 10px 8px}
-  .tool-card details summary{cursor:pointer;color:var(--fg3);font-size:11px;padding:4px 0}
-  .tool-card pre{margin:4px 0;padding:8px 10px;background:var(--bg);border-radius:6px;overflow-x:auto;font-size:11px;line-height:1.45;max-height:300px}
+  .tool-dur{color:var(--fg3);font-size:11px;font-variant-numeric:tabular-nums}
+  .tool-card details{padding:0 12px 8px}
+  .tool-card details summary{cursor:pointer;color:var(--fg3);font-size:11px;padding:6px 0;letter-spacing:.04em}
+  .tool-card pre{margin:4px 0;padding:10px 12px;background:var(--bg2);border-radius:3px;overflow-x:auto;font-size:11px;line-height:1.5;max-height:300px;color:var(--fg2)}
   .tool-result{padding:0 10px 8px}
   .thinking{margin:4px 0;font-size:12px;color:var(--fg3)}
   .thinking summary{cursor:pointer}
@@ -153,10 +169,24 @@
     .topbar .menu{display:block !important}
     .scrim.show{display:block}
     .main{height:100dvh;overflow:hidden}
-    .chat{padding:16px 0}
-    .msg-wrap{padding:0 14px}
+    .chat{padding:12px 0}
+    .msg-wrap{padding:0 12px}
     .inbox{padding:10px 12px calc(10px + env(safe-area-inset-bottom)) 12px}
     .inbox-inner{padding:6px 8px 6px 12px}
+    /* turn / tool 压缩 */
+    .turn-card{margin:12px 0;border-radius:4px}
+    .turn-head{padding:8px 12px;gap:8px}
+    .turn-title{font-size:12px}
+    .turn-user{padding:12px}
+    .turn-body{padding:4px 12px 10px}
+    .tool-card{font-size:11px}
+    .tool-head{padding:7px 10px;gap:8px}
+    .tool-name{min-width:auto}
+    .tool-hint{max-width:160px}
+    .topbar{padding:10px 14px}
+    .topbar h2{font-size:14px}
+    .topbar .ctx{font-size:11px}
+    .sb-head h1{font-size:15px}
   }
   .topbar .menu{display:none;padding:6px 10px;color:var(--fg2);border-radius:6px}
   .topbar .menu:hover{background:var(--bg2)}
@@ -279,7 +309,7 @@ function renderSessions(){
     const d = document.createElement('div');
     d.className = 'session-item' + (state.current?.sessionId===s.sessionId ? ' active':'') + (s.archived?' archived':'');
     const pinIcon = s.pinned ? '<span class="pin">★</span>' : '';
-    const archIcon = s.archived ? '<span class="arch">📁</span>' : '';
+    const archIcon = s.archived ? '<span class="arch">[arch]</span>' : '';
     const displayLabel = s.alias || prettyLabel(s);
     const subline = s.alias ? s.label : (s.recentSenders?.length ? s.recentSenders.slice(0,3).join(', ') : '');
     d.innerHTML = `<div class="label">${pinIcon}${archIcon}${escapeHTML(displayLabel)}</div>${subline?`<div class="sender-line">${escapeHTML(subline)}</div>`:''}${s.hint?`<div class="hint-line">${escapeHTML(s.hint)}</div>`:''}<div class="meta"><span>${ageLabel(s.ageMs)}</span><span class="tok">${fmt(s.totalTokens)}</span></div>`;
@@ -330,7 +360,7 @@ function showSessionMenu(ev, s){
   m.innerHTML = `
     <button data-act="rename">✏️ 重命名</button>
     <button data-act="pin">${s.pinned?'☆ 取消置顶':'★ 置顶'}</button>
-    <button data-act="archive">${s.archived?'↩️ 取消归档':'📁 归档'}</button>
+    <button data-act="archive">${s.archived?'取消归档':'归档'}</button>
     <button data-act="copy">📋 复制 sessionId</button>
   `;
   m.querySelectorAll('button').forEach(b=>b.onclick=async ()=>{
@@ -456,7 +486,7 @@ function appendStreamEntry(entry){
         body.appendChild(d);
       }else if (p.type === 'thinking' && p.text){
         const d = document.createElement('details'); d.className='thinking';
-        d.innerHTML = `<summary>💭 思考</summary><pre>${escapeHTML(p.text)}</pre>`;
+        d.innerHTML = `<summary>thinking</summary><pre>${escapeHTML(p.text)}</pre>`;
         body.appendChild(d);
       }else if (p.type === 'toolCall'){
         body.insertAdjacentHTML('beforeend', renderToolCall(p));
@@ -488,10 +518,10 @@ function newTurnCard(entry){
   const txt = stripMeta(entry.text || '');
   turn.innerHTML = `
     <div class="turn-head">
-      <span class="turn-status">🔄</span>
+      <span class="turn-status"></span>
       <span class="turn-title">${escapeHTML(txt.slice(0,80) || '(空消息)')}</span>
-      <span class="turn-meta"><span class="turn-timer">0s</span> · <span class="turn-tools">0 工具</span></span>
-      <button class="turn-stop" title="停止 agent">⏹</button>
+      <span class="turn-meta"><span class="turn-timer">0s</span> · <span class="turn-tools">0</span></span>
+      <button class="turn-stop" title="停止 agent">STOP</button>
     </div>
     <div class="turn-user">${renderMd(txt)}</div>
     <div class="turn-body"></div>
@@ -499,7 +529,7 @@ function newTurnCard(entry){
   turn.querySelector('.turn-stop').onclick = async ()=>{
     if (!confirm('停止当前 agent？')) return;
     const r = await fetch('api/stop', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({sessionId: sid})}).then(r=>r.json());
-    if (r.ok){ toast('已发 SIGTERM'); turn.classList.add('stopped'); turn.querySelector('.turn-status').textContent='⏹'; }
+    if (r.ok){ toast('已发 SIGTERM'); turn.classList.remove('running'); turn.classList.add('stopped'); }
     else toast('停止失败: '+(r.error||''));
   };
   // 计时器
@@ -516,10 +546,9 @@ function finalizeTurn(turn, entry){
   if (!turn) return;
   turn.classList.remove('running');
   turn.classList.add('done');
-  const status = turn.querySelector('.turn-status'); if (status) status.textContent = '✅';
   const stop = turn.querySelector('.turn-stop'); if (stop) stop.remove();
   const toolCount = turn.querySelectorAll('.tool-card').length;
-  const toolsEl = turn.querySelector('.turn-tools'); if (toolsEl) toolsEl.textContent = `${toolCount} 工具`;
+  const toolsEl = turn.querySelector('.turn-tools'); if (toolsEl) toolsEl.textContent = `${toolCount} tool${toolCount===1?'':'s'}`;
 }
 
 function attachToolResult(card, entry){
@@ -529,17 +558,16 @@ function attachToolResult(card, entry){
   if (body){
     body.style.display = 'block';
     if (tname === 'exec'){
-      body.innerHTML = `<div class="term"><div class="term-head">exitCode: ${entry.exitCode ?? '?'} · ${(entry.durationMs||0)/1000}s</div><pre class="term-body">${escapeHTML(txt || '(无输出)')}</pre></div>`;
+      body.innerHTML = `<div class="term"><div class="term-head">exit ${entry.exitCode ?? '?'}  ·  ${((entry.durationMs||0)/1000).toFixed(1)}s</div><pre class="term-body">${escapeHTML(txt || '(no output)')}</pre></div>`;
     }else if (tname === 'edit' || tname === 'write'){
       body.innerHTML = `<pre class="diff">${highlightDiff(txt)}</pre>`;
     }else if (tname === 'read'){
       body.innerHTML = `<pre class="code-preview">${escapeHTML(txt.slice(0, 2000))}${txt.length>2000?'\n…':''}</pre>`;
     }else{
-      body.innerHTML = `<pre>${escapeHTML(txt || '(空)')}</pre>`;
+      body.innerHTML = `<pre>${escapeHTML(txt || '(empty)')}</pre>`;
     }
   }
-  const icon = card.querySelector('.tool-status');
-  if (icon) icon.textContent = entry.isError ? '❌' : '✅';
+  card.dataset.status = entry.isError ? 'error' : 'done';
   const dur = card.querySelector('.tool-dur');
   if (dur && entry.durationMs) dur.textContent = (entry.durationMs/1000).toFixed(1) + 's';
 }
@@ -567,22 +595,20 @@ function renderToolCall(p){
   else hint = JSON.stringify(args).slice(0,80);
   const icon = toolIcon(name);
   const argsJson = escapeHTML(JSON.stringify(args, null, 2));
-  return `<div class="tool-card" data-tcid="${escapeHTML(p.id||'')}" data-tname="${escapeHTML(name)}">
+  return `<div class="tool-card" data-tcid="${escapeHTML(p.id||'')}" data-tname="${escapeHTML(name)}" data-status="running">
     <div class="tool-head">
-      <span class="tool-status">⏳</span>
-      <span class="tool-icon">${icon}</span>
+      <span class="tool-status"></span>
       <span class="tool-name">${escapeHTML(name)}</span>
       <span class="tool-hint">${escapeHTML(hint)}</span>
       <span class="tool-dur"></span>
     </div>
-    <details class="tool-detail"><summary>参数</summary><pre>${argsJson}</pre></details>
+    <details class="tool-detail"><summary>args</summary><pre>${argsJson}</pre></details>
     <div class="tool-result" style="display:none"></div>
   </div>`;
 }
 
 function toolIcon(name){
-  const map = {exec:'⏵', edit:'✎', write:'✎', read:'📄', browser:'🌐', image:'🖼️', image_generate:'🎨', web_fetch:'🌐', web_search:'🔍', sessions_spawn:'👶', sessions_send:'✉', sessions_yield:'⏸', message:'💬', memory_search:'🧠', memory_get:'🧠', update_plan:'📋', process:'⚙'};
-  return map[name] || '⚡';
+  return '';
 }
 
 function stripMeta(t){
@@ -611,9 +637,9 @@ function renderMessages(msgs){
       const txt = stripMeta(m.text || '');
       curTurn.innerHTML = `
         <div class="turn-head">
-          <span class="turn-status">✅</span>
+          <span class="turn-status"></span>
           <span class="turn-title">${escapeHTML(txt.slice(0,80) || '(空)')}</span>
-          <span class="turn-meta"><span class="turn-tools">0 工具</span></span>
+          <span class="turn-meta"><span class="turn-tools">0 tools</span></span>
         </div>
         <div class="turn-user">${renderMd(txt)}</div>
         <div class="turn-body"></div>`;
@@ -624,7 +650,7 @@ function renderMessages(msgs){
     if (!curBody){
       // orphan: pre-user content (compact summary etc)
       curTurn = document.createElement('div'); curTurn.className='turn-card done';
-      curTurn.innerHTML = '<div class="turn-head"><span class="turn-status">📜</span><span class="turn-title">(历史)</span></div><div class="turn-body"></div>';
+      curTurn.innerHTML = '<div class="turn-head"><span class="turn-status"></span><span class="turn-title">(history)</span></div><div class="turn-body"></div>';
       wrap.appendChild(curTurn);
       curBody = curTurn.querySelector('.turn-body');
     }
@@ -645,7 +671,7 @@ function renderMessages(msgs){
   // 更新每个 turn 的工具计数
   wrap.querySelectorAll('.turn-card').forEach(t=>{
     const n = t.querySelectorAll('.tool-card').length;
-    const el = t.querySelector('.turn-tools'); if (el) el.textContent = `${n} 工具`;
+    const el = t.querySelector('.turn-tools'); if (el) el.textContent = `${n} tool${n===1?'':'s'}`;
   });
   c.innerHTML = ''; c.appendChild(wrap);
   c.scrollTop = c.scrollHeight;
@@ -714,7 +740,7 @@ async function send(){
   state.sending = true;
   state.sendStartedAt = Date.now();
   $('#send').disabled = true;
-  $('#hint').textContent = hasMedia ? '上传图片中…' : '发送中…agent 运行中';
+  $('#hint').textContent = hasMedia ? '上传图片中' : 'agent 处理中';
   // 先上传 media
   const mediaPaths = [];
   try{
@@ -725,7 +751,7 @@ async function send(){
     }
   }catch(e){ toast('上传错误: '+e.message); state.sending=false; updateSendBtn(); return }
   state.pendingMedia = []; renderPastePreview();
-  $('#hint').textContent = '发送中…agent 运行中';
+  $('#hint').textContent = 'agent 处理中';
   // optimistic: 起一个新 turn
   {
     const c = $('#chat');
@@ -755,7 +781,7 @@ async function send(){
     // 启动 30s NO_REPLY watchdog：SSE 收到 assistant 会清掉 state.sending
     setTimeout(()=>{
       if (state.sending){
-        $('#hint').textContent = '🤐 agent 静默（无文本输出）';
+        $('#hint').textContent = 'agent 已静默返回（无文本输出）';
         state.sending = false;
         updateSendBtn();
       }
