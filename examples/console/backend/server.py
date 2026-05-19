@@ -374,7 +374,7 @@ def api_send(session_id: str, message: str, media_paths: list = None):
         log_path = Path("/tmp") / f"console-send-{session_id[:8]}.log"
         logf = log_path.open("ab")
         try:
-            proc = subprocess.Popen(cmd, stdout=logf, stderr=logf, stdin=subprocess.DEVNULL)
+            proc = subprocess.Popen(cmd, stdout=logf, stderr=logf, stdin=subprocess.DEVNULL, start_new_session=True)
         except FileNotFoundError as e:
             logf.close()
             return {"ok": False, "error": f"openclaw CLI not found in PATH: {e}"}
@@ -398,6 +398,27 @@ def api_running(session_id: str):
     with _SEND_LOCK:
         info = _RUNNING.get(session_id)
     return {"running": bool(info), "info": info}
+
+
+def api_stop(session_id: str):
+    """发 SIGTERM 给 openclaw agent 进程。"""
+    import signal
+    with _SEND_LOCK:
+        info = _RUNNING.get(session_id)
+    if not info:
+        return {"ok": False, "error": "not running"}
+    pid = info.get("pid")
+    try:
+        # 杀整个进程组（openclaw agent fork 了子进程）
+        os.killpg(os.getpgid(pid), signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    except Exception:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+    return {"ok": True, "pid": pid}
 
 
 CONTENT_TYPES = {
@@ -556,6 +577,11 @@ class H(BaseHTTPRequestHandler):
             if not sid or (not msg and not media):
                 return self._json(400, {"error": "sessionId and message/media required"})
             return self._json(200, api_send(sid, msg or "(图片)", media))
+        if p == "/api/stop":
+            sid = data.get("sessionId", "")
+            if not sid:
+                return self._json(400, {"error": "sessionId required"})
+            return self._json(200, api_stop(sid))
         if p == "/api/upload":
             return self._handle_upload(body)
         if p == "/api/session-meta":
