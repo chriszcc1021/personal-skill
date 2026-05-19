@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """OpenClaw Console - 纯 stdlib HTTP 服务器"""
-import os, json, subprocess, time, re
+import os, json, subprocess, time, re, uuid, base64
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -15,6 +15,25 @@ SESSIONS_INDEX = AGENT_DIR / "sessions" / "sessions.json"
 SESSIONS_DIR = AGENT_DIR / "sessions"
 SGT = timezone(timedelta(hours=8))
 PORT = int(os.environ.get("CONSOLE_PORT", "8088"))
+MEDIA_DIR = Path(os.environ.get("OPENCLAW_MEDIA_DIR", "/home/openclaw/.openclaw/media/inbound"))
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+META_DIR = Path(__file__).resolve().parent / "meta"
+META_DIR.mkdir(parents=True, exist_ok=True)
+SESSION_META_FILE = META_DIR / "session-meta.json"  # {sessionId: {pinned, archived, alias}}
+_META_LOCK = threading.Lock()
+
+
+def _load_meta() -> dict:
+    if not SESSION_META_FILE.exists():
+        return {}
+    try:
+        return json.loads(SESSION_META_FILE.read_text("utf-8") or "{}")
+    except Exception:
+        return {}
+
+
+def _save_meta(d: dict):
+    SESSION_META_FILE.write_text(json.dumps(d, ensure_ascii=False, indent=2), "utf-8")
 
 _HINT_CACHE: dict = {}  # {sessionId: (mtime, hint)}
 
@@ -122,13 +141,18 @@ def _category(s: dict) -> str:
 
 
 def api_list_sessions():
+    meta = _load_meta()
     out = []
     for s in _load_sessions_index():
         sid = s.get("sessionId")
+        m = meta.get(sid, {}) if sid else {}
         out.append({
             "key": s.get("key"),
             "sessionId": sid,
-            "label": _short_label(s),
+            "label": m.get("alias") or _short_label(s),
+            "alias": m.get("alias"),
+            "pinned": bool(m.get("pinned")),
+            "archived": bool(m.get("archived")),
             "hint": _last_user_hint(sid) if sid else "",
             "category": _category(s),
             "kind": s.get("kind"),
@@ -142,7 +166,8 @@ def api_list_sessions():
             "modelProvider": s.get("modelProvider"),
             "abortedLastRun": s.get("abortedLastRun"),
         })
-    out.sort(key=lambda x: x.get("updatedAt") or 0, reverse=True)
+    # pinned 优先，然后 updatedAt desc；archived 除非调用时要
+    out.sort(key=lambda x: (0 if x["pinned"] else 1, -(x.get("updatedAt") or 0)))
     return {"sessions": out}
 
 
@@ -296,13 +321,18 @@ _SEND_LOCK = threading.Lock()
 _RUNNING: dict = {}  # sessionId -> {pid, started}
 
 
-def api_send(session_id: str, message: str):
+def api_send(session_id: str, message: str, media_paths: list = None):
     """同步跳进后台，立即返回；agent 走 jsonl 追加 → SSE 推。"""
+    # 拼入 media 提示，让 agent 知道去读
+    full_msg = message
+    if media_paths:
+        prefix = "[media attached: " + " | ".join(media_paths) + "]\n"
+        full_msg = prefix + message
     with _SEND_LOCK:
         existing = _RUNNING.get(session_id)
         if existing:
             return {"ok": False, "error": "already running", "runningSince": existing["started"]}
-        cmd = ["openclaw", "agent", "--session-id", session_id, "--message", message, "--json", "--timeout", "300"]
+        cmd = ["openclaw", "agent", "--session-id", session_id, "--message", full_msg, "--json", "--timeout", "300"]
         log_path = Path("/tmp") / f"console-send-{session_id[:8]}.log"
         logf = log_path.open("ab")
         try:
@@ -484,10 +514,60 @@ class H(BaseHTTPRequestHandler):
         if p == "/api/send":
             sid = data.get("sessionId", "")
             msg = (data.get("message") or "").strip()
-            if not sid or not msg:
-                return self._json(400, {"error": "sessionId and message required"})
-            return self._json(200, api_send(sid, msg))
+            media = data.get("mediaPaths") or []
+            if not sid or (not msg and not media):
+                return self._json(400, {"error": "sessionId and message/media required"})
+            return self._json(200, api_send(sid, msg or "(图片)", media))
+        if p == "/api/upload":
+            return self._handle_upload(body)
+        if p == "/api/session-meta":
+            sid = data.get("sessionId")
+            if not sid:
+                return self._json(400, {"error": "sessionId required"})
+            with _META_LOCK:
+                meta = _load_meta()
+                cur = meta.get(sid, {})
+                for k in ("pinned", "archived", "alias"):
+                    if k in data:
+                        v = data[k]
+                        if k == "alias":
+                            cur[k] = str(v)[:80] if v else None
+                        else:
+                            cur[k] = bool(v)
+                # 清理空
+                cur = {k: v for k, v in cur.items() if v}
+                if cur:
+                    meta[sid] = cur
+                else:
+                    meta.pop(sid, None)
+                _save_meta(meta)
+            return self._json(200, {"ok": True, "meta": cur})
         return self._json(404, {"error": "not found"})
+
+    def _handle_upload(self, body: str):
+        ctype = self.headers.get("content-type", "")
+        if not body:
+            return self._json(400, {"error": "empty"})
+        if ctype.startswith("application/json"):
+            try:
+                d = json.loads(body)
+            except Exception:
+                return self._json(400, {"error": "bad json"})
+            durl = d.get("dataUrl", "")
+            m = re.match(r"^data:([\w./+-]+);base64,(.+)$", durl, re.S)
+            if not m:
+                return self._json(400, {"error": "bad dataUrl"})
+            mime = m.group(1)
+            try:
+                raw = base64.b64decode(m.group(2))
+            except Exception:
+                return self._json(400, {"error": "bad base64"})
+            ext = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "image/gif": ".gif"}.get(mime, ".bin")
+            fname = f"console-{uuid.uuid4()}{ext}"
+            fp = MEDIA_DIR / fname
+            fp.write_bytes(raw)
+            return self._json(200, {"ok": True, "path": str(fp), "mime": mime, "size": len(raw)})
+        return self._json(400, {"error": "unsupported content-type, send application/json with dataUrl"})
 
 
 class ThreadingServer(socketserver.ThreadingMixIn, HTTPServer):

@@ -56,6 +56,16 @@
   .session-item .hint-line{font-size:11px;color:var(--fg2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
   .session-item .meta{font-size:11px;color:var(--fg3);margin-top:4px;display:flex;justify-content:space-between}
   .session-item .tok{font-variant-numeric:tabular-nums}
+  .session-item .pin{color:#f5a623;margin-right:4px}
+  .session-item .arch{margin-right:4px;opacity:.6}
+  .session-item.archived{opacity:.55}
+  .session-menu{position:fixed;background:var(--bg);border:1px solid var(--br);border-radius:8px;padding:4px;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,.18);min-width:140px;font-size:13px}
+  .session-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--fg);padding:8px 12px;cursor:pointer;border-radius:6px;font:inherit}
+  .session-menu button:hover{background:var(--bg2)}
+  .paste-preview{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0}
+  .paste-thumb{position:relative;width:56px;height:56px;border:1px solid var(--br);border-radius:6px;overflow:hidden;background:var(--bg2)}
+  .paste-thumb img{width:100%;height:100%;object-fit:cover}
+  .paste-thumb .x{position:absolute;top:0;right:0;background:rgba(0,0,0,.65);color:#fff;border:0;width:18px;height:18px;border-radius:0 0 0 6px;cursor:pointer;line-height:16px;font-size:11px;padding:0}
 
   .sb-foot{padding:12px 16px;border-top:1px solid var(--br);display:flex;gap:8px;align-items:center;font-size:11px;color:var(--fg3)}
   .sb-foot button{padding:6px 10px;border-radius:6px;font-size:12px;color:var(--fg2);background:var(--bg2)}
@@ -159,8 +169,9 @@
       <div class="empty">从左侧挑一个 session 开始</div>
     </div>
     <div class="inbox">
+      <div id="paste-preview" class="paste-preview" style="display:none"></div>
       <div class="inbox-inner">
-        <textarea id="input" placeholder="输入消息，Enter 发送，Shift+Enter 换行" rows="1"></textarea>
+        <textarea id="input" placeholder="输入消息，Enter 发送，Shift+Enter 换行、Cmd/Ctrl+V 粘贴图" rows="1"></textarea>
         <button class="send" id="send" disabled>发送</button>
       </div>
       <div class="hint" id="hint"></div>
@@ -242,9 +253,12 @@ function renderSessions(){
   });
   filtered.forEach(s=>{
     const d = document.createElement('div');
-    d.className = 'session-item' + (state.current?.sessionId===s.sessionId ? ' active':'');
-    d.innerHTML = `<div class="label">${escapeHTML(s.label)}</div>${s.hint?`<div class="hint-line">${escapeHTML(s.hint)}</div>`:''}<div class="meta"><span>${ageLabel(s.ageMs)}</span><span class="tok">${fmt(s.totalTokens)}</span></div>`;
+    d.className = 'session-item' + (state.current?.sessionId===s.sessionId ? ' active':'') + (s.archived?' archived':'');
+    const pinIcon = s.pinned ? '<span class="pin">★</span>' : '';
+    const archIcon = s.archived ? '<span class="arch">📁</span>' : '';
+    d.innerHTML = `<div class="label">${pinIcon}${archIcon}${escapeHTML(s.label)}</div>${s.hint?`<div class="hint-line">${escapeHTML(s.hint)}</div>`:''}<div class="meta"><span>${ageLabel(s.ageMs)}</span><span class="tok">${fmt(s.totalTokens)}</span></div>`;
     d.onclick = ()=>selectSession(s);
+    d.oncontextmenu = (ev)=>{ ev.preventDefault(); showSessionMenu(ev, s) };
     c.appendChild(d);
   });
   if (!filtered.length) c.innerHTML = '<div class="empty" style="padding:24px;text-align:center;color:var(--fg3);font-size:12px">该分类下无 session</div>';
@@ -260,6 +274,50 @@ function ageLabel(ms){
 }
 
 function escapeHTML(s){ return (s||'').replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])) }
+
+function showSessionMenu(ev, s){
+  document.querySelectorAll('.session-menu').forEach(m=>m.remove());
+  const m = document.createElement('div');
+  m.className = 'session-menu';
+  m.style.left = Math.min(ev.clientX, window.innerWidth-160) + 'px';
+  m.style.top = Math.min(ev.clientY, window.innerHeight-180) + 'px';
+  m.innerHTML = `
+    <button data-act="rename">✏️ 重命名</button>
+    <button data-act="pin">${s.pinned?'☆ 取消置顶':'★ 置顶'}</button>
+    <button data-act="archive">${s.archived?'↩️ 取消归档':'📁 归档'}</button>
+    <button data-act="copy">📋 复制 sessionId</button>
+  `;
+  m.querySelectorAll('button').forEach(b=>b.onclick=async ()=>{
+    const act = b.dataset.act;
+    if (act === 'rename'){
+      const v = prompt('设置别名（留空清除）', s.alias || s.label);
+      if (v !== null){
+        await updateMeta(s.sessionId, {alias: v.trim()});
+        await refresh();
+      }
+    }else if (act === 'pin'){
+      await updateMeta(s.sessionId, {pinned: !s.pinned});
+      await refresh();
+    }else if (act === 'archive'){
+      await updateMeta(s.sessionId, {archived: !s.archived});
+      await refresh();
+    }else if (act === 'copy'){
+      try{ await navigator.clipboard.writeText(s.sessionId); toast('已复制 sessionId') }catch(e){ toast('复制失败') }
+    }
+    m.remove();
+  });
+  document.body.appendChild(m);
+  setTimeout(()=>{
+    document.addEventListener('click', function close(){ m.remove(); document.removeEventListener('click', close) }, {once: true});
+  }, 0);
+}
+
+async function updateMeta(sid, patch){
+  try{
+    const r = await fetch('api/session-meta', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({sessionId: sid, ...patch})}).then(r=>r.json());
+    if (!r.ok) toast('保存失败');
+  }catch(e){ toast('保存错误') }
+}
 
 async function selectSession(s){
   state.current = s;
@@ -313,7 +371,7 @@ function startPolling(sid){
       if (msgs.length > lastCount){
         renderMessages(msgs);
         lastCount = msgs.length;
-        if (state.sending){ state.sending=false; $('#hint').textContent=''; $('#send').disabled = !input.value.trim() }
+        if (state.sending){ state.sending=false; $('#hint').textContent=''; updateSendBtn() }
       }
     }catch(e){}
   }, 2000);
@@ -339,7 +397,7 @@ function appendStreamEntry(entry){
     if (!html) html = '<div class="hint-small">🤐 静默（无文本输出）</div>';
     d.innerHTML = html;
     // 取消 sending 状态
-    if (state.sending){ state.sending=false; $('#hint').textContent=''; $('#send').disabled = !input.value.trim() }
+    if (state.sending){ state.sending=false; $('#hint').textContent=''; updateSendBtn() }
   }else if (entry.role === 'toolResult'){
     // 找到对应 toolCall 卡片贴 result
     const card = wrap.querySelector(`.tool-card[data-tcid="${entry.toolCallId}"]`);
@@ -428,10 +486,24 @@ function renderMd(text){
 
 // input
 const input = $('#input');
+state.pendingMedia = [];
+
+function renderPastePreview(){
+  const box = $('#paste-preview');
+  if (!state.pendingMedia.length){ box.style.display='none'; box.innerHTML=''; return }
+  box.style.display='flex';
+  box.innerHTML = state.pendingMedia.map((m,i)=>`<div class="paste-thumb"><img src="${m.dataUrl}"><button class="x" data-i="${i}">✕</button></div>`).join('');
+  box.querySelectorAll('button.x').forEach(b=>b.onclick=()=>{ state.pendingMedia.splice(+b.dataset.i,1); renderPastePreview(); updateSendBtn() });
+}
+
+function updateSendBtn(){
+  $('#send').disabled = (!input.value.trim() && !state.pendingMedia.length) || !state.current || state.sending;
+}
+
 input.addEventListener('input', ()=>{
   input.style.height = 'auto';
   input.style.height = Math.min(input.scrollHeight, 200) + 'px';
-  $('#send').disabled = !input.value.trim() || !state.current || state.sending;
+  updateSendBtn();
 });
 input.addEventListener('keydown', e=>{
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing){
@@ -439,27 +511,54 @@ input.addEventListener('keydown', e=>{
     if (!$('#send').disabled) send();
   }
 });
+input.addEventListener('paste', async (e)=>{
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const it of items){
+    if (it.kind === 'file' && it.type.startsWith('image/')){
+      e.preventDefault();
+      const f = it.getAsFile();
+      if (!f) continue;
+      const dataUrl = await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(f) });
+      state.pendingMedia.push({dataUrl, mime: it.type, name: f.name || 'paste.png'});
+      renderPastePreview();
+      updateSendBtn();
+    }
+  }
+});
 $('#send').onclick = send;
 
 async function send(){
   if (!state.current) return;
   const msg = input.value.trim();
-  if (!msg) return;
+  const hasMedia = state.pendingMedia.length > 0;
+  if (!msg && !hasMedia) return;
   state.sending = true;
   state.sendStartedAt = Date.now();
   $('#send').disabled = true;
+  $('#hint').textContent = hasMedia ? '上传图片中…' : '发送中…agent 运行中';
+  // 先上传 media
+  const mediaPaths = [];
+  try{
+    for (const m of state.pendingMedia){
+      const r = await fetch('api/upload', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({dataUrl: m.dataUrl})}).then(r=>r.json());
+      if (!r.ok){ toast('上传失败: '+(r.error||'')); state.sending=false; updateSendBtn(); $('#hint').textContent=''; return }
+      mediaPaths.push(r.path);
+    }
+  }catch(e){ toast('上传错误: '+e.message); state.sending=false; updateSendBtn(); return }
+  state.pendingMedia = []; renderPastePreview();
   $('#hint').textContent = '发送中…agent 运行中';
   input.value = ''; input.style.height='auto';
   try{
     const r = await fetch('api/send', {
       method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ sessionId: state.current.sessionId, message: msg })
+      body: JSON.stringify({ sessionId: state.current.sessionId, message: msg, mediaPaths })
     }).then(r=>r.json());
     if (!r.ok){
       toast('发送失败: '+(r.error||'unknown'));
       $('#hint').textContent = '失败 · ' + (r.error||'');
       state.sending = false;
-      $('#send').disabled = !input.value.trim();
+      updateSendBtn();
       return;
     }
     // 启动 30s NO_REPLY watchdog：SSE 收到 assistant 会清掉 state.sending
@@ -467,10 +566,10 @@ async function send(){
       if (state.sending){
         $('#hint').textContent = '🤐 agent 静默（无文本输出）';
         state.sending = false;
-        $('#send').disabled = !input.value.trim();
+        updateSendBtn();
       }
     }, 90000);
-  }catch(e){ toast('网络错误: '+e.message); $('#hint').textContent='错误'; state.sending = false; $('#send').disabled = !input.value.trim() }
+  }catch(e){ toast('网络错误: '+e.message); $('#hint').textContent='错误'; state.sending = false; updateSendBtn() }
 }
 
 // sidebar mobile
