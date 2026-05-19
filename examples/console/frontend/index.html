@@ -127,23 +127,37 @@
   .paste-thumb{position:relative;width:56px;height:56px;border:1px solid var(--br);border-radius:6px;overflow:hidden;background:var(--bg2)}
   .paste-thumb img{width:100%;height:100%;object-fit:cover}
   .paste-thumb .x{position:absolute;top:0;right:0;background:rgba(0,0,0,.65);color:#fff;border:0;width:18px;height:18px;border-radius:0 0 0 6px;cursor:pointer;line-height:16px;font-size:var(--fs-11);padding:0}
-  .turn-card{margin:18px 0;border:1px solid var(--br);border-radius:6px;background:var(--bg);overflow:hidden;transition:border-color .15s}
-  .turn-card.running{border-color:var(--fg2)}
+  /* === Codex 风格会话渲染 === */
+  .turn-card{margin:24px 0;background:transparent;border:0;border-radius:0;overflow:visible;transition:none}
   .turn-card.running .turn-status::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg);animation:pulse 1.4s ease-in-out infinite}
   .turn-card.done .turn-status::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg3)}
   .turn-card.stopped .turn-status::before{content:'';display:inline-block;width:6px;height:6px;border:1px solid var(--fg2);border-radius:50%}
   .turn-card.stopped{opacity:.7}
   @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
-  .turn-head{display:flex;align-items:center;gap:12px;padding:10px 16px;background:transparent;font-size:var(--fs-12);border-bottom:1px solid var(--br)}
-  .turn-status{width:8px;display:inline-flex;align-items:center;justify-content:center}
-  .turn-title{flex:1;color:var(--fg2);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.01em;font-family:var(--ff-mono);font-size:var(--fs-11)}
-  .turn-meta{color:var(--fg3);font-size:var(--fs-11);font-variant-numeric:tabular-nums;font-family:var(--ff-mono);letter-spacing:.02em}
-  .turn-stop{background:transparent;border:1px solid var(--br);color:var(--fg2);border-radius:3px;padding:2px 10px;cursor:pointer;font-size:var(--fs-10);letter-spacing:.08em;font-family:var(--ff-mono);text-transform:uppercase}
-  .turn-stop:hover{border-color:var(--fg2);color:var(--fg)}
-  .turn-user{padding:14px 16px;color:var(--fg);font-size:var(--fs-14);line-height:var(--lh-relaxed)}
-  .turn-body{padding:6px 16px 14px;background:var(--bg3)}
-  .turn-body .msg{margin:10px 0}
-  .turn-body .bubble{padding:0;background:transparent;color:var(--fg);font-size:var(--fs-14);line-height:var(--lh-relaxed)}
+  /* 用户气泡 */
+  .turn-user{display:flex;justify-content:flex-end;margin:8px 0 14px}
+  .turn-user .ubub{max-width:80%;background:var(--user-bg);color:var(--user-fg);padding:8px 14px;border-radius:14px;border-bottom-right-radius:4px;font-size:var(--fs-14);line-height:var(--lh-base);white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+  /* 折叠头 「已处理 X · N tools ›」 */
+  .turn-head{display:flex;align-items:center;gap:10px;padding:0;margin:14px 0 8px;font-size:var(--fs-12);color:var(--fg3);border:0;cursor:pointer;user-select:none}
+  .turn-head::before{content:'';flex:0 0 14px;height:1px;background:var(--br2)}
+  .turn-head::after{content:'';flex:1;height:1px;background:var(--br2)}
+  .turn-head .turn-status{width:auto}
+  .turn-head .turn-title{flex:0 0 auto;color:var(--fg3);font-family:var(--ff-sans);font-size:var(--fs-12);font-weight:400;letter-spacing:0;text-transform:none;white-space:nowrap;overflow:visible}
+  .turn-head .turn-meta{color:var(--fg3);font-size:var(--fs-11);font-variant-numeric:tabular-nums;font-family:var(--ff-mono)}
+  .turn-head .turn-chev{color:var(--fg3);font-size:var(--fs-11);transition:transform .15s}
+  .turn-card.open .turn-head .turn-chev{transform:rotate(90deg)}
+  .turn-card.running .turn-head{color:var(--fg2)}
+  .turn-card.running .turn-head .turn-title{color:var(--fg2)}
+  /* 折叠体：tools / thinking */
+  .turn-body{display:none;padding:6px 0 4px;background:transparent;border-left:2px solid var(--br2);margin-left:6px;padding-left:14px}
+  .turn-card.open .turn-body{display:block}
+  .turn-card.running .turn-body{display:block}
+  /* assistant 纯文本（总是可见）*/
+  .turn-assistant{margin:6px 0 0;color:var(--fg);font-size:var(--fs-14);line-height:var(--lh-relaxed);white-space:normal;word-wrap:break-word;overflow-wrap:anywhere}
+  .turn-assistant p{margin:8px 0}
+  .turn-assistant code{background:var(--bg2);padding:1px 6px;border-radius:3px;font-size:var(--fs-mono-xs)}
+  .turn-assistant pre{background:var(--bg2);padding:10px 12px;border-radius:4px;overflow-x:auto;font-size:var(--fs-mono-xs);line-height:1.5}
+  .turn-assistant a{color:var(--acc)}
   .term{background:var(--bg2);color:var(--fg);border-radius:3px;overflow:hidden;font-family:var(--ff-mono);margin:6px 0;border:1px solid var(--br)}
   .term-head{padding:6px 12px;background:var(--bg3);font-size:var(--fs-10);color:var(--fg3);border-bottom:1px solid var(--br);letter-spacing:.05em;text-transform:uppercase}
   .term-body{padding:10px 12px;font-size:var(--fs-11);line-height:1.6;max-height:300px;overflow:auto;white-space:pre-wrap;margin:0;color:var(--fg2)}
@@ -786,11 +800,15 @@ function appendStreamEntry(entry){
   }
   if (entry.role === 'assistant'){
     const parts = entry.parts || [];
+    // 确保有 assistant 容器
+    const turnEl = body.closest('.turn-card');
+    let asstEl = turnEl ? turnEl.querySelector('.turn-assistant') : null;
+    if (turnEl && !asstEl){ asstEl = document.createElement('div'); asstEl.className='turn-assistant'; turnEl.appendChild(asstEl) }
     for (const p of parts){
       if (p.type === 'text' && p.text){
-        const d = document.createElement('div'); d.className='msg assistant';
-        d.innerHTML = `<div class="bubble">${renderMd(p.text)}</div>`;
-        body.appendChild(d);
+        const d = document.createElement('div');
+        d.innerHTML = renderMd(p.text);
+        (asstEl || body).appendChild(d);
       }else if (p.type === 'thinking' && p.text){
         const d = document.createElement('details'); d.className='thinking';
         d.innerHTML = `<summary>thinking</summary><pre>${escapeHTML(p.text)}</pre>`;
@@ -824,15 +842,22 @@ function newTurnCard(entry){
   turn.dataset.started = Date.now();
   const txt = stripMeta(entry.text || '');
   turn.innerHTML = `
+    <div class="turn-user"><div class="ubub">${escapeHTML(txt)}</div></div>
     <div class="turn-head">
+      <span class="turn-chev">›</span>
       <span class="turn-status"></span>
-      <span class="turn-title">${escapeHTML(txt.slice(0,80) || '(空消息)')}</span>
-      <span class="turn-meta"><span class="turn-timer">0s</span> · <span class="turn-tools">0</span></span>
+      <span class="turn-title">思考中</span>
+      <span class="turn-meta"><span class="turn-timer">0s</span></span>
       <button class="turn-stop" title="停止 agent">STOP</button>
     </div>
-    <div class="turn-user">${renderMd(txt)}</div>
     <div class="turn-body"></div>
+    <div class="turn-assistant"></div>
   `;
+  turn.classList.add('open');
+  turn.querySelector('.turn-head').addEventListener('click', (e)=>{
+    if (e.target.closest('.turn-stop')) return;
+    turn.classList.toggle('open');
+  });
   turn.querySelector('.turn-stop').onclick = async ()=>{
     if (!confirm('停止当前 agent？')) return;
     const r = await fetch('api/stop', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({sessionId: sid})}).then(r=>r.json());
@@ -853,9 +878,21 @@ function finalizeTurn(turn, entry){
   if (!turn) return;
   turn.classList.remove('running');
   turn.classList.add('done');
+  turn.classList.remove('open');
   const stop = turn.querySelector('.turn-stop'); if (stop) stop.remove();
   const toolCount = turn.querySelectorAll('.tool-card').length;
-  const toolsEl = turn.querySelector('.turn-tools'); if (toolsEl) toolsEl.textContent = `${toolCount} tool${toolCount===1?'':'s'}`;
+  const meta = turn.querySelector('.turn-meta');
+  const timer = turn.querySelector('.turn-timer');
+  const dur = turn.dataset.started ? Math.round((Date.now() - +turn.dataset.started)/1000) : null;
+  const parts = [];
+  if (dur != null) parts.push(fmtDur(dur));
+  if (toolCount) parts.push(`${toolCount} tool${toolCount===1?'':'s'}`);
+  if (meta) meta.innerHTML = `<span class="turn-tools">${parts.join(' · ')}</span>`;
+  const title = turn.querySelector('.turn-title'); if (title) title.textContent = '已处理';
+  if (!toolCount){
+    const ch = turn.querySelector('.turn-chev'); if (ch) ch.style.visibility='hidden';
+    const h = turn.querySelector('.turn-head'); if (h) h.style.cursor='default';
+  }
 }
 
 function attachToolResult(card, entry){
@@ -932,40 +969,56 @@ function renderMessages(msgs){
   const c = $('#chat');
   if (!msgs.length){ c.innerHTML = '<div class="empty">空 session</div>'; return; }
   const wrap = document.createElement('div'); wrap.className='msg-wrap';
-  // 按 turn 分组：user 起头，后面跟 assistant/toolCalls
   let curTurn = null;
   let curBody = null;
+  let curAssistant = null;
+  let turnStartTs = null;
+  let turnEndTs = null;
   msgs.forEach(m=>{
     if (m.role === 'user'){
+      // finalize previous
+      if (curTurn) finalizeStaticTurn(curTurn, turnStartTs, turnEndTs);
       _turnIdSeq++;
       curTurn = document.createElement('div');
       curTurn.className = 'turn-card done';
       curTurn.dataset.tid = _turnIdSeq;
       const txt = stripMeta(m.text || '');
       curTurn.innerHTML = `
+        <div class="turn-user"><div class="ubub">${escapeHTML(txt)}</div></div>
         <div class="turn-head">
+          <span class="turn-chev">›</span>
           <span class="turn-status"></span>
-          <span class="turn-title">${escapeHTML(txt.slice(0,80) || '(空)')}</span>
-          <span class="turn-meta"><span class="turn-tools">0 tools</span></span>
+          <span class="turn-title">已处理</span>
+          <span class="turn-meta"><span class="turn-tools"></span></span>
         </div>
-        <div class="turn-user">${renderMd(txt)}</div>
-        <div class="turn-body"></div>`;
+        <div class="turn-body"></div>
+        <div class="turn-assistant"></div>`;
       wrap.appendChild(curTurn);
       curBody = curTurn.querySelector('.turn-body');
+      curAssistant = curTurn.querySelector('.turn-assistant');
+      turnStartTs = m.timestamp ? new Date(m.timestamp).getTime() : null;
+      turnEndTs = turnStartTs;
+      // click to toggle
+      curTurn.querySelector('.turn-head').addEventListener('click', ()=>{
+        curTurn.classList.toggle('open');
+      });
       return;
     }
-    if (!curBody){
-      // orphan: pre-user content (compact summary etc)
+    if (!curTurn){
+      // orphan
       curTurn = document.createElement('div'); curTurn.className='turn-card done';
-      curTurn.innerHTML = '<div class="turn-head"><span class="turn-status"></span><span class="turn-title">(history)</span></div><div class="turn-body"></div>';
+      curTurn.innerHTML = '<div class="turn-head"><span class="turn-chev">›</span><span class="turn-status"></span><span class="turn-title">history</span><span class="turn-meta"></span></div><div class="turn-body"></div><div class="turn-assistant"></div>';
       wrap.appendChild(curTurn);
       curBody = curTurn.querySelector('.turn-body');
+      curAssistant = curTurn.querySelector('.turn-assistant');
+      curTurn.querySelector('.turn-head').addEventListener('click', ()=>{ curTurn.classList.toggle('open') });
     }
     if (m.role === 'assistant'){
+      if (m.timestamp) turnEndTs = new Date(m.timestamp).getTime();
       if (m.text){
-        const d = document.createElement('div'); d.className='msg assistant';
-        d.innerHTML = `<div class="bubble">${renderMd(m.text)}</div>`;
-        curBody.appendChild(d);
+        const d = document.createElement('div');
+        d.innerHTML = renderMd(m.text);
+        curAssistant.appendChild(d);
       }
       if (m.toolCalls?.length){
         for (const t of m.toolCalls){
@@ -975,24 +1028,63 @@ function renderMessages(msgs){
       }
     }
   });
-  // 更新每个 turn 的工具计数
-  wrap.querySelectorAll('.turn-card').forEach(t=>{
-    const n = t.querySelectorAll('.tool-card').length;
-    const el = t.querySelector('.turn-tools'); if (el) el.textContent = `${n} tool${n===1?'':'s'}`;
-  });
+  if (curTurn) finalizeStaticTurn(curTurn, turnStartTs, turnEndTs);
   c.innerHTML = ''; c.appendChild(wrap);
   c.scrollTop = c.scrollHeight;
 }
 
+function finalizeStaticTurn(turn, startTs, endTs){
+  const n = turn.querySelectorAll('.tool-card').length;
+  const tEl = turn.querySelector('.turn-tools');
+  const dur = (startTs && endTs && endTs > startTs) ? Math.round((endTs - startTs) / 1000) : null;
+  const parts = [];
+  if (dur != null) parts.push(fmtDur(dur));
+  if (n) parts.push(`${n} tool${n===1?'':'s'}`);
+  if (tEl) tEl.textContent = parts.join(' · ');
+  if (!n){
+    // 无 tool 时隐藏折叠头的 chevron
+    const ch = turn.querySelector('.turn-chev'); if (ch) ch.style.visibility='hidden';
+    // 不可点击
+    const h = turn.querySelector('.turn-head'); if (h) h.style.cursor='default';
+  }
+}
+function fmtDur(s){
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s/60), r = s%60;
+  return r? `${m}m ${r}s` : `${m}m`;
+}
+
 function renderMd(text){
-  // 极简 md: ``` 代码块, ` 行内, **粗**, [链接](url)
-  let h = escapeHTML(text);
-  h = h.replace(/```([a-z]*)\n([\s\S]*?)```/g, (_,l,c)=>`<pre><code>${c}</code></pre>`);
-  h = h.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-  h = h.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-  h = h.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank">$1</a>');
-  return h;
+  if (!text) return '';
+  // 提取代码块占位
+  const blocks = [];
+  let t = String(text).replace(/```([a-z0-9_+-]*)\n?([\s\S]*?)```/g, (_,l,c)=>{
+    const i = blocks.length;
+    blocks.push(`<pre><code>${escapeHTML(c.replace(/\n$/,''))}</code></pre>`);
+    return `\u0000CB${i}\u0000`;
+  });
+  t = escapeHTML(t);
+  // 行内 code
+  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  // 粗体
+  t = t.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+  // 链接
+  t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  t = t.replace(/(?<![">=])(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  // 按空行分段
+  const paras = t.split(/\n\s*\n/);
+  const html = paras.map(p=>{
+    p = p.trim();
+    if (!p) return '';
+    if (/^\u0000CB\d+\u0000$/.test(p)) return p;
+    if (/^([-*]|\d+\.)\s/m.test(p) && p.split(/\n/).every(l=>!l.trim() || /^([-*]|\d+\.)\s/.test(l))){
+      const ordered = /^\d+\.\s/.test(p);
+      const lis = p.split(/\n/).filter(Boolean).map(l=>l.replace(/^([-*]|\d+\.)\s+/,'')).map(x=>`<li>${x}</li>`).join('');
+      return ordered ? `<ol>${lis}</ol>` : `<ul>${lis}</ul>`;
+    }
+    return `<p>${p.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+  return html.replace(/\u0000CB(\d+)\u0000/g, (_,i)=>blocks[+i]);
 }
 
 // input
