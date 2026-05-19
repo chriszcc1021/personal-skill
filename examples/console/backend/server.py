@@ -376,11 +376,26 @@ _RUNNING: dict = {}  # sessionId -> {pid, started}
 
 def api_send(session_id: str, message: str, media_paths: list = None):
     """同步跳进后台，立即返回；agent 走 jsonl 追加 → SSE 推。"""
-    # 拼入 media 提示，让 agent 知道去读
     full_msg = message
     if media_paths:
         prefix = "[media attached: " + " | ".join(media_paths) + "]\n"
-        full_msg = prefix + message
+        full_msg = prefix + full_msg
+    # 项目上下文：首次 send 注入 prompt + cwd 提示
+    proj = _project_for_session(session_id)
+    work_cwd = None
+    if proj:
+        if proj.get("cwd"):
+            cw = Path(proj["cwd"]).expanduser()
+            if cw.exists() and cw.is_dir():
+                work_cwd = str(cw)
+        if not _session_has_history(session_id):
+            pieces = []
+            if proj.get("prompt"):
+                pieces.append(f"[项目上下文 · {proj.get('name','')}]\n{proj['prompt'].strip()}")
+            if work_cwd:
+                pieces.append(f"[项目工作目录] {work_cwd}\n后续 exec/read/write/edit 默认在此目录下进行（openclaw cwd 为 workspace，需显式 cd 或使用绝对路径）。")
+            if pieces:
+                full_msg = "\n\n".join(pieces) + "\n\n---\n\n" + full_msg
     with _SEND_LOCK:
         existing = _RUNNING.get(session_id)
         if existing:
@@ -389,11 +404,14 @@ def api_send(session_id: str, message: str, media_paths: list = None):
         log_path = Path("/tmp") / f"console-send-{session_id[:8]}.log"
         logf = log_path.open("ab")
         try:
-            proc = subprocess.Popen(cmd, stdout=logf, stderr=logf, stdin=subprocess.DEVNULL, start_new_session=True)
+            proc = subprocess.Popen(
+                cmd, stdout=logf, stderr=logf, stdin=subprocess.DEVNULL,
+                start_new_session=True, cwd=work_cwd,
+            )
         except FileNotFoundError as e:
             logf.close()
             return {"ok": False, "error": f"openclaw CLI not found in PATH: {e}"}
-        _RUNNING[session_id] = {"pid": proc.pid, "started": int(time.time())}
+        _RUNNING[session_id] = {"pid": proc.pid, "started": int(time.time()), "cwd": work_cwd}
 
         def _wait():
             try:
@@ -419,7 +437,6 @@ def api_running(session_id: str):
 
 def api_projects():
     projs = _load_projects()
-    # 补 sessionIds 详情（仅 alias + lastUpdated）
     meta = _load_meta()
     idx_sessions = {s.get("sessionId"): s for s in _load_sessions_index()}
     out = []
@@ -436,20 +453,42 @@ def api_projects():
                 "hint": _extract_session_info(sid).get("hint", "") if sid else "",
             })
         threads.sort(key=lambda t: -(t.get("updatedAt") or 0))
-        out.append({"projectId": pid, "name": p.get("name") or pid, "threads": threads})
+        out.append({
+            "projectId": pid,
+            "name": p.get("name") or pid,
+            "prompt": p.get("prompt", ""),
+            "cwd": p.get("cwd", ""),
+            "threads": threads,
+        })
     out.sort(key=lambda x: x["name"])
     return {"projects": out}
 
 
-def api_project_upsert(project_id: str, name: str):
+def api_project_upsert(project_id: str, name: str, prompt: str = None, cwd: str = None):
     with _PROJ_LOCK:
         projs = _load_projects()
         if project_id not in projs:
-            projs[project_id] = {"name": name or project_id, "sessionIds": []}
+            projs[project_id] = {"name": name or project_id, "sessionIds": [], "prompt": prompt or "", "cwd": cwd or ""}
         else:
             projs[project_id]["name"] = name or projs[project_id].get("name", project_id)
+            if prompt is not None: projs[project_id]["prompt"] = prompt
+            if cwd is not None: projs[project_id]["cwd"] = cwd
         _save_projects(projs)
         return {"ok": True, "project": projs[project_id]}
+
+
+def _project_for_session(session_id: str) -> dict:
+    """返回 session 所在的 project dict（含 prompt / cwd），没有 返 None。"""
+    projs = _load_projects()
+    for pid, p in projs.items():
+        if session_id in p.get("sessionIds", []):
+            return {**p, "projectId": pid}
+    return None
+
+
+def _session_has_history(session_id: str) -> bool:
+    f = SESSIONS_DIR / f"{session_id}.jsonl"
+    return f.exists() and f.stat().st_size > 50
 
 
 def api_project_delete(project_id: str):
@@ -700,7 +739,9 @@ class H(BaseHTTPRequestHandler):
         if p == "/api/project-upsert":
             pid = (data.get("projectId") or "").strip() or str(uuid.uuid4())
             name = (data.get("name") or "").strip()
-            return self._json(200, api_project_upsert(pid, name))
+            prompt_v = data.get("prompt")
+            cwd_v = data.get("cwd")
+            return self._json(200, api_project_upsert(pid, name, prompt_v, cwd_v))
         if p == "/api/project-delete":
             pid = (data.get("projectId") or "").strip()
             if not pid:
@@ -716,6 +757,16 @@ class H(BaseHTTPRequestHandler):
             pid = (data.get("projectId") or "").strip()
             alias = (data.get("alias") or "").strip()
             return self._json(200, api_thread_new(pid, alias))
+        if p == "/api/thread-assign-batch":
+            pid = (data.get("projectId") or "").strip()
+            sids = data.get("sessionIds") or []
+            if not isinstance(sids, list):
+                return self._json(400, {"error": "sessionIds list required"})
+            n = 0
+            for sid in sids:
+                if isinstance(sid, str) and sid.strip():
+                    api_thread_assign(pid, sid.strip()); n += 1
+            return self._json(200, {"ok": True, "count": n})
         return self._json(404, {"error": "not found"})
 
     def _handle_upload(self, body: str):
