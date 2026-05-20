@@ -46,7 +46,36 @@ AI 不是工具，是**带宽极高但需要明确指令的同事**。
 
 ---
 
-## 2. Karpathy Coding（已固化为独立 skill）
+## 2. 版本管理纪律（每次改动必走）
+
+**所有项目强制 3 件套**：
+```
+projects/<name>/
+├── VERSION             # 0.4.2
+└── CHANGELOG.md        # 人话写的迭代记录
+```
+
+**SemVer**：`MAJOR.MINOR.PATCH`。默认 bump PATCH。
+
+**每次改完代码强制走这 6 步**：
+1. 改代码
+2. 决定 bump 哪一位（默认 PATCH）
+3. 写 CHANGELOG.md（1-3 行人话）
+4. bump VERSION
+5. commit message 加前缀：`[whysper v0.4.2] xxx`
+6. 部署后 `git tag -a whysper-v0.4.2 · push --tags`
+
+**bump 时机**：每次部署 bump 一次。小改攒一波一起 bump；大改单独部署单独 bump。
+
+**部署元数据**：服务端跑 `/api/version` 返 `{version, git_sha, deployed_at}`，前端顶栏显示。
+
+**回退一行命令**：`git checkout whysper-v0.4.1`。
+
+> 完整 skill：[version-discipline](https://github.com/chriszcc1021/personal-skill/tree/main/skills/version-discipline)
+
+---
+
+## 3. Karpathy Coding（已固化为独立 skill）
 
 **核心 4 条**：
 1. 改前先思考，模糊处问清楚（列 A/B 让用户挑，不要默默选）
@@ -63,7 +92,7 @@ AI 不是工具，是**带宽极高但需要明确指令的同事**。
 
 ---
 
-## 3. 工具循环防御（防 AI 鬼打墙）
+## 4. 工具循环防御（防 AI 鬼打墙）
 
 **实战教训**：AI 经常在同一个工具上死磕，重试 5-10 次都拿不出结果。
 
@@ -77,7 +106,7 @@ AI 不是工具，是**带宽极高但需要明确指令的同事**。
 
 ---
 
-## 4. 设计相关（防 AI Slop）
+## 5. 设计相关（防 AI Slop）
 
 AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
@@ -103,7 +132,7 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 5. 沟通教训（写给和 AI 协作的你）
+## 6. 沟通教训（写给和 AI 协作的你）
 
 - 用户审美迭代极快：**改之前先 1-2 句列方案拍板再动手**
 - AI slop 敏感度爆表：戏剧句号、双词面包屑、uppercase、彩色徽章都是雷
@@ -114,7 +143,7 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 6. 部署铁律
+## 7. 部署铁律
 
 > 来自 console / whysper / vlog 多次踩坑。
 
@@ -125,7 +154,7 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 7. 成本管理
+## 8. 成本管理
 
 - AI 调用成本要算清楚：缓存读 / 缓存写 / 输入 / 输出 token 全要算
 - gateway 真实成本 ≈ list price × 折扣率（每家不同，自己拿 1-2 天数据反推）
@@ -133,7 +162,7 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 8. Memory 系统（让 AI 跨 session 不失忆）
+## 9. Memory 系统（让 AI 跨 session 不失忆）
 
 **核心思想**：AI 每次起来都是空的，文件是它的长期记忆。
 
@@ -151,7 +180,7 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 9. Skill 边界纪律
+## 10. Skill 边界纪律
 
 不是所有 skill 都该装。**用不到的 skill 占 context + 误触发**。
 
@@ -161,10 +190,11 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 10. 推荐 skill 组合（按场景）
+## 11. 推荐 skill 组合（按场景）
 
 ### 写代码（任何语言）
 - [karpathy-coding](https://github.com/chriszcc1021/personal-skill/tree/main/skills/karpathy-coding) — 强制流程
+- [version-discipline](https://github.com/chriszcc1021/personal-skill/tree/main/skills/version-discipline) — 版本管理纪律
 - [self-improving-agent](https://github.com/chriszcc1021/personal-skill/tree/main/skills/self-improving-agent) — 错误 → 沉淀
 
 ### 做 UI / 落地页
@@ -196,7 +226,7 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 11. 真实项目案例（学习参考）
+## 12. 真实项目案例（学习参考）
 
 所有源码在 [chriszcc1021/personal-skill/examples/](https://github.com/chriszcc1021/personal-skill/tree/main/examples)：
 
@@ -208,7 +238,7 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 12. 反例：本 skill 诞生时见过的雷
+## 13. 反例：本 skill 诞生时见过的雷
 
 | 雷 | 怎么踩的 | 怎么避 |
 |---|---|---|
@@ -220,10 +250,11 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 | AI 改 skill 风格页面没读 SKILL | Nothing 页面所有元素压平 | 强制先 read SKILL.md |
 | 部署用 nohup 手起丢 env | whysper AI key 没加载，截图永远抽不出事件 | 必须 systemd + EnvironmentFile |
 | 推 git 推了敏感数据 | whysper 本地数据差点 push | 推前问"这能 push 吗？" |
+| 改了 30 次没版本号 | whysper 用户问"现在第几版"答不出 | 强制 VERSION + CHANGELOG，每次部署 bump |
 
 ---
 
-## 13. 个人补充（可选）
+## 14. 个人补充（可选）
 
 如果你也想搭一套类似流程：
 
@@ -237,7 +268,7 @@ AI 默认输出"AI 味浓"的东西。**Slop 雷区**：
 
 ---
 
-## 14. 最重要的一条
+## 15. 最重要的一条
 
 **AI 不是工具，是同事。你怎么对同事，就怎么对它。**
 

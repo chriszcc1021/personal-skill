@@ -37,6 +37,17 @@ WHISPER_MODEL_PATH = os.environ.get("WHYSPER_WHISPER_MODEL_PATH", "/opt/whisper.
 WHISPER_THREADS = int(os.environ.get("WHYSPER_WHISPER_THREADS", "4"))
 
 app = FastAPI(title="Whysper")
+
+@app.get("/api/version")
+def version():
+    try:
+        v = (Path(__file__).resolve().parent.parent / "VERSION").read_text().strip()
+    except Exception: v = ""
+    return {
+        "version": v,
+        "git_sha": os.environ.get("GIT_SHA", ""),
+        "deployed_at": os.environ.get("DEPLOYED_AT", ""),
+    }
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # ---------- DB ----------
