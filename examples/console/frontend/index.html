@@ -84,6 +84,8 @@
   .proj-group-head{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;user-select:none}
   .proj-group-head .caret{font-size:var(--fs-10);color:var(--fg3);width:10px;display:inline-block;transition:transform .15s;flex-shrink:0}
   .proj-group.collapsed .caret{transform:rotate(-90deg)}
+  .proj-group .proj-icon{flex:0 0 14px;display:inline-flex;align-items:center;justify-content:center;color:var(--fg3)}
+  .proj-group .proj-icon svg{width:14px;height:14px;display:block}
   .proj-group .proj-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:var(--fs-13);color:var(--fg);letter-spacing:var(--ls-tight)}
   .proj-group .proj-count{font-size:var(--fs-10);color:var(--fg3);font-variant-numeric:tabular-nums;font-family:var(--ff-mono)}
   .proj-group .proj-add{padding:2px 8px;font-size:var(--fs-10);color:var(--fg3);border:1px solid var(--br);border-radius:3px;opacity:0;transition:opacity .15s;background:var(--bg)}
@@ -411,6 +413,7 @@ function renderProjects(){
       html += `<div class="proj-group ${isColl?'collapsed':''}" data-pid="${escapeHTML(p.projectId)}">
         <div class="proj-group-head">
           <span class="caret">▾</span>
+          <span class="proj-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.75 4.25a1 1 0 0 1 1-1h3.5l1.5 1.5h5.5a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg></span>
           <span class="proj-name">${escapeHTML(p.name)}</span>
           <span class="proj-count">${p.threads.length}</span>
           <button class="proj-add" data-act="add">新线程</button>
@@ -421,11 +424,11 @@ function renderProjects(){
             const running = state.running && state.running[t.sessionId] ? ' running' : '';
             const unread = state.unread && state.unread[t.sessionId] ? ' unread' : '';
             const name = t.alias || ('thread · ' + t.sessionId.slice(0,6));
-            const tok = t.totalTokens ? fmt(t.totalTokens) : '-';
+            const rel = fmtRelTime(t.updatedAt);
             let lead = '<span class="thread-dot"></span>';
             if (running) lead = '<span class="thread-dot"></span>'; // running 状态 CSS 接管
             else if (unread) lead = '<span class="unread-dot"></span>';
-            return `<div class="proj-thread${active}${running}${unread}" data-sid="${escapeHTML(t.sessionId)}">${lead}<span class="thread-name">${escapeHTML(name)}</span><span class="thread-tok">${tok}</span></div>`;
+            return `<div class="proj-thread${active}${running}${unread}" data-sid="${escapeHTML(t.sessionId)}">${lead}<span class="thread-name">${escapeHTML(name)}</span><span class="thread-time">${rel}</span></div>`;
           }).join('') || '<div style="padding:6px 14px 6px 14px;font-size:var(--fs-11);color:var(--fg3)">空</div>'}
         </div>
       </div>`;
@@ -644,6 +647,22 @@ function ageLabel(ms){
   if (sec < 3600) return Math.floor(sec/60) + 'm';
   if (sec < 86400) return Math.floor(sec/3600) + 'h';
   return Math.floor(sec/86400) + 'd';
+}
+
+// Codex 风格中文相对时间：N 分 / N 时 / N 天 / N 周 / N 月 / N 年
+function fmtRelTime(ts){
+  if (!ts) return '';
+  const now = Date.now();
+  const ms = ts > 1e12 ? ts : ts * 1000; // 兼容 s 和 ms
+  const diff = Math.max(0, now - ms);
+  const sec = Math.floor(diff/1000);
+  if (sec < 60) return '刚刚';
+  if (sec < 3600) return Math.floor(sec/60) + ' 分';
+  if (sec < 86400) return Math.floor(sec/3600) + ' 时';
+  if (sec < 7*86400) return Math.floor(sec/86400) + ' 天';
+  if (sec < 30*86400) return Math.floor(sec/(7*86400)) + ' 周';
+  if (sec < 365*86400) return Math.floor(sec/(30*86400)) + ' 月';
+  return Math.floor(sec/(365*86400)) + ' 年';
 }
 
 function escapeHTML(s){ return (s||'').replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])) }
