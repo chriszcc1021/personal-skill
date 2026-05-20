@@ -26,17 +26,17 @@
     --fg:#1d1d1f; --fg2:#6e6e73; --fg3:#a1a1a6;
     --br:#e5e5e7; --br2:#d2d2d7;
     --acc:#0066cc;
-    --user-bg:#0066cc; --user-fg:#fff;
+    --user-bg:#ececec; --user-fg:#1d1d1f;
     --asst-bg:transparent; --asst-fg:#1d1d1f;
     --tool-bg:#f5f5f7; --tool-fg:#6e6e73;
   }
   :root[data-theme=dark]{
     --bg:#000; --bg2:#1c1c1e; --bg3:#0f0f0f;
-    --fg:#f5f5f7; --fg2:#98989d; --fg3:#636366;
+    --fg:#ececec; --fg2:#98989d; --fg3:#636366;
     --br:#262628; --br2:#3a3a3c;
     --acc:#0a84ff;
-    --user-bg:#0a84ff; --user-fg:#fff;
-    --asst-bg:transparent; --asst-fg:#f5f5f7;
+    --user-bg:#2c2c2e; --user-fg:#ececec;
+    --asst-bg:transparent; --asst-fg:#ececec;
     --tool-bg:#1c1c1e; --tool-fg:#98989d;
   }
   *{box-sizing:border-box}
@@ -144,7 +144,7 @@
   @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
   /* 用户气泡 */
   .turn-user{display:flex;justify-content:flex-end;margin:8px 0 14px}
-  .turn-user .ubub{max-width:80%;background:var(--user-bg);color:var(--user-fg);padding:8px 14px;border-radius:14px;border-bottom-right-radius:4px;font-size:var(--fs-14);line-height:var(--lh-base);white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+  .turn-user .ubub{max-width:80%;background:var(--user-bg);color:var(--user-fg);padding:10px 14px;border-radius:14px;border-bottom-right-radius:4px;font-size:var(--fs-15);line-height:var(--lh-relaxed);white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
   /* 折叠头 「已处理 X · N tools ›」 */
   .turn-head{display:flex;align-items:center;gap:10px;padding:0;margin:14px 0 8px;font-size:var(--fs-12);color:var(--fg3);border:0;cursor:pointer;user-select:none}
   .turn-head::before{content:'';flex:0 0 14px;height:1px;background:var(--br2)}
@@ -161,10 +161,10 @@
   .turn-card.open .turn-body{display:block}
   .turn-card.running .turn-body{display:block}
   /* assistant 纯文本(总是可见)*/
-  .turn-assistant{margin:6px 0 0;color:var(--fg);font-size:var(--fs-14);line-height:var(--lh-relaxed);white-space:normal;word-wrap:break-word;overflow-wrap:anywhere}
-  .turn-assistant p{margin:8px 0}
-  .turn-assistant code{background:var(--bg2);padding:1px 6px;border-radius:3px;font-size:var(--fs-mono-xs)}
-  .turn-assistant pre{background:var(--bg2);padding:10px 12px;border-radius:4px;overflow-x:auto;font-size:var(--fs-mono-xs);line-height:1.5}
+  .turn-assistant{margin:6px 0 0;color:var(--fg);font-size:var(--fs-15);line-height:1.7;white-space:normal;word-wrap:break-word;overflow-wrap:anywhere}
+  .turn-assistant p{margin:12px 0}
+  .turn-assistant code{background:var(--bg2);padding:1px 6px;border-radius:3px;font-size:13px;font-family:var(--ff-mono)}
+  .turn-assistant pre{background:var(--bg2);padding:10px 12px;border-radius:4px;overflow-x:auto;font-size:13px;line-height:1.55;font-family:var(--ff-mono)}
   .turn-assistant a{color:var(--acc)}
   .term{background:var(--bg2);color:var(--fg);border-radius:3px;overflow:hidden;font-family:var(--ff-mono);margin:6px 0;border:1px solid var(--br)}
   .term-head{padding:6px 12px;background:var(--bg3);font-size:var(--fs-10);color:var(--fg3);border-bottom:1px solid var(--br);letter-spacing:.05em;text-transform:uppercase}
