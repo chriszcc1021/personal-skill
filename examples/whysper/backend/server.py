@@ -6,6 +6,9 @@ Endpoints:
   DELETE /api/entries/{id}   - delete
   PATCH /api/entries/{id}    - edit text/tags
   POST /api/organize         - trigger AI organize for today (or date param)
+  GET  /api/entries/{id}/calendar-items - calendar-worthy events/tasks/codes
+  GET  /api/ledger/candidates - review-first ledger candidates
+  GET  /api/ledger/entries    - confirmed ledger entries
   GET  /api/calendar         - calendar density {YYYY-MM-DD: count}
   GET  /api/stats            - streak + total
   GET  /api/tags             - all tags with counts
@@ -35,6 +38,7 @@ WHISPER_MODEL = os.environ.get("WHYSPER_WHISPER_MODEL", "gpt-4o-transcribe")
 WHISPER_CLI = os.environ.get("WHYSPER_WHISPER_CLI", "/opt/whisper.cpp/build/bin/whisper-cli")
 WHISPER_MODEL_PATH = os.environ.get("WHYSPER_WHISPER_MODEL_PATH", "/opt/whisper.cpp/models/ggml-medium-q5_0.bin")
 WHISPER_THREADS = int(os.environ.get("WHYSPER_WHISPER_THREADS", "4"))
+CAPTURE_MODES = {"auto", "note", "ledger"}
 
 app = FastAPI(title="Whysper")
 
@@ -89,6 +93,18 @@ def init_db():
         if "source" not in cols:
             try: c.execute("ALTER TABLE entries ADD COLUMN source TEXT DEFAULT 'app'")
             except Exception: pass
+        if "processing_stage" not in cols:
+            try: c.execute("ALTER TABLE entries ADD COLUMN processing_stage TEXT")
+            except Exception: pass
+        if "processing_status" not in cols:
+            try: c.execute("ALTER TABLE entries ADD COLUMN processing_status TEXT")
+            except Exception: pass
+        if "processing_error" not in cols:
+            try: c.execute("ALTER TABLE entries ADD COLUMN processing_error TEXT")
+            except Exception: pass
+        if "capture_mode" not in cols:
+            try: c.execute("ALTER TABLE entries ADD COLUMN capture_mode TEXT DEFAULT 'auto'")
+            except Exception: pass
         c.executescript("""
         CREATE TABLE IF NOT EXISTS organize_runs(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,7 +114,44 @@ def init_db():
           ok INTEGER,
           note TEXT
         );
+        CREATE TABLE IF NOT EXISTS ledger_candidates(
+          id TEXT PRIMARY KEY,
+          source_entry_id TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          status TEXT DEFAULT 'pending',
+          merchant TEXT,
+          amount REAL,
+          currency TEXT DEFAULT 'CNY',
+          paid_at TEXT,
+          category TEXT,
+          payment_method TEXT,
+          note TEXT,
+          confidence REAL,
+          raw_json TEXT,
+          tags TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_ledger_candidates_status ON ledger_candidates(status);
+        CREATE INDEX IF NOT EXISTS idx_ledger_candidates_entry ON ledger_candidates(source_entry_id);
+        CREATE TABLE IF NOT EXISTS ledger_entries(
+          id TEXT PRIMARY KEY,
+          candidate_id TEXT,
+          source_entry_id TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          confirmed_at INTEGER NOT NULL,
+          merchant TEXT,
+          amount REAL,
+          currency TEXT,
+          paid_at TEXT,
+          category TEXT,
+          payment_method TEXT,
+          note TEXT,
+          tags TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_ledger_entries_created ON ledger_entries(created_at);
         """)
+        for tbl in ("ledger_candidates", "ledger_entries"):
+            try: c.execute(f"ALTER TABLE {tbl} ADD COLUMN tags TEXT")
+            except Exception: pass
 init_db()
 
 # ---------- helpers ----------
@@ -124,7 +177,150 @@ def row_to_dict(r):
         except Exception: d["meta"] = {}
     else:
         d["meta"] = {}
+    d["calendar_items"] = calendar_items_from_entry(d)
+    if not d.get("processing_status"):
+        if d.get("transcribing"):
+            d["processing_status"] = "running"
+        elif d.get("organized"):
+            d["processing_status"] = "done"
+        else:
+            d["processing_status"] = "idle"
+    if not d.get("processing_stage"):
+        if d.get("transcribing"):
+            d["processing_stage"] = "vision" if d.get("image_file") else "transcribe"
+        else:
+            d["processing_stage"] = ""
+    if not d.get("capture_mode"):
+        d["capture_mode"] = "auto"
     return d
+
+def simple_row(r):
+    if not r:
+        return None
+    d = dict(r)
+    for k in ("tags",):
+        if k in d and d.get(k):
+            try: d[k] = json.loads(d[k])
+            except Exception: d[k] = []
+        elif k in d:
+            d[k] = []
+    if d.get("raw_json"):
+        try: d["raw_json"] = json.loads(d["raw_json"])
+        except Exception: pass
+    return d
+
+def as_float(v):
+    if v in (None, ""):
+        return None
+    try:
+        return float(str(v).replace(",", "").strip())
+    except Exception:
+        return None
+
+def _parse_iso(iso: str):
+    try:
+        if not iso: return None
+        d = dt.datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=dt.timezone(dt.timedelta(hours=8)))
+        return d
+    except Exception:
+        return None
+
+def _iso_plus_minutes(iso: str, minutes: int = 30) -> str:
+    d = _parse_iso(iso)
+    if not d: return ""
+    return (d + dt.timedelta(minutes=minutes)).isoformat()
+
+def calendar_items_from_entry(e: dict) -> list[dict]:
+    """Normalize AI events, task due dates, and code expirations into calendar-worthy items."""
+    meta = e.get("meta") or {}
+    items = []
+    for i, ev in enumerate(meta.get("events") or []):
+        start = ev.get("start_iso") or ""
+        if not start: continue
+        items.append({
+            "id": f"event-{i}",
+            "type": "event",
+            "title": ev.get("title") or e.get("title") or "Whysper 事件",
+            "start_iso": start,
+            "end_iso": ev.get("end_iso") or _iso_plus_minutes(start, 30),
+            "location": ev.get("location") or "",
+            "notes": ev.get("notes") or e.get("summary") or "",
+            "alert_min": ev.get("alert_min") if ev.get("alert_min") is not None else 30,
+        })
+    for i, task in enumerate(meta.get("tasks") or []):
+        due = task.get("due_iso") or ""
+        if not due: continue
+        title = task.get("text") or e.get("title") or "Whysper 待办"
+        items.append({
+            "id": f"task-{i}",
+            "type": "task",
+            "title": title,
+            "start_iso": due,
+            "end_iso": _iso_plus_minutes(due, 30),
+            "location": "",
+            "notes": e.get("summary") or e.get("final_text") or "",
+            "alert_min": 30,
+        })
+    for i, code in enumerate(meta.get("codes") or []):
+        exp = code.get("expire_iso") or ""
+        if not exp: continue
+        kind = code.get("kind") or "码"
+        value = code.get("value") or ""
+        items.append({
+            "id": f"code-{i}",
+            "type": "code",
+            "title": f"{kind}过期提醒",
+            "start_iso": exp,
+            "end_iso": _iso_plus_minutes(exp, 15),
+            "location": "",
+            "notes": f"{kind}: {value}" if value else kind,
+            "alert_min": 30,
+        })
+    return items
+
+def ensure_ledger_candidate(source_entry_id: str, seed_text: str = "") -> dict:
+    with db() as c:
+        existing = c.execute("SELECT * FROM ledger_candidates WHERE source_entry_id=?", (source_entry_id,)).fetchone()
+        if existing:
+            return simple_row(existing)
+        cid = uuid.uuid4().hex[:12]
+        c.execute("""INSERT INTO ledger_candidates(id,source_entry_id,created_at,status,currency,note,confidence)
+                     VALUES(?,?,?,?,?,?,?)""",
+                  (cid, source_entry_id, now_ts(), "pending", "CNY", seed_text or "", 0.0))
+        return simple_row(c.execute("SELECT * FROM ledger_candidates WHERE id=?", (cid,)).fetchone())
+
+def update_ledger_candidate_from_ai(source_entry_id: str, data: dict):
+    ensure_ledger_candidate(source_entry_id)
+    fields = {
+        "merchant": (data.get("merchant") or "").strip(),
+        "amount": as_float(data.get("amount")),
+        "currency": (data.get("currency") or "CNY").strip() or "CNY",
+        "paid_at": (data.get("paid_at") or "").strip(),
+        "category": (data.get("category") or "other").strip() or "other",
+        "payment_method": (data.get("payment_method") or "").strip(),
+        "note": (data.get("note") or "").strip(),
+        "confidence": as_float(data.get("confidence")),
+        "raw_json": json.dumps(data, ensure_ascii=False),
+    }
+    with db() as c:
+        sets = ",".join(f"{k}=?" for k in fields)
+        c.execute(f"UPDATE ledger_candidates SET {sets} WHERE source_entry_id=?", (*fields.values(), source_entry_id))
+
+def maybe_ledger_data(data: dict) -> dict | None:
+    ledger = data.get("ledger") or {}
+    if not isinstance(ledger, dict):
+        return None
+    amount = as_float(ledger.get("amount"))
+    merchant = (ledger.get("merchant") or "").strip()
+    is_expense = ledger.get("is_expense")
+    if is_expense is False:
+        return None
+    if amount is None and not merchant:
+        return None
+    ledger["amount"] = amount
+    return ledger
 
 # ---------- AI ----------
 async def ai_chat(messages, max_tokens=900, temperature=0.4) -> str:
@@ -190,19 +386,23 @@ async def _transcribe_and_update(eid: str, audio_path: Path):
     """Background task: run whisper.cpp, update entry on success."""
     try:
         with db() as c:
-            c.execute("UPDATE entries SET transcribing=1 WHERE id=?", (eid,))
+            c.execute("""UPDATE entries SET transcribing=1, processing_stage='transcribe',
+                         processing_status='running', processing_error=NULL WHERE id=?""", (eid,))
         tx = await transcribe(audio_path)
         if tx and tx.strip():
             with db() as c:
-                c.execute("UPDATE entries SET final_text=?, transcribing=0 WHERE id=?", (tx.strip(), eid))
+                c.execute("""UPDATE entries SET final_text=?, transcribing=0, processing_stage='transcribe',
+                             processing_status='done', processing_error=NULL WHERE id=?""", (tx.strip(), eid))
             print(f"[transcribe] {eid} done: {tx[:40]}")
         else:
             with db() as c:
-                c.execute("UPDATE entries SET transcribing=0 WHERE id=?", (eid,))
+                c.execute("""UPDATE entries SET transcribing=0, processing_stage='transcribe',
+                             processing_status='failed', processing_error='empty transcription' WHERE id=?""", (eid,))
             print(f"[transcribe] {eid} empty result")
     except Exception as e:
         with db() as c:
-            c.execute("UPDATE entries SET transcribing=0 WHERE id=?", (eid,))
+            c.execute("""UPDATE entries SET transcribing=0, processing_stage='transcribe',
+                         processing_status='failed', processing_error=? WHERE id=?""", (str(e)[:200], eid))
         print(f"[transcribe] {eid} error: {e}")
 
 
@@ -210,10 +410,12 @@ VISION_PROMPT = """你是个个人外挂大脑。看这张截图，抽取用户�
 今天是 {today} (Asia/Singapore)。以下是输出格式，严格 JSON，不要任何解释：
 
 {{
+  "route": ["knowledge"],
   "summary": "一句话总结这张图是什么 (不超 50 字)",
   "title": "一句话标题 (不超 18 字)",
   "text": "图里的关键文本内容提取 (OCR + 理解后的难表述，完整 250 字以内)",
   "tags": ["..."],
+  "ledger": {{"is_expense": false, "merchant": "", "amount": null, "currency": "CNY", "paid_at": "", "category": "food|transport|shopping|housing|health|subscription|transfer|other", "payment_method": "", "note": "", "confidence": 0.0}},
   "events": [{{"title":"...", "start_iso":"2026-05-18T14:00:00+08:00", "end_iso":"2026-05-18T15:00:00+08:00", "location":"...", "notes":"...", "alert_min":30}}],
   "codes": [{{"kind":"取件码/兑换码/取餐号", "value":"1234", "expire_iso":null}}],
   "tasks": [{{"text":"...", "due_iso":null}}],
@@ -224,19 +426,25 @@ VISION_PROMPT = """你是个个人外挂大脑。看这张截图，抽取用户�
 - 推断时间时遵照当地 +08:00。“明天”就是 {today}+1。
 - 有明确时间 + 事件 才填 events，否则留空数组。
 - 机票/火车票 alert_min 设 120，其他默认 30。
+- 如果截图是支付、收据、订单、账单、转账或消费记录，ledger.is_expense=true，并尽量提取 merchant/amount/paid_at/category/payment_method；不要编造金额。
 - codes 只抽实际可复制使用的短码（取件码、核销码、热锁、取餐号）。
 - tasks 限明确“我”需要完成的事项。
-- 如果是文章/帖子，重点摆 key_points，不产生 events/codes。
+- 如果是文章/帖子，重点摆 key_points，不产生 events/codes/ledger。
 - 不要手动转义引号，在 JSON 里用双引号即可。
 """
 
-async def _vision_extract_and_update(eid: str, image_path: Path):
+async def _vision_extract_and_update(eid: str, image_path: Path, capture_mode: str = "auto"):
     """Background task: send image to multimodal Claude, store structured meta."""
     if not AI_KEY or not image_path.exists():
+        reason = "AI key missing" if not AI_KEY else "image file missing"
+        with db() as c:
+            c.execute("""UPDATE entries SET transcribing=0, processing_stage='vision',
+                         processing_status='failed', processing_error=? WHERE id=?""", (reason, eid))
         return
     try:
         with db() as c:
-            c.execute("UPDATE entries SET transcribing=1 WHERE id=?", (eid,))
+            c.execute("""UPDATE entries SET transcribing=1, processing_stage='vision',
+                         processing_status='running', processing_error=NULL WHERE id=?""", (eid,))
         b64 = base64.b64encode(image_path.read_bytes()).decode()
         ext = image_path.suffix.lstrip('.').lower()
         mime = {"jpg":"image/jpeg","jpeg":"image/jpeg","png":"image/png","webp":"image/webp","heic":"image/heic"}.get(ext, "image/jpeg")
@@ -251,23 +459,34 @@ async def _vision_extract_and_update(eid: str, image_path: Path):
         }]
         raw = await ai_chat(msg, max_tokens=1800, temperature=0.2)
         data = _extract_json(raw) or {}
+        ledger_data = maybe_ledger_data(data)
+        if capture_mode == "ledger" and not ledger_data:
+            ledger_data = {"is_expense": True, "merchant": "", "amount": None, "currency": "CNY", "category": "other", "note": "AI 未能从截图中稳定提取消费信息", "confidence": 0.0}
+        if ledger_data:
+            update_ledger_candidate_from_ai(eid, ledger_data)
         text = (data.get("text") or "").strip()
         title = (data.get("title") or "").strip()
         summary = (data.get("summary") or "").strip()
         tags = data.get("tags") or []
+        if ledger_data and "ledger" not in tags:
+            tags = [*tags, "ledger"]
         meta = {
+            "route": data.get("route") or [],
+            "ledger_candidate": ledger_data or None,
             "events": data.get("events") or [],
             "codes": data.get("codes") or [],
             "tasks": data.get("tasks") or [],
             "key_points": data.get("key_points") or [],
         }
         with db() as c:
-            c.execute("""UPDATE entries SET final_text=?, title=?, summary=?, tags=?, meta=?, transcribing=0, organized=1 WHERE id=?""",
+            c.execute("""UPDATE entries SET final_text=?, title=?, summary=?, tags=?, meta=?, transcribing=0,
+                         organized=1, processing_stage='vision', processing_status='done', processing_error=NULL WHERE id=?""",
                       (text or summary or "", title, summary, json.dumps(tags, ensure_ascii=False), json.dumps(meta, ensure_ascii=False), eid))
         print(f"[vision] {eid} done: {title}")
     except Exception as e:
         with db() as c:
-            c.execute("UPDATE entries SET transcribing=0 WHERE id=?", (eid,))
+            c.execute("""UPDATE entries SET transcribing=0, processing_stage='vision',
+                         processing_status='failed', processing_error=? WHERE id=?""", (str(e)[:200], eid))
         print(f"[vision] {eid} error: {e}")
 
 # ---------- endpoints ----------
@@ -279,7 +498,9 @@ async def create_entry(
     lat: Optional[float] = Form(None),
     lng: Optional[float] = Form(None),
     source: str = Form("app"),
+    capture_mode: str = Form("auto"),
 ):
+    capture_mode = capture_mode if capture_mode in CAPTURE_MODES else "auto"
     eid = uuid.uuid4().hex[:12]
     audio_name = None
     image_name = None
@@ -305,14 +526,23 @@ async def create_entry(
         (DATA_ROOT / "images" / image_name).write_bytes(await image.read())
 
     ts = now_ts()
+    processing_stage = "vision" if image_name else ("transcribe" if audio_name else "")
+    processing_status = "running" if (audio_name or image_name) else "idle"
+    transcribing = 1 if (audio_name or image_name) else 0
     with db() as c:
-        c.execute("""INSERT INTO entries(id,created_at,local_date,audio_file,image_file,draft_text,final_text,lat,lng,source)
-                     VALUES(?,?,?,?,?,?,?,?,?,?)""",
-                  (eid, ts, ts_to_local_date(ts), audio_name, image_name, draft_text, final_text, lat, lng, source))
+        c.execute("""INSERT INTO entries(id,created_at,local_date,audio_file,image_file,draft_text,final_text,lat,lng,source,
+                     transcribing,processing_stage,processing_status,capture_mode)
+                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                  (eid, ts, ts_to_local_date(ts), audio_name, image_name, draft_text, final_text, lat, lng, source,
+                   transcribing, processing_stage, processing_status, capture_mode))
     # if image present, fire vision extraction in background
     if image_name:
-        asyncio.create_task(_vision_extract_and_update(eid, DATA_ROOT / "images" / image_name))
-    return {"id": eid, "final_text": final_text, "audio_file": audio_name, "image_file": image_name, "created_at": ts, "transcribing": 1 if (audio_name or image_name) else 0, "source": source}
+        if capture_mode == "ledger":
+            ensure_ledger_candidate(eid, draft_text or "")
+        asyncio.create_task(_vision_extract_and_update(eid, DATA_ROOT / "images" / image_name, capture_mode))
+    return {"id": eid, "final_text": final_text, "audio_file": audio_name, "image_file": image_name,
+            "created_at": ts, "transcribing": transcribing, "processing_stage": processing_stage,
+            "processing_status": processing_status, "source": source, "capture_mode": capture_mode}
 
 @app.get("/api/entries")
 def list_entries(date: Optional[str] = None, tag: Optional[str] = None, q: Optional[str] = None,
@@ -493,6 +723,165 @@ async def ask(body: dict):
         return {"answer": f"[AI 调用失败] {e}"}
     return {"answer": ans}
 
+# ---------- ledger ----------
+@app.get("/api/ledger/candidates")
+def list_ledger_candidates(status: str = "pending", limit: int = 100):
+    sql = "SELECT * FROM ledger_candidates"
+    args = []
+    if status != "all":
+        sql += " WHERE status=?"
+        args.append(status)
+    sql += " ORDER BY created_at DESC LIMIT ?"
+    args.append(limit)
+    with db() as c:
+        rows = [simple_row(r) for r in c.execute(sql, args)]
+    return {"candidates": rows, "total": len(rows)}
+
+@app.patch("/api/ledger/candidates/{cid}")
+async def patch_ledger_candidate(cid: str, body: dict):
+    allowed = {"merchant", "amount", "currency", "paid_at", "category", "payment_method", "note", "confidence", "status", "tags"}
+    fields = {k: body[k] for k in allowed if k in body}
+    if "amount" in fields:
+        fields["amount"] = as_float(fields["amount"])
+    if "confidence" in fields:
+        fields["confidence"] = as_float(fields["confidence"])
+    if "tags" in fields:
+        v = fields["tags"]
+        if isinstance(v, list):
+            fields["tags"] = json.dumps([str(t).strip() for t in v if str(t).strip()], ensure_ascii=False)
+        elif isinstance(v, str):
+            fields["tags"] = json.dumps([x.strip() for x in v.split(",") if x.strip()], ensure_ascii=False)
+        elif v is None:
+            fields["tags"] = None
+    if not fields:
+        return {"ok": True}
+    sets = ",".join(f"{k}=?" for k in fields)
+    with db() as c:
+        c.execute(f"UPDATE ledger_candidates SET {sets} WHERE id=?", (*fields.values(), cid))
+        row = c.execute("SELECT * FROM ledger_candidates WHERE id=?", (cid,)).fetchone()
+        if not row: raise HTTPException(404)
+    return {"ok": True, "candidate": simple_row(row)}
+
+@app.post("/api/ledger/candidates/{cid}/confirm")
+def confirm_ledger_candidate(cid: str):
+    with db() as c:
+        r = c.execute("SELECT * FROM ledger_candidates WHERE id=?", (cid,)).fetchone()
+        if not r: raise HTTPException(404)
+        item = simple_row(r)
+        tags_json = json.dumps(item.get("tags") or [], ensure_ascii=False) if isinstance(item.get("tags"), list) else None
+        entry_id = uuid.uuid4().hex[:12]
+        confirmed_at = now_ts()
+        c.execute("""INSERT INTO ledger_entries(id,candidate_id,source_entry_id,created_at,confirmed_at,merchant,amount,currency,paid_at,category,payment_method,note,tags)
+                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                  (entry_id, cid, item["source_entry_id"], item["created_at"], confirmed_at,
+                   item.get("merchant"), item.get("amount"), item.get("currency") or "CNY",
+                   item.get("paid_at"), item.get("category"), item.get("payment_method"), item.get("note"), tags_json))
+        c.execute("UPDATE ledger_candidates SET status='confirmed' WHERE id=?", (cid,))
+        row = c.execute("SELECT * FROM ledger_entries WHERE id=?", (entry_id,)).fetchone()
+    return {"ok": True, "entry": simple_row(row)}
+
+def _filter_ledger_entries_sql(category: Optional[str], q: Optional[str], from_date: Optional[str], to_date: Optional[str]):
+    sql = "SELECT * FROM ledger_entries WHERE 1=1"
+    args = []
+    if category:
+        sql += " AND lower(coalesce(category,''))=lower(?)"
+        args.append(category)
+    if q:
+        like = f"%{q.lower()}%"
+        sql += " AND (lower(coalesce(merchant,'')) LIKE ? OR lower(coalesce(note,'')) LIKE ? OR lower(coalesce(payment_method,'')) LIKE ?)"
+        args += [like, like, like]
+    if from_date:
+        sql += " AND substr(coalesce(paid_at,''),1,10) >= ?"
+        args.append(from_date)
+    if to_date:
+        sql += " AND substr(coalesce(paid_at,''),1,10) <= ?"
+        args.append(to_date)
+    return sql, args
+
+@app.get("/api/ledger/entries")
+def list_ledger_entries(limit: int = 200,
+                        category: Optional[str] = None,
+                        q: Optional[str] = None,
+                        from_date: Optional[str] = Query(None, alias="from"),
+                        to_date: Optional[str] = Query(None, alias="to")):
+    sql, args = _filter_ledger_entries_sql(category, q, from_date, to_date)
+    sql += " ORDER BY coalesce(paid_at, '') DESC, confirmed_at DESC LIMIT ?"
+    args.append(limit)
+    with db() as c:
+        rows = [simple_row(r) for r in c.execute(sql, args)]
+    return {"entries": rows, "total": len(rows)}
+
+@app.delete("/api/ledger/entries/{lid}")
+def delete_ledger_entry(lid: str):
+    with db() as c:
+        row = c.execute("SELECT id FROM ledger_entries WHERE id=?", (lid,)).fetchone()
+        if not row: raise HTTPException(404)
+        c.execute("DELETE FROM ledger_entries WHERE id=?", (lid,))
+    return {"ok": True, "id": lid}
+
+@app.get("/api/ledger/stats")
+def ledger_stats(window: str = "month"):
+    now = dt.datetime.utcnow() + dt.timedelta(hours=8)
+    today = now.date()
+    if window == "today":
+        start_date = today
+    elif window == "week":
+        start_date = today - dt.timedelta(days=today.weekday())
+    elif window == "month":
+        start_date = today.replace(day=1)
+    elif window == "year":
+        start_date = today.replace(month=1, day=1)
+    else:
+        start_date = None
+    with db() as c:
+        rows = [simple_row(r) for r in c.execute("SELECT * FROM ledger_entries ORDER BY confirmed_at DESC")]
+    def entry_date(e):
+        s = (e.get("paid_at") or "").strip()
+        if s:
+            d = _parse_iso(s)
+            if d: return d.astimezone(dt.timezone(dt.timedelta(hours=8))).date()
+            try: return dt.date.fromisoformat(s[:10])
+            except Exception: pass
+        return dt.date.fromtimestamp((e.get("created_at") or e.get("confirmed_at") or now_ts()) + 8*3600)
+    scoped = []
+    for e in rows:
+        d = entry_date(e)
+        if start_date and d < start_date:
+            continue
+        amt = float(e.get("amount") or 0)
+        if (e.get("category") or "").lower() == "transfer":
+            continue
+        scoped.append((d, amt, e))
+    total = round(sum(x[1] for x in scoped), 2)
+    by_cat = {}
+    for _, amt, e in scoped:
+        cat = (e.get("category") or "other").lower()
+        by_cat[cat] = by_cat.get(cat, 0) + amt
+    return {
+        "window": window,
+        "total_count": len(scoped),
+        "total_amount": total,
+        "avg": round(total / len(scoped), 2) if scoped else 0,
+        "by_category": [{"category": k, "amount": round(v, 2)} for k, v in sorted(by_cat.items(), key=lambda x: -x[1])],
+    }
+
+@app.get("/api/ledger/export.csv")
+def export_ledger_csv():
+    import csv, io
+    buf = io.StringIO()
+    buf.write("\ufeff")
+    w = csv.writer(buf)
+    w.writerow(["paid_at", "merchant", "amount", "currency", "category", "payment_method", "tags", "note", "confirmed_at"])
+    with db() as c:
+        for r in c.execute("SELECT * FROM ledger_entries ORDER BY coalesce(paid_at,'') DESC, confirmed_at DESC"):
+            d = simple_row(r) or {}
+            tags = d.get("tags") or []
+            w.writerow([d.get("paid_at") or "", d.get("merchant") or "", d.get("amount") or "", d.get("currency") or "",
+                        d.get("category") or "", d.get("payment_method") or "", ",".join(tags), d.get("note") or "", d.get("confirmed_at") or ""])
+    filename = f"whysper-ledger-{dt.datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.csv"
+    return Response(content=buf.getvalue().encode("utf-8"), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
 # ---------- media ----------
 @app.get("/media/audio/{name}")
 def get_audio(name: str):
@@ -522,15 +911,15 @@ def _ics_dt(iso: str) -> str:
 
 @app.get("/api/entries/{eid}/event")
 def entry_event(eid: str):
-    """返回给快捷指令设计的扯平事件结构。取 meta.events[0]。"""
+    """返回给快捷指令设计的扁平事件结构。取第一个 calendar item。"""
     with db() as c:
         r = c.execute("SELECT * FROM entries WHERE id=?", (eid,)).fetchone()
     if not r: raise HTTPException(404)
     e = row_to_dict(r)
-    events = (e.get("meta") or {}).get("events") or []
-    if not events:
-        return {"has_event": False, "entry_id": eid}
-    ev = events[0]
+    items = e.get("calendar_items") or []
+    if not items:
+        return {"has_event": False, "entry_id": eid, "processing_status": e.get("processing_status", ""), "processing_stage": e.get("processing_stage", "")}
+    ev = items[0]
     def _fmt(iso):
         try:
             d = dt.datetime.fromisoformat(iso.replace("Z","+00:00"))
@@ -541,6 +930,7 @@ def entry_event(eid: str):
     return {
         "has_event": True,
         "entry_id": eid,
+        "type": ev.get("type") or "event",
         "title": ev.get("title") or e.get("title") or "Whysper 事件",
         "start": _fmt(ev.get("start_iso") or ""),
         "end": _fmt(ev.get("end_iso") or ""),
@@ -548,9 +938,25 @@ def entry_event(eid: str):
         "end_iso": ev.get("end_iso") or "",
         "location": ev.get("location") or "",
         "notes": ev.get("notes") or e.get("summary") or "",
-        "event_count": len(events),
+        "event_count": len(items),
+        "processing_status": e.get("processing_status", ""),
+        "processing_stage": e.get("processing_stage", ""),
     }
 
+@app.get("/api/entries/{eid}/calendar-items")
+def entry_calendar_items(eid: str):
+    with db() as c:
+        r = c.execute("SELECT * FROM entries WHERE id=?", (eid,)).fetchone()
+    if not r: raise HTTPException(404)
+    e = row_to_dict(r)
+    return {
+        "entry_id": eid,
+        "has_items": bool(e.get("calendar_items")),
+        "items": e.get("calendar_items") or [],
+        "processing_status": e.get("processing_status", ""),
+        "processing_stage": e.get("processing_stage", ""),
+        "processing_error": e.get("processing_error") or "",
+    }
 
 @app.get("/api/entries/{eid}/ics")
 def entry_ics(eid: str):
@@ -558,8 +964,8 @@ def entry_ics(eid: str):
         r = c.execute("SELECT * FROM entries WHERE id=?", (eid,)).fetchone()
     if not r: raise HTTPException(404)
     e = row_to_dict(r)
-    events = (e.get("meta") or {}).get("events") or []
-    if not events: raise HTTPException(404, "no events on this entry")
+    events = e.get("calendar_items") or []
+    if not events: raise HTTPException(404, "no calendar items on this entry")
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Whysper//Whysper//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"]
     now_utc = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     for i, ev in enumerate(events):
