@@ -190,6 +190,22 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .ledger-summary{border:1px solid var(--dim2);padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:baseline}
 .ledger-summary .label{font-size:10px;color:var(--dim);letter-spacing:0.22em;text-transform:uppercase}
 .ledger-summary .amount{font-family:-apple-system,system-ui,sans-serif;font-size:24px;font-weight:700;letter-spacing:0}
+.ledger-stats{border:1px solid var(--dim2);padding:12px;margin-bottom:16px;font-family:-apple-system,system-ui,sans-serif}
+.ledger-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.ledger-stat .k{font-size:10px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase}
+.ledger-stat .v{margin-top:4px;font-size:18px;font-weight:750;color:var(--fg);letter-spacing:0}
+.ledger-insight{font-size:12px;color:#aaa;line-height:1.5;margin-bottom:12px;letter-spacing:0}
+.ledger-bars{display:flex;flex-direction:column;gap:8px}
+.ledger-bar{display:grid;grid-template-columns:56px 1fr 64px;gap:8px;align-items:center;font-size:12px;color:#ccc;letter-spacing:0}
+.ledger-bar-track{height:7px;border:1px solid var(--dim2);background:#050505}
+.ledger-bar-fill{height:100%;background:var(--fg);min-width:2px}
+.ledger-bar-amt{text-align:right;color:var(--fg);font-variant-numeric:tabular-nums}
+.ledger-chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
+.ledger-chips button{flex:0 0 auto;padding:7px 9px;border:1px solid var(--dim2);font-size:10px;color:var(--dim);letter-spacing:0.12em}
+.ledger-chips button.active{color:var(--fg);border-color:var(--fg)}
+.ledger-group-title{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px;font-family:-apple-system,system-ui,sans-serif}
+.ledger-group-title .name{font-size:14px;font-weight:700;color:var(--fg);letter-spacing:0}
+.ledger-group-title .sum{font-size:12px;color:var(--dim);letter-spacing:0}
 .ledger-card{border:1px solid var(--dim2);padding:14px;margin-bottom:10px;font-family:-apple-system,system-ui,sans-serif}
 .ledger-card.pending{border-style:dashed}
 .ledger-card.failed{border-color:var(--red)}
@@ -202,7 +218,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .ledger-form{display:none;margin-top:12px;grid-template-columns:1fr 1fr;gap:8px}
 .ledger-form.show{display:grid}
 .ledger-form label{font-size:10px;color:var(--dim);letter-spacing:0.16em;text-transform:uppercase}
-.ledger-form input,.ledger-form textarea{width:100%;margin-top:4px;padding:9px;background:transparent;border:1px solid var(--dim2);color:var(--fg);font-family:-apple-system,system-ui,sans-serif;font-size:13px;letter-spacing:0}
+.ledger-form input,.ledger-form select,.ledger-form textarea{width:100%;margin-top:4px;padding:9px;background:#000;border:1px solid var(--dim2);color:var(--fg);font-family:-apple-system,system-ui,sans-serif;font-size:13px;letter-spacing:0}
 .ledger-form textarea{grid-column:1/-1;min-height:70px;resize:vertical}
 .ledger-buttons{display:flex;gap:8px;margin-top:12px}
 .ledger-buttons button{flex:1;padding:10px;border:1px solid var(--dim2);font-size:10px;letter-spacing:0.2em;text-transform:uppercase}
@@ -1088,6 +1104,22 @@ function filterTag(t){
 }
 
 // ===== ledger =====
+const LEDGER_CATEGORIES = [
+  ['food','餐饮'],
+  ['transport','交通'],
+  ['shopping','购物'],
+  ['entertainment','娱乐'],
+  ['housing','居住'],
+  ['health','医疗'],
+  ['education','学习'],
+  ['travel','旅行'],
+  ['business','工作'],
+  ['subscription','订阅'],
+  ['transfer','转账'],
+  ['other','其他']
+];
+const LEDGER_CATEGORY_LABEL = Object.fromEntries(LEDGER_CATEGORIES);
+let ledgerCategoryFilter = '';
 function escAttr(s){return esc(String(s||'')).replace(/"/g,'&quot;')}
 function fmtAmt(n){
   const v = Number(n);
@@ -1105,6 +1137,69 @@ function ledgerCandidateFailed(c){
   if(c.merchant || c.amount!==null && c.amount!==undefined && c.amount!=='') return false;
   return true;
 }
+function ledgerCatLabel(cat){
+  return LEDGER_CATEGORY_LABEL[String(cat||'other').toLowerCase()] || '其他';
+}
+function ledgerCategoryOptions(current){
+  const cur = String(current || 'other').toLowerCase();
+  return LEDGER_CATEGORIES.map(([key,label]) =>
+    '<option value="'+key+'" '+(key===cur?'selected':'')+'>'+label+'</option>'
+  ).join('');
+}
+function setLedgerCategory(cat){
+  ledgerCategoryFilter = cat || '';
+  loadLedger();
+}
+function ledgerStatsHtml(stats){
+  const cats = stats.by_category || [];
+  const top = cats[0];
+  const insight = top
+    ? '本月最大支出是 '+esc(top.label || ledgerCatLabel(top.category))+'，占 '+esc(top.percent || 0)+'%。'
+    : '本月还没有已确认账单。';
+  const bars = cats.length ? cats.slice(0, 6).map(c => {
+    const label = c.label || ledgerCatLabel(c.category);
+    const pct = Math.max(2, Math.min(100, Number(c.percent || 0)));
+    return '<div class="ledger-bar">'+
+      '<div>'+esc(label)+'</div>'+
+      '<div class="ledger-bar-track"><div class="ledger-bar-fill" style="width:'+pct+'%"></div></div>'+
+      '<div class="ledger-bar-amt">'+fmtAmt(c.amount||0)+'</div>'+
+    '</div>';
+  }).join('') : '<div class="ledger-empty" style="padding:10px">暂无分类统计</div>';
+  return '<div class="ledger-stats">'+
+    '<div class="ledger-stats-grid">'+
+      '<div class="ledger-stat"><div class="k">本月</div><div class="v">'+fmtAmt(stats.total_amount||0)+'</div></div>'+
+      '<div class="ledger-stat"><div class="k">笔数</div><div class="v">'+(stats.total_count||0)+'</div></div>'+
+      '<div class="ledger-stat"><div class="k">均单</div><div class="v">'+fmtAmt(stats.avg||0)+'</div></div>'+
+    '</div>'+
+    '<div class="ledger-insight">'+insight+'</div>'+
+    '<div class="ledger-bars">'+bars+'</div>'+
+  '</div>';
+}
+function ledgerChipsHtml(stats){
+  const active = ledgerCategoryFilter || '';
+  const present = new Set((stats.by_category || []).map(c => String(c.category || 'other').toLowerCase()));
+  const chips = [['','全部'], ...LEDGER_CATEGORIES.filter(([key]) => present.has(key))];
+  return '<div class="ledger-chips">'+chips.map(([key,label]) =>
+    '<button class="'+(key===active?'active':'')+'" onclick="setLedgerCategory(\''+key+'\')">'+esc(label)+'</button>'
+  ).join('')+'</div>';
+}
+function ledgerGroupedEntries(entries){
+  const groups = [];
+  const idx = {};
+  entries.forEach(e => {
+    const cat = String(e.category || 'other').toLowerCase();
+    if(!idx[cat]){
+      idx[cat] = {cat, items: [], total: 0};
+      groups.push(idx[cat]);
+    }
+    idx[cat].items.push(e);
+    idx[cat].total += Number(e.amount || 0);
+  });
+  return groups.map(g =>
+    '<div class="ledger-group-title"><span class="name">'+esc(ledgerCatLabel(g.cat))+'</span><span class="sum">'+fmtAmt(g.total)+' CNY · '+g.items.length+' 笔</span></div>'+
+    g.items.map(ledgerEntryHtml).join('')
+  ).join('');
+}
 async function loadLedger(){
   const box = document.getElementById('ledgerBox');
   const exp = document.getElementById('ledgerExport');
@@ -1112,16 +1207,17 @@ async function loadLedger(){
   box.innerHTML = '<div class="ledger-empty">加载中</div>';
   let pending, entries, stats;
   try{
+    const entryUrl = '/ledger/entries?limit=200' + (ledgerCategoryFilter ? '&category='+encodeURIComponent(ledgerCategoryFilter) : '');
     [pending, entries, stats] = await Promise.all([
       api('/ledger/candidates?status=pending&limit=100'),
-      api('/ledger/entries?limit=200'),
+      api(entryUrl),
       api('/ledger/stats?window=month')
     ]);
   }catch(e){
     box.innerHTML = '<div class="ledger-empty">加载失败 · '+esc(e.message||e)+'</div>';
     return;
   }
-  let html = '<div class="ledger-summary"><span class="label">本月已确认</span><span class="amount">'+fmtAmt(stats.total_amount||0)+' CNY</span></div>';
+  let html = ledgerStatsHtml(stats) + ledgerChipsHtml(stats);
   if(pending.candidates && pending.candidates.length){
     html += '<div class="day-head"><span>待确认 · '+pending.candidates.length+'</span><div class="line"></div></div>';
     html += pending.candidates.map(ledgerCandidateHtml).join('');
@@ -1130,7 +1226,9 @@ async function loadLedger(){
   }
   if(entries.entries && entries.entries.length){
     html += '<div class="day-head"><span>已入账 · '+entries.entries.length+'</span><div class="line"></div></div>';
-    html += entries.entries.map(ledgerEntryHtml).join('');
+    html += ledgerGroupedEntries(entries.entries);
+  } else {
+    html += '<div class="ledger-empty">没有匹配的已入账记录</div>';
   }
   box.innerHTML = html;
 }
@@ -1143,7 +1241,7 @@ function ledgerCandidateHtml(c){
     '<div class="ledger-top"><div class="ledger-merchant">'+esc(c.merchant||'待识别账单')+'</div><div class="ledger-amount '+(amount==='待填'?'unknown':'')+'">'+amount+'</div></div>'+
     '<div class="ledger-meta">'+
       (c.paid_at?'<span>'+esc(fmtPaidAt(c.paid_at))+'</span>':'')+
-      (c.category?'<span>'+esc(c.category)+'</span>':'')+
+      (c.category?'<span>'+esc(ledgerCatLabel(c.category))+'</span>':'')+
       (c.payment_method?'<span>'+esc(c.payment_method)+'</span>':'')+
       '<span>confidence '+esc(c.confidence||0)+'</span>'+
     '</div>'+
@@ -1159,7 +1257,7 @@ function ledgerForm(c){
     '<label>金额<input id="lg-amount-'+id+'" inputmode="decimal" value="'+escAttr(c.amount??'')+'"></label>'+
     '<label>币种<input id="lg-currency-'+id+'" value="'+escAttr(c.currency||'CNY')+'"></label>'+
     '<label>时间<input id="lg-paid-'+id+'" value="'+escAttr(c.paid_at||'')+'" placeholder="2026-05-21"></label>'+
-    '<label>类别<input id="lg-category-'+id+'" value="'+escAttr(c.category||'other')+'"></label>'+
+    '<label>类别<select id="lg-category-'+id+'">'+ledgerCategoryOptions(c.category)+'</select></label>'+
     '<label>方式<input id="lg-method-'+id+'" value="'+escAttr(c.payment_method||'')+'"></label>'+
     '<textarea id="lg-note-'+id+'" placeholder="备注">'+esc(c.note||'')+'</textarea>'+
     '<div class="ledger-buttons" style="grid-column:1/-1;margin-top:0"><button class="confirm" onclick="saveLedgerCandidate(\''+id+'\')">保存修改</button></div>'+
@@ -1171,7 +1269,7 @@ function ledgerEntryHtml(e){
     '<div class="ledger-top"><div class="ledger-merchant">'+esc(e.merchant||'账单')+'</div><div class="ledger-amount">'+amount+'</div></div>'+
     '<div class="ledger-meta">'+
       (e.paid_at?'<span>'+esc(fmtPaidAt(e.paid_at))+'</span>':'')+
-      (e.category?'<span>'+esc(e.category)+'</span>':'')+
+      (e.category?'<span>'+esc(ledgerCatLabel(e.category))+'</span>':'')+
       (e.payment_method?'<span>'+esc(e.payment_method)+'</span>':'')+
       '<button class="ledger-export" style="margin-left:auto" onclick="deleteLedgerEntry(\''+e.id+'\')">删除</button>'+
     '</div>'+
