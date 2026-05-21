@@ -1042,6 +1042,8 @@ function stripMeta(t){
 
 function renderMessages(msgs){
   const c = $('#chat');
+  // 保留现有的排队 optimistic turn（jsonl 还没落盘，重绘不能抓掉）
+  const queuedTurns = [...c.querySelectorAll('.turn-card.queued')].map(t=>t.cloneNode(true));
   if (!msgs.length){ c.innerHTML = '<div class="empty">空 session</div>'; return; }
   const wrap = document.createElement('div'); wrap.className='msg-wrap';
   let curTurn = null;
@@ -1105,6 +1107,15 @@ function renderMessages(msgs){
   });
   if (curTurn) finalizeStaticTurn(curTurn, turnStartTs, turnEndTs);
   c.innerHTML = ''; c.appendChild(wrap);
+  // 重新插回排队 turn
+  if (queuedTurns.length){
+    for (const qt of queuedTurns){
+      wrap.appendChild(qt);
+      // 重新绑定点击折叠
+      const h = qt.querySelector('.turn-head');
+      if (h) h.addEventListener('click', ()=> qt.classList.toggle('open'));
+    }
+  }
   // 如果当前 session 还在跑，把最后一个 turn 标为 running
   const curSid = state.current?.sessionId;
   if (curSid && state.running && state.running[curSid] && curTurn){
