@@ -158,6 +158,12 @@
   .turn-card.open .turn-head .turn-chev{transform:rotate(90deg)}
   .turn-card.running .turn-head{color:var(--fg2)}
   .turn-card.running .turn-head .turn-title{color:var(--fg2)}
+  /* 正在干什么 提示行（仅 running 时显示） */
+  .turn-current{display:none;margin:4px 0 8px;padding-left:6px;font-size:var(--fs-12);color:var(--fg3);font-style:italic;letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .turn-current::before{content:'›';margin-right:6px;font-style:normal;color:var(--fg3)}
+  .turn-card.running .turn-current{display:block}
+  /* running 期间 thinking 默认展开 */
+  .turn-card.running .thinking[open] pre,.turn-card.running .thinking pre{max-height:80px}
   /* 折叠体:tools / thinking */
   .turn-body{display:none;padding:6px 0 4px;background:transparent;border-left:2px solid var(--br2);margin-left:6px;padding-left:14px}
   .turn-card.open .turn-body{display:block}
@@ -854,10 +860,24 @@ function appendStreamEntry(entry){
         (asstEl || body).appendChild(d);
       }else if (p.type === 'thinking' && p.text){
         const d = document.createElement('details'); d.className='thinking';
+        // running 期间默认展开
+        const turnCard = body.closest('.turn-card');
+        const isRun = turnCard && turnCard.classList.contains('running');
         d.innerHTML = `<summary>thinking</summary><pre>${escapeHTML(p.text)}</pre>`;
+        if (isRun) d.open = true;
         body.appendChild(d);
+        // 同步 current 提示：取 thinking 第一行前 80 字
+        if (isRun){
+          const firstLine = (p.text||'').split('\n').find(l=>l.trim()) || '';
+          setTurnCurrent(turnCard, '思考中: ' + firstLine.slice(0,80));
+        }
       }else if (p.type === 'toolCall'){
         body.insertAdjacentHTML('beforeend', renderToolCall(p));
+        const turnCard = body.closest('.turn-card');
+        if (turnCard && turnCard.classList.contains('running')){
+          const h = toolHint(p);
+          setTurnCurrent(turnCard, h ? `${p.name||'tool'}: ${h}` : (p.name||'tool'));
+        }
       }
     }
     // 更新 turn header状态
@@ -892,6 +912,7 @@ function newTurnCard(entry){
       <span class="turn-title">思考中</span>
       <span class="turn-meta"><span class="turn-timer">0s</span></span>
     </div>
+    <div class="turn-current">思考中…</div>
     <div class="turn-body"></div>
     <div class="turn-assistant"></div>
   `;
@@ -959,6 +980,25 @@ function highlightDiff(s){
     if (line.startsWith('@@')) return `<span class="d-hunk">${line}</span>`;
     return line;
   }).join('\n');
+}
+
+// 提取 tool call 的 hint 文本（与 renderToolCall 逻辑一致）
+function toolHint(p){
+  const args = p.arguments || {};
+  if (args.command) return String(args.command).slice(0,100);
+  if (args.path) return args.path;
+  if (args.url) return args.url;
+  if (args.query) return args.query;
+  if (args.message) return String(args.message).slice(0,80);
+  if (args.text) return String(args.text).slice(0,80);
+  return '';
+}
+
+// 更新 turn-card 顶部「正在干什么」提示行
+function setTurnCurrent(turn, text){
+  if (!turn) return;
+  const el = turn.querySelector('.turn-current');
+  if (el) el.textContent = text || '思考中…';
 }
 
 function renderToolCall(p){
@@ -1065,6 +1105,38 @@ function renderMessages(msgs){
   });
   if (curTurn) finalizeStaticTurn(curTurn, turnStartTs, turnEndTs);
   c.innerHTML = ''; c.appendChild(wrap);
+  // 如果当前 session 还在跑，把最后一个 turn 标为 running
+  const curSid = state.current?.sessionId;
+  if (curSid && state.running && state.running[curSid] && curTurn){
+    curTurn.classList.remove('done');
+    curTurn.classList.add('running','open');
+    // 插 turn-current 提示行（如果没有的话）
+    if (!curTurn.querySelector('.turn-current')){
+      const cur = document.createElement('div'); cur.className='turn-current'; cur.textContent='思考中…';
+      const head = curTurn.querySelector('.turn-head');
+      head.parentNode.insertBefore(cur, head.nextSibling);
+    }
+    // 提取最后一个 tool 作为 current hint
+    const lastTool = curTurn.querySelector('.tool-card:last-of-type');
+    if (lastTool){
+      const tn = lastTool.dataset.tname || lastTool.querySelector('.tool-name')?.textContent || 'tool';
+      const th = lastTool.querySelector('.tool-hint')?.textContent || '';
+      setTurnCurrent(curTurn, th ? `${tn}: ${th}` : tn);
+    }
+    // 启动计时器
+    const started = state.running[curSid].started ? state.running[curSid].started * 1000 : Date.now();
+    curTurn.dataset.started = started;
+    if (!curTurn.querySelector('.turn-timer')){
+      const meta = curTurn.querySelector('.turn-meta');
+      if (meta) meta.innerHTML = '<span class="turn-timer">0s</span>';
+    }
+    const timer = curTurn.querySelector('.turn-timer');
+    const tick = setInterval(()=>{
+      if (!curTurn.classList.contains('running') || !document.body.contains(curTurn)){ clearInterval(tick); return }
+      const sec = Math.floor((Date.now() - started)/1000);
+      if (timer) timer.textContent = sec + 's';
+    }, 500);
+  }
   c.scrollTop = c.scrollHeight;
 }
 
