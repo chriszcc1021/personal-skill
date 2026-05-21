@@ -24,6 +24,7 @@ import httpx
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 DATA_ROOT = Path(os.environ.get("WHYSPER_DATA", "/var/whysper-data"))
 DATA_ROOT.mkdir(parents=True, exist_ok=True)
@@ -55,6 +56,7 @@ def version():
         "deployed_at": os.environ.get("DEPLOYED_AT", ""),
     }
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(GZipMiddleware, minimum_size=512)
 
 # ---------- DB ----------
 def db():
@@ -1147,3 +1149,25 @@ def storage_info():
 @app.get("/api/health")
 def health():
     return {"ok": True, "ts": now_ts(), "data": str(DATA_ROOT)}
+
+@app.get("/api/boot")
+def boot(tab: str = "rec", date: Optional[str] = None, year: Optional[int] = None, month: Optional[int] = None):
+    """One-shot bootstrap: stats + the current tab's needed data. Saves N RTTs vs separate calls."""
+    out = {"stats": stats(), "tags": list_tags(), "shortcut_url": None}
+    if tab == "list":
+        out["entries"] = list_entries(date=None, tag=None, q=None, limit=200, offset=0)
+    elif tab == "cal":
+        d = date or today_local()
+        try:
+            y = int(year) if year else dt.date.fromisoformat(d).year
+            m = int(month) if month else dt.date.fromisoformat(d).month
+        except Exception:
+            y, m = dt.date.fromisoformat(today_local()).year, dt.date.fromisoformat(today_local()).month
+        out["calendar"] = calendar(year=y, month=m)
+        out["storage"] = storage_info()
+        out["day_summary"] = day_summary(d)
+    elif tab == "ledger":
+        out["ledger_candidates"] = list_ledger_candidates(status="pending", limit=100)
+        out["ledger_entries"] = list_ledger_entries(limit=200, category=None, q=None, from_date=None, to_date=None)
+        out["ledger_stats"] = ledger_stats(window="month")
+    return out

@@ -747,7 +747,13 @@ async function doBulkDelete(){
 }
 
 async function loadList(){
-  const j = await api('/entries?limit=200');
+  let j;
+  if(__bootCache && __bootCache.entries){
+    j = __bootCache.entries;
+    __bootCache.entries = null;
+  } else {
+    j = await api('/entries?limit=200');
+  }
   const box = document.getElementById('listBox');
   if(!j.entries.length){box.innerHTML='<div class="empty">还没有笔记 · 去录一条</div>';return}
   let html='';
@@ -922,7 +928,7 @@ function showEventSheet(e){
   };
 }
 
-function esc(s){return (s||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}
+function esc(s){return String(s||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}
 
 // ===== detail =====
 let curEntry=null;
@@ -976,7 +982,9 @@ async function openEntry(id){
 function copyCode(v){ navigator.clipboard.writeText(v).then(()=>toast('已复制 '+v)).catch(()=>toast('复制失败')); }
 async function loadStorage(){
   try{
-    const s = await api('/storage');
+    let s;
+    if(__bootCache && __bootCache.storage){ s = __bootCache.storage; __bootCache.storage = null; }
+    else s = await api('/storage');
     const pct = s.pct||0;
     const warn = pct >= 80 ? ' warn' : '';
     document.getElementById('storageCard').innerHTML =
@@ -1002,7 +1010,13 @@ let calCur = new Date();
 async function loadCal(){
   const y=calCur.getFullYear(),m=calCur.getMonth()+1;
   document.getElementById('calTitle').textContent = y+' · '+String(m).padStart(2,'0');
-  const data = await api('/calendar?year='+y+'&month='+m);
+  let data;
+  if(__bootCache && __bootCache.calendar && y===new Date().getFullYear() && m===new Date().getMonth()+1){
+    data = __bootCache.calendar;
+    __bootCache.calendar = null;  // one-shot
+  } else {
+    data = await api('/calendar?year='+y+'&month='+m);
+  }
   const g = document.getElementById('calGrid');
   const weeks=['日','一','二','三','四','五','六'];
   let html = weeks.map(w=>'<div class="cal-week">'+w+'</div>').join('');
@@ -1041,7 +1055,14 @@ async function showCalDay(ds){
   const box = document.getElementById('calDayList');
   box.innerHTML = '<div class="cal-day-title">'+ds+' · 加载中</div>';
   let j;
-  try{ j = await api('/day-summary?date='+ds); }catch(_){ box.innerHTML='<div class="cal-day-title">'+ds+' · 失败</div>'; return; }
+  try{
+    if(__bootCache && __bootCache.day_summary && ds===new Date().toISOString().slice(0,10)){
+      j = __bootCache.day_summary;
+      __bootCache.day_summary = null;
+    } else {
+      j = await api('/day-summary?date='+ds);
+    }
+  }catch(_){ box.innerHTML='<div class="cal-day-title">'+ds+' · 失败</div>'; return; }
   if(!j.count){
     box.innerHTML = '<div class="cal-day-title">'+ds+' · 0 条</div><div class="empty">这一天什么也没说</div>';
     return;
@@ -1084,7 +1105,9 @@ async function doOrganize(){
   }
 }
 async function loadTags(){
-  const tags = await api('/tags');
+  let tags;
+  if(__bootCache && __bootCache.tags){ tags = __bootCache.tags; __bootCache.tags = null; }
+  else tags = await api('/tags');
   const box = document.getElementById('tagCloud');
   if(!tags.length){box.innerHTML='<div class="empty" style="padding:20px;width:100%">还没有标签 · 先记几条再整理</div>';return}
   box.innerHTML = tags.slice(0,30).map(t=>'<span class="tag" onclick="filterTag(\''+t.tag+'\')">'+esc(t.tag)+' · '+t.count+'</span>').join('');
@@ -1212,12 +1235,21 @@ async function loadLedger(){
   box.innerHTML = '<div class="ledger-empty">加载中</div>';
   let pending, entries, stats;
   try{
-    const entryUrl = '/ledger/entries?limit=200' + (ledgerCategoryFilter ? '&category='+encodeURIComponent(ledgerCategoryFilter) : '');
-    [pending, entries, stats] = await Promise.all([
-      api('/ledger/candidates?status=pending&limit=100'),
-      api(entryUrl),
-      api('/ledger/stats?window=month')
-    ]);
+    if(__bootCache && __bootCache.ledger_candidates && !ledgerCategoryFilter){
+      pending = __bootCache.ledger_candidates;
+      entries = __bootCache.ledger_entries;
+      stats   = __bootCache.ledger_stats;
+      __bootCache.ledger_candidates = null;
+      __bootCache.ledger_entries = null;
+      __bootCache.ledger_stats = null;
+    } else {
+      const entryUrl = '/ledger/entries?limit=200' + (ledgerCategoryFilter ? '&category='+encodeURIComponent(ledgerCategoryFilter) : '');
+      [pending, entries, stats] = await Promise.all([
+        api('/ledger/candidates?status=pending&limit=100'),
+        api(entryUrl),
+        api('/ledger/stats?window=month')
+      ]);
+    }
   }catch(e){
     box.innerHTML = '<div class="ledger-empty">加载失败 · '+esc(e.message||e)+'</div>';
     return;
@@ -1327,9 +1359,9 @@ async function deleteLedgerEntry(id){
 }
 
 // ===== stats =====
-async function loadStats(){
+async function loadStats(seed){
   try{
-    const s = await api('/stats');
+    const s = seed || await api('/stats');
     document.getElementById('statsBar').textContent = s.today_count+' 今日 · '+s.streak+' 连击';
   }catch(_){}
 }
@@ -1343,7 +1375,17 @@ function toast(msg){
   toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
 }
 
-loadStats();
+// ===== boot: single-shot prefetch =====
+let __bootCache = null;
+async function bootPrefetch(initialTab){
+  try{
+    __bootCache = await api('/boot?tab='+encodeURIComponent(initialTab||'rec'));
+    if(__bootCache.stats) loadStats(__bootCache.stats);
+  }catch(_){ __bootCache = null; }
+}
+
+const __initialTab = new URLSearchParams(location.search).get('tab') || 'rec';
+bootPrefetch(__initialTab);
 refreshShortcutCard();
 bootTabFromUrl();
 

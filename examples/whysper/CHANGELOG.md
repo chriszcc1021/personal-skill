@@ -7,36 +7,33 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.5.1] - 2026-05-21
+## [0.5.3] - 2026-05-21
 ### Added
-- 单次上传总量限制 100MB，避免公开入口被超大文件拖垮。
-- 顶栏增加轻量 Action Button 配置图标，点击后显示快捷指令配置说明。
+- `/api/boot?tab=<tab>` 聚合端点：一次请求拿到 stats + tags + 当前 tab 数据（list/cal/ledger）
+- 前端启动改成 `bootPrefetch(initialTab)` 一发命中，loadList/loadCal/loadStorage/loadDaySummary/loadLedger/loadTags 都优先吃 cache
+- FastAPI 启用 GZip middleware（≥512B 自动压缩），entries 列表 17KB → ~3KB
 
-### Changed
-- `?tab=ledger` 等 URL 参数会自动切换到底部对应页面。
-- iOS 快捷指令说明改为上传后最多轮询 3 次日历时间项，减少 AI 异步处理导致漏加日历。
-- Service Worker 升级缓存版本，确保线上前端更新后优先加载新版页面。
+### Performance
+- 首屏请求数：~8 个 → 1 个 boot + 异步刷新
+- entries JSON 体积：~80% 压缩
+- SW cache bump `whysper-v9-perf`
 
-## [0.5.0] - 2026-05-21
+## [0.5.2] - 2026-05-21
+### Fixed
+- 「账」tab 一直「加载中」：`esc()` 在 `c.confidence`（number）上炸 `TypeError: replace is not a function`。`esc()` 改成 `String(s||'').replace(...)`，对所有非字符串都安全
+- Service Worker bump 到 v8（whysper-v8-ledger-fix），强制重拉 index.html
+
+## [0.5.1] - 2026-05-20
 ### Added
-- 单一截图入口自动分流：账单进入待确认账本，时间事项进入日历/Todo 提醒，普通截图进入知识整理。
-- 账本数据表与 API：待确认账单、确认入账、已入账列表、月度汇总、CSV 导出。
-- 前端新增「账」页，支持查看待确认账单、修改识别结果、确认入账、删除误识别。
+- 记账 review-first 流程：`/api/ledger/candidates` + `/api/ledger/entries`，前端「账」tab 显示待确认/已入账
+- AI 视觉抽取增加 `ledger` 字段（is_expense / merchant / amount / category / paid_at / payment_method）
+- DB 新表 `ledger_candidates` + `ledger_entries`
+- entries 加 `capture_mode` 字段（auto / note / ledger）
 
-### Changed
-- iOS 快捷指令说明改为一个 Action Button 截图入口，`capture_mode=auto` 由 AI 自动判断去向。
-- 截图视觉 prompt 增加消费账单识别字段，同时保留日历/Todo/知识整理字段。
-
-## [0.4.3] - 2026-05-21
+## [0.5.0] - 2026-05-20
 ### Added
-- `calendar_items` 统一时间项：截图里的日程、待办截止时间、码过期时间都能导出到 ICS。
-- `GET /api/entries/{id}/calendar-items`，给 iOS 快捷指令轮询分析结果并自动添加日历。
-- 条目处理状态字段：`processing_stage` / `processing_status` / `processing_error`。
+- `/api/entries/{id}/calendar-items` 端点
 
-### Changed
-- 「理」页列表卡片显示截图分析中、语音转写中、分析失败、检测到时间项等明确状态。
-- 自动加日历弹窗从只识别 events 改为识别全部 calendar items。
-- 快捷指令文档补充上传后轮询并添加日程的流程。
 
 ## [0.4.2] - 2026-05-20
 ### Fixed
