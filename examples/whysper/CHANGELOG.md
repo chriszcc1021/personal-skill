@@ -7,6 +7,16 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-21
+### Added
+- 单次上传总量限制 100MB，避免公开入口被超大文件拖垮。
+- 顶栏增加轻量 Action Button 配置图标，点击后显示快捷指令配置说明。
+
+### Changed
+- `?tab=ledger` 等 URL 参数会自动切换到底部对应页面。
+- iOS 快捷指令说明改为上传后最多轮询 3 次日历时间项，减少 AI 异步处理导致漏加日历。
+- Service Worker 升级缓存版本，确保线上前端更新后优先加载新版页面。
+
 ## [0.5.0] - 2026-05-21
 ### Added
 - 单一截图入口自动分流：账单进入待确认账本，时间事项进入日历/Todo 提醒，普通截图进入知识整理。

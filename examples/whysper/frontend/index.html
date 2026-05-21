@@ -30,13 +30,21 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
   position:sticky;top:0;background:var(--bg);z-index:50;
   padding:env(safe-area-inset-top,12px) 16px 12px;
   border-bottom:1px solid var(--dim2);
-  display:flex;align-items:center;justify-content:space-between;
+  width:100vw;max-width:100vw;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
-.brand{display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
 .brand-icon{width:28px;height:28px;position:relative}
 .brand-icon i{position:absolute;width:2px;height:2px;background:var(--fg);border-radius:50%;left:50%;top:50%}
 .brand-name{font-size:14px;letter-spacing:0.3em;font-weight:600;text-transform:uppercase}
-.stats{font-size:11px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase}
+.top-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0;flex:0 1 auto}
+.stats{font-size:11px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;max-width:92px}
+.shortcut-icon{flex:0 0 28px;width:28px;height:28px;border:1px solid var(--dim2);color:var(--dim);display:flex;align-items:center;justify-content:center;padding:0;opacity:.8}
+.shortcut-icon:active{border-color:var(--dim2);color:var(--fg)}
+.shortcut-icon.needs-attention{color:var(--red)}
+.shortcut-icon-grid{width:14px;height:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.shortcut-icon-grid b{background:currentColor;border-radius:50%;opacity:.65}
+.shortcut-icon-grid b:nth-child(5){opacity:1}
 
 /* tabs */
 .tabs{display:flex;border-bottom:1px solid var(--dim2);background:var(--bg);position:sticky;top:56px;z-index:49}
@@ -44,7 +52,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .tab.active{color:var(--fg);border-bottom-color:var(--red)}
 
 /* views */
-.view{display:none;padding:16px;min-height:calc(100vh - 80px)}
+.view{display:none;padding:16px;min-height:calc(100vh - 80px);width:100vw;max-width:100vw}
 .view.active{display:block}
 
 /* record view */
@@ -80,13 +88,6 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .rec-actions button.primary{border-color:var(--fg)}
 .rec-actions button.danger{border-color:var(--red);color:var(--red)}
 .img-preview{margin-top:12px;width:120px;height:120px;border:1px solid var(--dim2);object-fit:cover}
-.shortcut-card{width:360px;max-width:92%;border:1px dashed var(--dim2);padding:12px 14px;margin-top:12px;display:none;font-family:var(--font)}
-.shortcut-card.show{display:block}
-.shortcut-card .sc-meta{font-size:9px;color:var(--red);letter-spacing:0.28em;text-transform:uppercase;margin-bottom:7px}
-.shortcut-card .sc-text{font-size:12px;color:#aaa;line-height:1.55;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif}
-.shortcut-card .sc-actions{display:flex;gap:8px;margin-top:10px}
-.shortcut-card button{flex:1;padding:9px 10px;border:1px solid var(--dim2);font-size:10px;letter-spacing:0.22em;text-transform:uppercase}
-.shortcut-card button.primary{border-color:var(--red);color:var(--red)}
 
 /* list view */
 .day-head{margin:24px 0 12px;padding:0 4px;display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase}
@@ -227,8 +228,8 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .ledger-empty{padding:24px 10px;color:var(--dim);text-align:center;font-size:11px;letter-spacing:0.22em;text-transform:uppercase}
 
 /* bottom nav */
-.bnav{position:fixed;bottom:0;left:0;right:0;background:#000;border-top:1px solid var(--dim2);display:flex;z-index:60;padding-bottom:env(safe-area-inset-bottom,0)}
-.bnav button{flex:1;padding:14px 6px;font-size:9px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:6px}
+.bnav{position:fixed;bottom:0;left:0;width:100vw;max-width:100vw;background:#000;border-top:1px solid var(--dim2);display:flex;z-index:60;padding-bottom:env(safe-area-inset-bottom,0)}
+.bnav button{flex:1 1 0;min-width:0;padding:14px 6px;font-size:9px;letter-spacing:0.3em;color:var(--dim);text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:6px}
 .bnav button.active{color:var(--fg)}
 .bnav .ic{width:18px;height:18px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:1px}
 .bnav .ic b{background:currentColor;opacity:0.4;border-radius:50%}
@@ -299,7 +300,12 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
     <div class="brand-icon" id="brandIcon"></div>
     <div class="brand-name">Whysper</div>
   </div>
-  <div class="stats" id="statsBar">— · —</div>
+  <div class="top-actions">
+    <button class="shortcut-icon" id="shortcutIcon" onclick="openShortcutSetup()" title="配置 Action Button" aria-label="配置 Action Button">
+      <span class="shortcut-icon-grid"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>
+    </button>
+    <div class="stats" id="statsBar">— · —</div>
+  </div>
 </div>
 
 <!-- views -->
@@ -308,14 +314,6 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
     <div class="rec-status" id="recStatus">按住下方按钮开始</div>
     <div class="rec-live" id="recLive"></div>
     <img class="img-preview" id="imgPreview" style="display:none"/>
-    <div class="shortcut-card" id="shortcutCard">
-      <div class="sc-meta">Action Button</div>
-      <div class="sc-text">截图快捷指令还没标记为已配置。配置后，长按 Action Button 就能把当前屏幕丢进 Whysper。</div>
-      <div class="sc-actions">
-        <button class="primary" onclick="openShortcutSetup()">配置</button>
-        <button onclick="markShortcutReady()">已配置</button>
-      </div>
-    </div>
   </div>
   <div class="rec-mid">
     <div class="rec-actions">
@@ -434,8 +432,9 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
     <ol class="setup-steps">
       <li>在「快捷指令」中新建动作：截屏。</li>
       <li>添加「通过 URL 获取内容」，方法选 POST，请求体选表单。</li>
-      <li>表单字段添加 image（文件）和 source（文本，值为 shortcut）。</li>
+      <li>表单字段添加 image（文件）、source（文本，shortcut）和 capture_mode（文本，auto）。</li>
       <li>把下面这个地址填进 URL，然后在系统设置里把 Action Button 绑定到这个快捷指令。</li>
+      <li>需要自动加日历时，上传后每 5 秒查询一次 calendar-items，最多 3 次。</li>
     </ol>
     <div class="meta">URL</div>
     <div class="setup-url" id="shortcutUrl"></div>
@@ -485,6 +484,7 @@ renderBrandIcon();
 const API = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
 const MEDIA = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-media';
 const SHORTCUT_READY_KEY = 'whysperShortcutReady';
+const VALID_TABS = new Set(['rec','list','cal','ledger']);
 async function api(path, opts={}){
   const r = await fetch(API+path, opts);
   if(!r.ok) throw new Error(await r.text());
@@ -499,12 +499,12 @@ function shortcutEndpoint(){
   return location.origin + API + '/entries';
 }
 function refreshShortcutCard(){
-  const card = document.getElementById('shortcutCard');
-  if(!card) return;
+  const icon = document.getElementById('shortcutIcon');
+  if(!icon) return;
   const flag = localStorage.getItem(SHORTCUT_READY_KEY);
-  // 默认视为已配置（用户已经手动配过）；只有显式清空才会再显示
-  const ready = flag === null ? true : flag === '1';
-  card.classList.toggle('show', isIOS() && !ready);
+  const ready = flag === '1';
+  icon.classList.toggle('needs-attention', isIOS() && !ready);
+  icon.title = ready ? 'Action Button 已标记配置' : '配置 Action Button 快捷指令';
 }
 function openShortcutSetup(){
   const urlBox = document.getElementById('shortcutUrl');
@@ -536,6 +536,7 @@ function markShortcutReady(){
 
 // ===== tabs =====
 function switchTab(t){
+  if(!VALID_TABS.has(t)) t = 'rec';
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.bnav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+t).classList.add('active');
@@ -543,6 +544,10 @@ function switchTab(t){
   if(t==='list'){loadList(); loadTags();}
   if(t==='cal'){ loadCal(); loadStorage(); }
   if(t==='ledger'){ loadLedger(); }
+}
+function bootTabFromUrl(){
+  const tab = new URLSearchParams(location.search).get('tab');
+  if(tab) switchTab(tab);
 }
 
 // ===== recording =====
@@ -1340,6 +1345,7 @@ function toast(msg){
 
 loadStats();
 refreshShortcutCard();
+bootTabFromUrl();
 
 // ===== ask voice button (click to start, click to stop; show 问 button after) =====
 let askSR=null,askListening=false;

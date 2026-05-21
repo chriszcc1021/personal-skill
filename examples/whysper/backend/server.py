@@ -39,6 +39,8 @@ WHISPER_CLI = os.environ.get("WHYSPER_WHISPER_CLI", "/opt/whisper.cpp/build/bin/
 WHISPER_MODEL_PATH = os.environ.get("WHYSPER_WHISPER_MODEL_PATH", "/opt/whisper.cpp/models/ggml-medium-q5_0.bin")
 WHISPER_THREADS = int(os.environ.get("WHYSPER_WHISPER_THREADS", "4"))
 CAPTURE_MODES = {"auto", "note", "ledger"}
+MAX_UPLOAD_MB = int(os.environ.get("WHYSPER_MAX_UPLOAD_MB", "100"))
+MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
 app = FastAPI(title="Whysper")
 
@@ -259,6 +261,28 @@ def normalize_ledger_category(value) -> str:
     if raw in LEDGER_CATEGORIES:
         return raw
     return LEDGER_CATEGORY_ALIASES.get(str(value or "").strip(), "other")
+
+async def write_upload_limited(upload: UploadFile, dest: Path, used_bytes: int = 0) -> int:
+    total = used_bytes
+    written = 0
+    try:
+        with dest.open("wb") as f:
+            while True:
+                chunk = await upload.read(1024 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > MAX_UPLOAD_BYTES:
+                    raise HTTPException(413, f"upload exceeds {MAX_UPLOAD_MB} MB")
+                f.write(chunk)
+                written += len(chunk)
+    except Exception:
+        try:
+            dest.unlink(missing_ok=True)
+        except Exception:
+            pass
+        raise
+    return written
 
 def as_float(v):
     if v in (None, ""):
@@ -557,25 +581,36 @@ async def create_entry(
     audio_name = None
     image_name = None
     final_text = draft_text or ""
+    total_upload_bytes = 0
+    saved_paths: list[Path] = []
+    audio_path: Optional[Path] = None
 
-    if audio is not None:
-        ext = ".webm"
-        if audio.filename and "." in audio.filename:
-            ext = "." + audio.filename.rsplit(".", 1)[-1].lower()
-            if ext not in (".webm", ".mp4", ".m4a", ".mp3", ".ogg", ".wav"): ext = ".webm"
-        audio_name = f"{eid}{ext}"
-        ap = DATA_ROOT / "audio" / audio_name
-        ap.write_bytes(await audio.read())
-        # server-side transcribe (async — return entry with draft immediately, update later)
-        asyncio.create_task(_transcribe_and_update(eid, ap))
+    try:
+        if audio is not None:
+            ext = ".webm"
+            if audio.filename and "." in audio.filename:
+                ext = "." + audio.filename.rsplit(".", 1)[-1].lower()
+                if ext not in (".webm", ".mp4", ".m4a", ".mp3", ".ogg", ".wav"): ext = ".webm"
+            audio_name = f"{eid}{ext}"
+            ap = DATA_ROOT / "audio" / audio_name
+            total_upload_bytes += await write_upload_limited(audio, ap, total_upload_bytes)
+            saved_paths.append(ap)
+            audio_path = ap
 
-    if image is not None:
-        ext = ".jpg"
-        if image.filename and "." in image.filename:
-            ext = "." + image.filename.rsplit(".", 1)[-1].lower()
-            if ext not in (".jpg",".jpeg",".png",".webp",".heic"): ext = ".jpg"
-        image_name = f"{eid}{ext}"
-        (DATA_ROOT / "images" / image_name).write_bytes(await image.read())
+        if image is not None:
+            ext = ".jpg"
+            if image.filename and "." in image.filename:
+                ext = "." + image.filename.rsplit(".", 1)[-1].lower()
+                if ext not in (".jpg",".jpeg",".png",".webp",".heic"): ext = ".jpg"
+            image_name = f"{eid}{ext}"
+            ip = DATA_ROOT / "images" / image_name
+            total_upload_bytes += await write_upload_limited(image, ip, total_upload_bytes)
+            saved_paths.append(ip)
+    except HTTPException:
+        for p in saved_paths:
+            try: p.unlink(missing_ok=True)
+            except Exception: pass
+        raise
 
     ts = now_ts()
     processing_stage = "vision" if image_name else ("transcribe" if audio_name else "")
@@ -587,6 +622,9 @@ async def create_entry(
                      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                   (eid, ts, ts_to_local_date(ts), audio_name, image_name, draft_text, final_text, lat, lng, source,
                    transcribing, processing_stage, processing_status, capture_mode))
+    if audio_path:
+        # server-side transcribe (async — return entry with draft immediately, update later)
+        asyncio.create_task(_transcribe_and_update(eid, audio_path))
     # if image present, fire vision extraction in background
     if image_name:
         if capture_mode == "ledger":
@@ -780,7 +818,10 @@ async def ask(body: dict):
 def list_ledger_categories():
     with db() as c:
         rows = c.execute("SELECT lower(coalesce(category,'other')) AS category, COUNT(*) AS n FROM ledger_entries GROUP BY category").fetchall()
-    counts = {normalize_ledger_category(r["category"]): r["n"] for r in rows}
+    counts = {}
+    for r in rows:
+        key = normalize_ledger_category(r["category"])
+        counts[key] = counts.get(key, 0) + r["n"]
     return {
         "categories": [
             {"category": key, "label": label, "count": counts.get(key, 0)}
@@ -851,7 +892,7 @@ def _filter_ledger_entries_sql(category: Optional[str], q: Optional[str], from_d
     args = []
     if category:
         sql += " AND lower(coalesce(category,''))=lower(?)"
-        args.append(category)
+        args.append(normalize_ledger_category(category))
     if q:
         like = f"%{q.lower()}%"
         sql += " AND (lower(coalesce(merchant,'')) LIKE ? OR lower(coalesce(note,'')) LIKE ? OR lower(coalesce(payment_method,'')) LIKE ?)"
