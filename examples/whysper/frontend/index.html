@@ -202,6 +202,9 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .ledger-bar-fill{height:100%;background:var(--fg);min-width:2px}
 .ledger-bar-amt{text-align:right;color:var(--fg);font-variant-numeric:tabular-nums}
 .ledger-chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
+.ledger-sort{display:flex;gap:6px;margin-bottom:14px}
+.ledger-sort button{flex:0 0 auto;padding:6px 10px;border:1px solid var(--dim2);font-size:10px;color:var(--dim);letter-spacing:0.12em;background:none}
+.ledger-sort button.active{color:var(--fg);border-color:var(--fg)}
 .ledger-chips button{flex:0 0 auto;padding:7px 9px;border:1px solid var(--dim2);font-size:10px;color:var(--dim);letter-spacing:0.12em}
 .ledger-chips button.active{color:var(--fg);border-color:var(--fg)}
 .ledger-group-title{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px;font-family:-apple-system,system-ui,sans-serif}
@@ -1148,6 +1151,7 @@ const LEDGER_CATEGORIES = [
 ];
 const LEDGER_CATEGORY_LABEL = Object.fromEntries(LEDGER_CATEGORIES);
 let ledgerCategoryFilter = '';
+let ledgerSortBy = 'time';  // 'time' | 'amount'
 let __ledgerData = null;  // {pending, entries, stats} 全量缓存，category 切换不重发
 function escAttr(s){return esc(String(s||'')).replace(/"/g,'&quot;')}
 function fmtAmt(n){
@@ -1181,6 +1185,10 @@ function setLedgerCategory(cat){
   if(__ledgerData){ renderLedger(); }
   else { loadLedger(); }
 }
+function setLedgerSort(by){
+  ledgerSortBy = (by === 'amount') ? 'amount' : 'time';
+  if(__ledgerData){ renderLedger(); }
+}
 function ledgerStatsHtml(stats){
   const cats = stats.by_category || [];
   const top = cats[0];
@@ -1213,6 +1221,12 @@ function ledgerChipsHtml(stats){
   return '<div class="ledger-chips">'+chips.map(([key,label]) =>
     '<button class="'+(key===active?'active':'')+'" onclick="setLedgerCategory(\''+key+'\')">'+esc(label)+'</button>'
   ).join('')+'</div>';
+}
+function ledgerSortHtml(){
+  return '<div class="ledger-sort">'+
+    '<button class="'+(ledgerSortBy==='time'?'active':'')+'" onclick="setLedgerSort(\'time\')">按时间</button>'+
+    '<button class="'+(ledgerSortBy==='amount'?'active':'')+'" onclick="setLedgerSort(\'amount\')">按金额</button>'+
+  '</div>';
 }
 function ledgerGroupedEntries(entries){
   const groups = [];
@@ -1267,10 +1281,16 @@ function renderLedger(){
   const {pending, entries, stats} = __ledgerData;
   // 前端 filter
   const filterCat = ledgerCategoryFilter.toLowerCase();
-  const filteredEntries = filterCat
+  let filteredEntries = filterCat
     ? (entries.entries||[]).filter(e => String(e.category||'other').toLowerCase() === filterCat)
-    : (entries.entries||[]);
-  let html = ledgerStatsHtml(stats) + ledgerChipsHtml(stats);
+    : (entries.entries||[]).slice();
+  // 前端排序
+  if(ledgerSortBy === 'amount'){
+    filteredEntries.sort((a,b) => Number(b.amount||0) - Number(a.amount||0));
+  } else {
+    filteredEntries.sort((a,b) => String(b.paid_at||'').localeCompare(String(a.paid_at||'')));
+  }
+  let html = ledgerStatsHtml(stats) + ledgerChipsHtml(stats) + ledgerSortHtml();
   if(pending.candidates && pending.candidates.length){
     html += '<div class="day-head"><span>待确认 · '+pending.candidates.length+'</span><div class="line"></div></div>';
     html += pending.candidates.map(ledgerCandidateHtml).join('');

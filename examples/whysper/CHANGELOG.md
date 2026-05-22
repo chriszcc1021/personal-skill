@@ -7,6 +7,11 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-05-22
+### Added
+- 「账」tab 加按时间 / 按金额排序切换（纯前端排序，不打后端）
+
+
 ## [0.5.4] - 2026-05-22
 ### Changed
 - 「账」tab 切换 category chip 不再重新请求后端，纯前端 filter + 重渲（__ledgerData 全量缓存）
