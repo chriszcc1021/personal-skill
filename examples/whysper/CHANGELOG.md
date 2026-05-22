@@ -7,6 +7,12 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-05-22
+### Changed
+- 前端切到 Nothing-inspired 字体栈：Doto / Space Grotesk / Space Mono，中文走 Noto Sans SC fallback
+- 3D 视图同步加载同一套字体 token
+- SW cache bump `whysper-v12-nothing-fonts`
+
 ## [0.5.5] - 2026-05-22
 ### Added
 - 「账」tab 加按时间 / 按金额排序切换（纯前端排序，不打后端）
@@ -16,7 +22,6 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - 「账」tab 切换 category chip 不再重新请求后端，纯前端 filter + 重渲（__ledgerData 全量缓存）
 - 加 entry 或确认/删除后才主动 loadLedger，浏览即过滤秒切
-
 
 ## [0.5.3] - 2026-05-21
 ### Added
