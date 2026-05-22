@@ -1148,6 +1148,7 @@ const LEDGER_CATEGORIES = [
 ];
 const LEDGER_CATEGORY_LABEL = Object.fromEntries(LEDGER_CATEGORIES);
 let ledgerCategoryFilter = '';
+let __ledgerData = null;  // {pending, entries, stats} 全量缓存，category 切换不重发
 function escAttr(s){return esc(String(s||'')).replace(/"/g,'&quot;')}
 function fmtAmt(n){
   const v = Number(n);
@@ -1176,7 +1177,9 @@ function ledgerCategoryOptions(current){
 }
 function setLedgerCategory(cat){
   ledgerCategoryFilter = cat || '';
-  loadLedger();
+  // 纯前端 filter + 重渲，不重新拉后端
+  if(__ledgerData){ renderLedger(); }
+  else { loadLedger(); }
 }
 function ledgerStatsHtml(stats){
   const cats = stats.by_category || [];
@@ -1235,7 +1238,7 @@ async function loadLedger(){
   box.innerHTML = '<div class="ledger-empty">加载中</div>';
   let pending, entries, stats;
   try{
-    if(__bootCache && __bootCache.ledger_candidates && !ledgerCategoryFilter){
+    if(__bootCache && __bootCache.ledger_candidates){
       pending = __bootCache.ledger_candidates;
       entries = __bootCache.ledger_entries;
       stats   = __bootCache.ledger_stats;
@@ -1243,10 +1246,10 @@ async function loadLedger(){
       __bootCache.ledger_entries = null;
       __bootCache.ledger_stats = null;
     } else {
-      const entryUrl = '/ledger/entries?limit=200' + (ledgerCategoryFilter ? '&category='+encodeURIComponent(ledgerCategoryFilter) : '');
+      // 总是拉全量不带 category，前端 filter
       [pending, entries, stats] = await Promise.all([
         api('/ledger/candidates?status=pending&limit=100'),
-        api(entryUrl),
+        api('/ledger/entries?limit=200'),
         api('/ledger/stats?window=month')
       ]);
     }
@@ -1254,6 +1257,19 @@ async function loadLedger(){
     box.innerHTML = '<div class="ledger-empty">加载失败 · '+esc(e.message||e)+'</div>';
     return;
   }
+  __ledgerData = {pending, entries, stats};
+  renderLedger();
+}
+
+function renderLedger(){
+  if(!__ledgerData) return;
+  const box = document.getElementById('ledgerBox');
+  const {pending, entries, stats} = __ledgerData;
+  // 前端 filter
+  const filterCat = ledgerCategoryFilter.toLowerCase();
+  const filteredEntries = filterCat
+    ? (entries.entries||[]).filter(e => String(e.category||'other').toLowerCase() === filterCat)
+    : (entries.entries||[]);
   let html = ledgerStatsHtml(stats) + ledgerChipsHtml(stats);
   if(pending.candidates && pending.candidates.length){
     html += '<div class="day-head"><span>待确认 · '+pending.candidates.length+'</span><div class="line"></div></div>';
@@ -1261,9 +1277,9 @@ async function loadLedger(){
   } else {
     html += '<div class="ledger-empty">没有待确认账单</div>';
   }
-  if(entries.entries && entries.entries.length){
-    html += '<div class="day-head"><span>已入账 · '+entries.entries.length+'</span><div class="line"></div></div>';
-    html += ledgerGroupedEntries(entries.entries);
+  if(filteredEntries.length){
+    html += '<div class="day-head"><span>已入账 · '+filteredEntries.length+'</span><div class="line"></div></div>';
+    html += ledgerGroupedEntries(filteredEntries);
   } else {
     html += '<div class="ledger-empty">没有匹配的已入账记录</div>';
   }

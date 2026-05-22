@@ -7,6 +7,12 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-05-22
+### Changed
+- 「账」tab 切换 category chip 不再重新请求后端，纯前端 filter + 重渲（__ledgerData 全量缓存）
+- 加 entry 或确认/删除后才主动 loadLedger，浏览即过滤秒切
+
+
 ## [0.5.3] - 2026-05-21
 ### Added
 - `/api/boot?tab=<tab>` 聚合端点：一次请求拿到 stats + tags + 当前 tab 数据（list/cal/ledger）
