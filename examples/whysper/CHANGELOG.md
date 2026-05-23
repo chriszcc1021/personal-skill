@@ -7,11 +7,40 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.5.6] - 2026-05-22
+## [0.6.3] - 2026-05-23
 ### Changed
-- 前端切到 Nothing-inspired 字体栈：Doto / Space Grotesk / Space Mono，中文走 Noto Sans SC fallback
-- 3D 视图同步加载同一套字体 token
-- SW cache bump `whysper-v12-nothing-fonts`
+- 合并 personal-skill 远端 5d4d832 typography 改动
+- 3d.html 应用 Doto / Space Grotesk / Space Mono / Noto Sans SC 字体栈
+- 与 0.6.0-0.6.2 的 ledger 重设计 + 主页字体合并
+
+
+## [0.6.2] - 2026-05-22
+### Changed
+- Nothing-inspired 字体栈：
+  - Doto = 点阵/品牌味，仅用于 hero 大数字
+  - Space Grotesk = 主 UI/display
+  - Space Mono = 数字/标签/时间/状态
+  - PingFang SC = 中文 fallback（商家名、洞察文、chip 标签），不被点阵化
+- chip active 状态改为实心反色更醒目
+
+
+## [0.6.1] - 2026-05-22
+### Changed
+- 流水行去掉「支付方式·类别」啰嗦元信息（类别已被左侧色条 + group 头表达）
+- 商家字号 14→16，金额 15→18，更清晰
+- Hero 下方加回人话洞察「最大支出是 购物，占 99%」
+
+
+## [0.6.0] - 2026-05-22
+### Changed
+- 「账」tab Nothing-style 重设计：
+  - Hero 数字（本月支出 46px 大字 + 时间段 label + 笔数）
+  - 时间窗口 chip（本月 / 上月 / 近30天 / 全部）
+  - 类别 Nothing 点阵 SVG icon（12 类，单色 currentColor）
+  - 流水卡片改单行 row（3px 类别色条 + icon + 商家 + 时间·支付方式·类别 + 金额 + ×）
+  - 按日期 group + 当日小计
+  - 去掉重 stats panel / 候选 panel 默认折叠
+
 
 ## [0.5.5] - 2026-05-22
 ### Added
@@ -22,6 +51,7 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - 「账」tab 切换 category chip 不再重新请求后端，纯前端 filter + 重渲（__ledgerData 全量缓存）
 - 加 entry 或确认/删除后才主动 loadLedger，浏览即过滤秒切
+
 
 ## [0.5.3] - 2026-05-21
 ### Added
