@@ -847,6 +847,19 @@ async function dismissEvent(eid, idx, added){
   toast(added ? '已加入日历' : '已忽略');
   setTimeout(()=>loadUpcomingEvents(), 200);
 }
+function dismissBeforeIcs(a){
+  // 阶段 1：阻止默认跳转
+  event.stopPropagation();
+  event.preventDefault();
+  const eid = a.dataset.eid, idx = a.dataset.idx;
+  const href = a.href;
+  // 阶段 2：同步发 sendBeacon（不被跳转打断）
+  try{ navigator.sendBeacon(API+'/entries/'+eid+'/events/'+idx+'/dismiss', new Blob([], {type:'application/json'})); }catch(_){}
+  // 阶段 3：跡后才跳转 ICS
+  setTimeout(()=>{ location.href = href; }, 100);
+  setTimeout(()=>loadUpcomingEvents(), 1500);
+  return false;
+}
 async function deleteEntryRow(eid){
   try{ await api('/entries/'+eid, {method:'DELETE'}); toast('已删除'); loadList(true); loadTags(); loadStats(); }
   catch(_){ toast('删除失败'); }
@@ -1202,7 +1215,7 @@ async function loadUpcomingEvents(){
         '<div class="up-title">'+esc(ev.title||'事件')+'</div>'+
         (ev.location?'<div class="up-loc">'+esc(ev.location)+'</div>':'')+
       '</div>'+
-      '<a class="btn-cal compact" href="'+apiBase+'/entries/'+eid+'/ics" onclick="event.stopPropagation();dismissEvent(\''+eid+'\','+idx+',true)">加</a>'+
+      '<a class="btn-cal compact" href="'+apiBase+'/entries/'+eid+'/ics" data-eid="'+eid+'" data-idx="'+idx+'" onclick="return dismissBeforeIcs(this);">加</a>'+
       '<button class="btn-del" onclick="event.stopPropagation();dismissEvent(\''+eid+'\','+idx+',false)" title="忽略">×</button>'+
     '</div>';
   });

@@ -310,12 +310,17 @@ def _iso_plus_minutes(iso: str, minutes: int = 30) -> str:
     return (d + dt.timedelta(minutes=minutes)).isoformat()
 
 def calendar_items_from_entry(e: dict) -> list[dict]:
-    """Normalize AI events, task due dates, and code expirations into calendar-worthy items."""
+    """Normalize AI events, task due dates, and code expirations into calendar-worthy items.
+    优先用 events；tasks/codes 同时间被占 → 跳过避免 ICS 双包。"""
     meta = e.get("meta") or {}
     items = []
+    used_starts = set()
     for i, ev in enumerate(meta.get("events") or []):
         start = ev.get("start_iso") or ""
         if not start: continue
+        key = start[:16]
+        if key in used_starts: continue
+        used_starts.add(key)
         items.append({
             "id": f"event-{i}",
             "type": "event",
@@ -329,6 +334,9 @@ def calendar_items_from_entry(e: dict) -> list[dict]:
     for i, task in enumerate(meta.get("tasks") or []):
         due = task.get("due_iso") or ""
         if not due: continue
+        key = due[:16]
+        if key in used_starts: continue
+        used_starts.add(key)
         title = task.get("text") or e.get("title") or "Whysper 待办"
         items.append({
             "id": f"task-{i}",
@@ -634,6 +642,17 @@ async def _vision_extract_and_update(eid: str, image_path: Path, capture_mode: s
         summary = (data.get("summary") or "").strip()
         tags = data.get("tags") or []
         events = data.get("events") or []
+        # 过滤「派生提醒」类 event：标题含「完成支付/当日支付/当天付款/记得付费/提前准备/出发准备/提前确认/行程前联系」等 → 去掉
+        _bad_kw = ['完成支付','当日支付','当天支付','记得付','提前准备','出发准备','提前确认','行程前联系','提前报到','准备资料']
+        events = [ev for ev in events if isinstance(ev,dict) and not any(k in (ev.get('title') or '') for k in _bad_kw)]
+        # 同一 entry 内事件去重：同一 start_iso 仅留一条
+        _seen_iso = set(); _dedup_ev = []
+        for ev in events:
+            k = (ev.get('start_iso') or '')[:16]
+            if k and k in _seen_iso: continue
+            if k: _seen_iso.add(k)
+            _dedup_ev.append(ev)
+        events = _dedup_ev
         codes = data.get("codes") or []
         tasks = data.get("tasks") or []
         key_points = data.get("key_points") or []
