@@ -369,6 +369,7 @@ def ensure_ledger_candidate(source_entry_id: str, seed_text: str = "") -> dict:
         return simple_row(c.execute("SELECT * FROM ledger_candidates WHERE id=?", (cid,)).fetchone())
 
 def update_ledger_candidate_from_ai(source_entry_id: str, data: dict):
+    """账单直接进 ledger_entries，跳过确认步骤。保留 candidate 表作为历史/修改错诤反悔渠道。"""
     ensure_ledger_candidate(source_entry_id)
     fields = {
         "merchant": (data.get("merchant") or "").strip(),
@@ -384,6 +385,44 @@ def update_ledger_candidate_from_ai(source_entry_id: str, data: dict):
     with db() as c:
         sets = ",".join(f"{k}=?" for k in fields)
         c.execute(f"UPDATE ledger_candidates SET {sets} WHERE source_entry_id=?", (*fields.values(), source_entry_id))
+        c.execute("UPDATE ledger_candidates SET status='confirmed' WHERE source_entry_id=?", (source_entry_id,))
+        # 有商家或金额 才写入 ledger_entries
+        if fields["merchant"] or fields["amount"] is not None:
+            cand = c.execute("SELECT id, created_at FROM ledger_candidates WHERE source_entry_id=?", (source_entry_id,)).fetchone()
+            existing = c.execute("SELECT id FROM ledger_entries WHERE source_entry_id=?", (source_entry_id,)).fetchone()
+            tags_json = json.dumps(data.get("tags") or [], ensure_ascii=False) if isinstance(data.get("tags"), list) else None
+            # paid_at 兑底：AI 没抽到就用截图 entry 的 created_at (UTC+8 ISO)
+            paid_at_val = fields["paid_at"]
+            if not paid_at_val:
+                src_row = c.execute("SELECT created_at FROM entries WHERE id=?", (source_entry_id,)).fetchone()
+                if src_row and src_row["created_at"]:
+                    paid_at_val = (dt.datetime.utcfromtimestamp(src_row["created_at"]) + dt.timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%S+08:00")
+            if existing:
+                c.execute("""UPDATE ledger_entries SET merchant=?, amount=?, currency=?, paid_at=?, category=?, payment_method=?, note=?, tags=COALESCE(?,tags) WHERE id=?""",
+                          (fields["merchant"], fields["amount"], fields["currency"], paid_at_val,
+                           fields["category"], fields["payment_method"], fields["note"], tags_json, existing["id"]))
+            else:
+                # 去重：同 merchant + 同 amount + 同 paid_at → 跳过不创建（严格同一笔消费）
+                if fields["merchant"] and fields["amount"] is not None and paid_at_val:
+                    dup = c.execute("""SELECT id, source_entry_id FROM ledger_entries
+                                        WHERE merchant=? AND amount=? AND paid_at=?
+                                        LIMIT 1""",
+                                    (fields["merchant"], fields["amount"], paid_at_val)).fetchone()
+                    if dup:
+                        # 同时把重复的 entry 打上标记，前端可以提示
+                        ev_meta = c.execute("SELECT meta FROM entries WHERE id=?", (source_entry_id,)).fetchone()
+                        try: mm = json.loads(ev_meta["meta"] or "{}") if ev_meta else {}
+                        except: mm = {}
+                        mm["duplicate_of"] = dup["source_entry_id"]
+                        c.execute("UPDATE entries SET meta=? WHERE id=?", (json.dumps(mm, ensure_ascii=False), source_entry_id))
+                        print(f"[ledger] {source_entry_id} dedup: merges into {dup['id']}")
+                        return
+                entry_id = uuid.uuid4().hex[:12]
+                c.execute("""INSERT INTO ledger_entries(id,candidate_id,source_entry_id,created_at,confirmed_at,merchant,amount,currency,paid_at,category,payment_method,note,tags)
+                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                          (entry_id, cand["id"], source_entry_id, cand["created_at"], now_ts(),
+                           fields["merchant"], fields["amount"], fields["currency"], paid_at_val,
+                           fields["category"], fields["payment_method"], fields["note"], tags_json))
 
 def maybe_ledger_data(data: dict) -> dict | None:
     ledger = data.get("ledger") or {}
@@ -488,7 +527,8 @@ VISION_PROMPT = """你是个个人外挂大脑。看这张截图，抽取用户�
 今天是 {today} (Asia/Singapore)。以下是输出格式，严格 JSON，不要任何解释：
 
 {{
-  "route": ["knowledge"],
+  "route": ["bill" | "calendar" | "knowledge"],
+  "kind": "工具|种草|灵感|文章|教程|想法|待办|其它",
   "summary": "一句话总结这张图是什么 (不超 50 字)",
   "title": "一句话标题 (不超 18 字)",
   "text": "图里的关键文本内容提取 (OCR + 理解后的难表述，完整 250 字以内)",
@@ -500,11 +540,58 @@ VISION_PROMPT = """你是个个人外挂大脑。看这张截图，抽取用户�
   "key_points": ["..."]
 }}
 
-规则：
+**route 分发规则（重要）**：
+- 含金额/货币/订单/付款记录 → 加入 "bill"
+- 含未来时间 + 事项（约饭、会议、航班、门票、使用期限） → 加入 "calendar"
+- 含值得收藏的知识/工具/文章/素材/操作说明/文案 → 加入 "knowledge"
+- **可多选**：一张截图可以同时是 bill+calendar+knowledge。输出数组。
+- 完全不匹配任何类型（连文本都提不出什么）：返回 ["knowledge"] 兑底。
+
+**events 严格限制（避免别乱加日历）**：
+events 只填**需要用户亲自出现或采取行动**的事。
+✅ 能填 events的：约人见面/吃饭/喝咖啡、会议/面试/培训、机票/火车/酒店入住离店、电影/演出/活动入场、体检/看牙/做美容、课程/上班打卡。特征：主语是“我”，出现地点，是聊天记录里的约定或邀请函。
+⚠️ **events 额外铁律**：
+- **一句聊天最多出 1 个 event**，不要自创「提前确认」「出发准备」「行程前 X 天联系」这类派生事件。
+- AI 不要加「润色」、「补充」、「智能查漏补缺」类型的额外 event。
+- **模糊时间要主动推断**：
+  - 「今天」→ {today}
+  - 「明天」→ {today} + 1
+  - 「后天」→ {today} + 2
+  - 「本周 X」→ 本周那个星期 X（如果已过 → 下周 X）
+  - 「下周 X / 下周 / 下个周 X」→ 下一个那个星期 X
+  - 「这周末 / 周末」→ 本周六 / 周日
+  - 推不出具体日期才留空；需要推出就必须推，不要因为「模糊」就丢掉事件。
+- start_iso 必须从原文或上述推断读到。原文有明确点点钟就用该点；只说了「下周日」「明天」 → 填 09:00 兑底，end_iso 可选，不要编造 12:00、13:30 这种虚假范围。
+- 一个聊天会话多人制定同一件事（例如各自说「下周五火锅」「到时候见」） → 合并为 1 个 event。
+
+❌ **严禁**填 events的（这些只是信息提醒，不要进日历）：
+  - 发货时间 / 送达 / 到货 / 物流截止 / 预计送达 / 签收
+  - 优惠券 / 兑换码 / 退款截止 / 退货期限
+  - 取件码到期 / 自提截止
+  - 信用卡还款日（除非用户明确表示要去还款）
+  - 商品预售时间 / 抢购开售时间
+  - 订单待付款超时
+  - 文章/帖子里提到的某个日期（如小米发布会）除非用户明确表态要去看
+  - 别人的行程 / 订单 / 上下班时间
+  这些信息应该出现在 text/summary/key_points 里，不进 events。
+
+**kind 主分类（仅 route 含 knowledge 才填，只能从枚举选 1 个）**：
+- 工具：App / SaaS / 软件 / 插件 / 在线服务推荐
+- 种草：餐厅 / 店 / 酒店 / 商品 / 地点推荐或别人分享
+- 灵感：设计参考 / UI / 海报 / 画面 / 视觉素材
+- 文章：文章摘抄 / 帖子 / 博客 / 公众号内容
+- 教程：操作步骤 / how-to / 设置指南 / 代码片段
+- 想法：自己的思考 / 感悟 / 随心录音转写
+- 待办：我要做的事
+- 其它：都不匹配时兑底
+**不要填多个、不要自创、只能从 8 个里选 1 个。**
+route 只有 bill / calendar 时 kind 填 "其它" 或留空。
+
+**其他规则**：
 - 推断时间时遵照当地 +08:00。“明天”就是 {today}+1。
-- 有明确时间 + 事件 才填 events，否则留空数组。
 - 机票/火车票 alert_min 设 120，其他默认 30。
-- 如果截图是支付、收据、订单、账单、转账或消费记录，ledger.is_expense=true，并尽量提取 merchant/amount/paid_at/category/payment_method；category 必须从枚举里选，娱乐消费用 entertainment；不要编造金额。
+- 如果是支付、收据、订单、账单、转账或消费记录，ledger.is_expense=true，并尽量提取 merchant/amount/paid_at/category/payment_method；category 必须从枚举里选，娱乐消费用 entertainment；不要编造金额。
+- **paid_at 特别注意**：这是**消费发生时间**（付款时间 / 下单时间），不是截图时间，也不是今天。仅从图里读取明文标示的消费/支付/下单时间；找不到就填空字符串 "" ，不要编造、不要用今天兑底。
 - codes 只抽实际可复制使用的短码（取件码、核销码、热锁、取餐号）。
 - tasks 限明确“我”需要完成的事项。
 - 如果是文章/帖子，重点摆 key_points，不产生 events/codes/ledger。
@@ -546,15 +633,30 @@ async def _vision_extract_and_update(eid: str, image_path: Path, capture_mode: s
         title = (data.get("title") or "").strip()
         summary = (data.get("summary") or "").strip()
         tags = data.get("tags") or []
+        events = data.get("events") or []
+        codes = data.get("codes") or []
+        tasks = data.get("tasks") or []
+        key_points = data.get("key_points") or []
+        # 「零信息」检查：所有提炼字段空 + 无账单 → 拒收错诤入口
+        is_empty = not (text or title or summary or events or codes or tasks or key_points or ledger_data)
+        if is_empty and capture_mode != "ledger":
+            with db() as c:
+                c.execute("DELETE FROM entries WHERE id=?", (eid,))
+                c.execute("DELETE FROM ledger_candidates WHERE source_entry_id=?", (eid,))
+            try: image_path.unlink(missing_ok=True)
+            except Exception: pass
+            print(f"[vision] {eid} dropped: empty")
+            return
         if ledger_data and "ledger" not in tags:
             tags = [*tags, "ledger"]
         meta = {
             "route": data.get("route") or [],
+            "kind": (data.get("kind") or "").strip() or "其它",
             "ledger_candidate": ledger_data or None,
-            "events": data.get("events") or [],
-            "codes": data.get("codes") or [],
-            "tasks": data.get("tasks") or [],
-            "key_points": data.get("key_points") or [],
+            "events": events,
+            "codes": codes,
+            "tasks": tasks,
+            "key_points": key_points,
         }
         with db() as c:
             c.execute("""UPDATE entries SET final_text=?, title=?, summary=?, tags=?, meta=?, transcribing=0,
@@ -754,19 +856,38 @@ async def organize(body: dict = None):
     date = body.get("date") or today_local()
     with db() as c:
         rows = [row_to_dict(r) for r in c.execute("SELECT * FROM entries WHERE local_date=? ORDER BY created_at ASC", (date,))]
-    if not rows:
+        # 接入当日账单 + 日历事件 作为总结补充
+        ledger_rows = [row_to_dict(r) for r in c.execute(
+            "SELECT * FROM ledger_entries WHERE substr(coalesce(paid_at,''),1,10)=? OR substr(datetime(created_at,'unixepoch','+8 hours'),1,10)=? ORDER BY created_at ASC",
+            (date, date))]
+    if not rows and not ledger_rows:
         return {"ok": False, "reason": "no entries", "date": date}
     payload_items = [{"id": r["id"], "text": (r.get("final_text") or r.get("draft_text") or "").strip()} for r in rows]
+    # 提取当日未来事件
+    upcoming_events = []
+    for r in rows:
+        meta = r.get("meta") or {}
+        for ev in (meta.get("events") or []):
+            if ev and ev.get("start_iso"):
+                upcoming_events.append({"title": ev.get("title",""), "when": ev.get("start_iso",""), "loc": ev.get("location","")})
+    ledger_summary = [{"merchant": r.get("merchant",""), "amount": r.get("amount"), "category": r.get("category","")} for r in ledger_rows]
+    ledger_total = sum(float(r.get("amount") or 0) for r in ledger_rows)
     prompt = (
-        "你是一个个人笔记整理助手。下面是用户今天用语音随手记的想法碎片（已转写为文字，可能有错别字）。\n"
-        "请你做三件事，对每一条单独输出：\n"
-        "1) 修正明显错别字，但保留原意和口语感（不要改写润色）。\n"
-        "2) 提取一句不超过 18 字的标题。\n"
-        "3) 给 1-3 个自由标签（中文短词，比如 vlog、想法、待办、感悟、阅读、人际、健康）。\n"
-        "严格输出 JSON：{\"items\":[{\"id\":\"...\",\"title\":\"...\",\"final_text\":\"...\",\"tags\":[\"...\"]}, ...]}\n"
-        "另外加一个 \"summary\" 字段，用一段不超过 80 字的中文总结今天的核心主题。\n"
-        "不要任何解释，只输出 JSON。\n\n"
-        f"输入条目：\n{json.dumps(payload_items, ensure_ascii=False, indent=2)}"
+        "你是一个个人笔记整理助手。下面是用户今天 (" + date + ") 的活动记录。\n\n"
+        "请你做三件事：\n"
+        "1) 对每一条语音/文本 entry 单独输出：修正错别字（保留口语感）、提一个不超 18 字的标题、给 1-3 个中文简标签。\n"
+        "2) 生成一段 100-150 字的《今日叙述》总结（summary 字段）：要是一段连贯的人话，不要列点不要结构化。可以多问价阐述例子。要综合：\n"
+        "   - 语音笔记里的想法/问题/情绪\n"
+        "   - 今日账单总支出及主要消费场景 (有才提，没则跳过)\n"
+        "   - 未来事件提醒 (下周 X 要去吃饭/机票费与之类，有才提)\n"
+        "   - 今日的主题/主线（如 “在思考 vlog 项目”、“在走 X 方案”）\n"
+        "   叙述要自然、不套话、不鼓励、不套上明天加油\n"
+        "3) 提 5-8 个今日最重要的中文标签到 day_tags\n\n"
+        "严格输出 JSON：\n"
+        '{"items":[{"id":"...","title":"...","final_text":"...","tags":["..."]}, ...], "summary":"...", "day_tags":["..."]}\n\n'
+        f"文本 entries (详细内容)：\n{json.dumps(payload_items, ensure_ascii=False, indent=2)}\n\n"
+        f"今日账单 ({len(ledger_rows)} 笔, 合计 ¥{ledger_total:.2f})：\n{json.dumps(ledger_summary, ensure_ascii=False, indent=2)}\n\n"
+        f"未来事件：\n{json.dumps(upcoming_events, ensure_ascii=False, indent=2)}\n"
     )
     try:
         raw = await ai_chat([{"role":"user","content":prompt}], max_tokens=2000, temperature=0.3)
@@ -833,12 +954,12 @@ def list_ledger_categories():
 
 @app.get("/api/ledger/candidates")
 def list_ledger_candidates(status: str = "pending", limit: int = 100):
-    sql = "SELECT * FROM ledger_candidates"
+    sql = "SELECT lc.*, e.image_file AS source_image FROM ledger_candidates lc LEFT JOIN entries e ON e.id=lc.source_entry_id"
     args = []
     if status != "all":
-        sql += " WHERE status=?"
+        sql += " WHERE lc.status=?"
         args.append(status)
-    sql += " ORDER BY created_at DESC LIMIT ?"
+    sql += " ORDER BY lc.created_at DESC LIMIT ?"
     args.append(limit)
     with db() as c:
         rows = [simple_row(r) for r in c.execute(sql, args)]
@@ -890,20 +1011,21 @@ def confirm_ledger_candidate(cid: str):
     return {"ok": True, "entry": simple_row(row)}
 
 def _filter_ledger_entries_sql(category: Optional[str], q: Optional[str], from_date: Optional[str], to_date: Optional[str]):
-    sql = "SELECT * FROM ledger_entries WHERE 1=1"
+    # SELECT * 以 le.* + JOIN entries e 打 source_image
+    sql = "SELECT le.*, e.image_file AS source_image FROM ledger_entries le LEFT JOIN entries e ON e.id=le.source_entry_id WHERE 1=1"
     args = []
     if category:
-        sql += " AND lower(coalesce(category,''))=lower(?)"
+        sql += " AND lower(coalesce(le.category,''))=lower(?)"
         args.append(normalize_ledger_category(category))
     if q:
         like = f"%{q.lower()}%"
-        sql += " AND (lower(coalesce(merchant,'')) LIKE ? OR lower(coalesce(note,'')) LIKE ? OR lower(coalesce(payment_method,'')) LIKE ?)"
+        sql += " AND (lower(coalesce(le.merchant,'')) LIKE ? OR lower(coalesce(le.note,'')) LIKE ? OR lower(coalesce(le.payment_method,'')) LIKE ?)"
         args += [like, like, like]
     if from_date:
-        sql += " AND substr(coalesce(paid_at,''),1,10) >= ?"
+        sql += " AND substr(coalesce(le.paid_at,''),1,10) >= ?"
         args.append(from_date)
     if to_date:
-        sql += " AND substr(coalesce(paid_at,''),1,10) <= ?"
+        sql += " AND substr(coalesce(le.paid_at,''),1,10) <= ?"
         args.append(to_date)
     return sql, args
 
@@ -914,7 +1036,7 @@ def list_ledger_entries(limit: int = 200,
                         from_date: Optional[str] = Query(None, alias="from"),
                         to_date: Optional[str] = Query(None, alias="to")):
     sql, args = _filter_ledger_entries_sql(category, q, from_date, to_date)
-    sql += " ORDER BY coalesce(paid_at, '') DESC, confirmed_at DESC LIMIT ?"
+    sql += " ORDER BY coalesce(le.paid_at, '') DESC, le.confirmed_at DESC LIMIT ?"
     args.append(limit)
     with db() as c:
         rows = [simple_row(r) for r in c.execute(sql, args)]
@@ -1026,6 +1148,22 @@ def _ics_dt(iso: str) -> str:
         return d.strftime("%Y%m%dT%H%M%SZ")
     except Exception:
         return ""
+
+@app.post("/api/entries/{eid}/events/{idx}/dismiss")
+def dismiss_event(eid: str, idx: int):
+    """标记某 entry 的某个 event 为已加/已忽略，不再出现在「未来事件」候选区。"""
+    with db() as c:
+        r = c.execute("SELECT meta FROM entries WHERE id=?", (eid,)).fetchone()
+        if not r: raise HTTPException(404)
+        try: m = json.loads(r["meta"] or "{}")
+        except Exception: m = {}
+        events = m.get("events") or []
+        if 0 <= idx < len(events) and isinstance(events[idx], dict):
+            events[idx]["dismissed"] = True
+            m["events"] = events
+            c.execute("UPDATE entries SET meta=? WHERE id=?", (json.dumps(m, ensure_ascii=False), eid))
+            return {"ok": True, "dismissed_idx": idx}
+        raise HTTPException(400, "invalid event index")
 
 @app.get("/api/entries/{eid}/event")
 def entry_event(eid: str):

@@ -29,6 +29,19 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:var(--font);overflow-x:hidden}
+input,textarea,select{font-size:16px}  /* iOS 防缩放 */
+.ledger-hero-num{font-size:46px}
+@media (max-width: 360px){ .ledger-hero-num{font-size:34px!important} }
+.src-badge{display:inline-block;margin-left:6px;padding:1px 5px;border:1px solid var(--dim2);font-size:9px;letter-spacing:0.1em;color:var(--dim);text-transform:none}
+.src-badge.audio{border-color:var(--red);color:var(--red)}
+.src-badge.image{border-color:var(--dim);color:var(--fg)}
+.btn-del.confirming{opacity:1;color:var(--red);font-size:11px;font-family:var(--font-cn);letter-spacing:0.05em;width:auto;padding:0 6px;font-weight:500}
+.tag:active,.ledger-chips button:active,.ledger-dd-btn:active,.ledger-dd-item:active{transform:translateY(1px);transition:transform 0.08s ease}
+.organize-btn.busy{opacity:0.7;border-color:var(--dim)!important;color:var(--dim)!important;letter-spacing:0.2em}
+.organize-btn.done{border-color:#4ade80!important;color:#4ade80!important}
+.organize-btn.fail{border-color:var(--red)!important;color:var(--red)!important}
+.upcoming-more-btn{display:block;margin:10px auto 0;background:transparent;border:1px solid var(--dim2);color:var(--dim);font-family:var(--font-mono);font-size:11px;letter-spacing:0.15em;padding:8px 16px;cursor:pointer;-webkit-appearance:none;appearance:none;border-radius:0}
+.upcoming-more-btn:hover{color:var(--fg);border-color:var(--dim)}
 body{padding-bottom:80px;letter-spacing:0.02em}
 button{font-family:inherit;background:transparent;color:inherit;border:none;cursor:pointer;font-size:inherit}
 
@@ -109,7 +122,22 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .entry-title{font-size:14px;color:var(--fg);font-family:-apple-system,system-ui,sans-serif;font-weight:600;margin-bottom:6px;letter-spacing:0;line-height:1.4}
 .entry-text{font-size:13px;color:#bbb;line-height:1.6;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .entry-tags{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px}
-.tag{font-size:10px;padding:2px 6px;border:1px solid var(--dim2);color:var(--dim);letter-spacing:0.1em}
+.tag{font-size:11px;padding:7px 11px;border:1px solid var(--dim);color:var(--fg);letter-spacing:0.1em;font-family:var(--font-cn);background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:4px;line-height:1;border-radius:0}
+.tag-more{font-size:11px;padding:6px 10px;border:1px dashed var(--dim2);color:var(--dim);letter-spacing:0.1em;font-family:var(--font-cn);line-height:1}
+
+/* 统一删除/忽略 × 按钮 */
+.btn-del{background:none;border:none;color:var(--dim);font-size:18px;width:28px;height:28px;cursor:pointer;opacity:0.35;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.btn-del:hover{opacity:1;color:var(--red)}
+.btn-del.absolute{position:absolute;top:8px;right:8px;z-index:2}
+
+/* 统一「加日历」按钮 */
+.btn-cal{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--red);color:var(--red);font-family:var(--font-mono);font-size:11px;letter-spacing:0.2em;text-decoration:none;cursor:pointer;background:transparent;line-height:1;padding:8px 14px}
+.btn-cal:active{background:var(--red);color:#fff}
+.btn-cal.compact{width:36px;height:32px;padding:0;letter-spacing:0}
+.btn-cal.block{display:block;text-align:center;padding:14px;font-size:12px;letter-spacing:0.3em;text-transform:uppercase;margin-top:12px;width:100%;box-sizing:border-box}
+
+/* legacy 别名 → 全隐藏，已由 .btn-del/.btn-cal 接管 */
+.entry-cal-btn,.up-add,.up-skip,.btn-ics,.entry-del,.ledger-row-x{display:none!important}
 .entry-img{margin-top:10px;max-width:100%;max-height:200px;border:1px solid var(--dim2)}
 .entry-state{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--dim);letter-spacing:0.16em;text-transform:uppercase;line-height:1.45}
 .entry-state .dot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
@@ -124,8 +152,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .entry-progress b:nth-child(3n){animation-delay:.15s}
 .entry-progress b:nth-child(3n+1){animation-delay:.3s}
 @keyframes scanBar{0%,100%{background:var(--dim2)}45%,60%{background:var(--red)}}
-.entry-cal-btn{display:inline-block;margin-top:10px;padding:8px 14px;border:1px solid var(--red);color:var(--red);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;font-family:-apple-system,system-ui,sans-serif}
-.entry-cal-btn:active{background:var(--red);color:#fff}
+/* legacy entry-cal-btn -> .btn-cal */
 .empty{text-align:center;color:var(--dim);padding:60px 20px;font-size:12px;letter-spacing:0.3em;text-transform:uppercase}
 
 /* calendar view */
@@ -157,8 +184,21 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .storage-card .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--fg);transition:width 0.4s}
 .storage-card .bar.warn i{background:var(--red)}
 .storage-card .num{color:var(--fg);font-variant-numeric:tabular-nums}
-.day-summary{font-size:14px;color:var(--fg);line-height:1.7;letter-spacing:0;font-family:-apple-system,system-ui,sans-serif;padding:4px 0 12px}
+.day-summary{font-size:14px;color:var(--fg);line-height:1.7;letter-spacing:0;font-family:var(--font-cn);padding:4px 0 12px}
 .day-summary.muted{color:var(--dim);font-size:12px;letter-spacing:0.15em;text-transform:uppercase}
+/* upcoming events at top of calendar tab */
+.upcoming-events{margin:8px 0 16px}
+.upcoming-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim)}
+.upcoming-head .line{flex:1;height:1px;background:var(--dim2)}
+.upcoming-item{display:grid;grid-template-columns:60px 1fr auto auto;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--dim2);cursor:pointer}
+.up-when{text-align:center}
+.up-date{font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;color:var(--dim);text-transform:uppercase}
+.up-time{font-family:var(--font-mono);font-size:15px;color:var(--fg);margin-top:2px;font-variant-numeric:tabular-nums}
+.up-body{min-width:0}
+.up-title{font-family:var(--font-cn);font-size:14px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.up-loc{font-family:var(--font-cn);font-size:11px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* legacy up-add/up-skip/entry-del -> .btn-cal.compact / .btn-del */
+.upcoming-more{margin-top:8px;text-align:center;font-family:var(--font-mono);font-size:10px;color:var(--dim);letter-spacing:0.1em}
 
 /* ask view */
 .ask-box{display:flex;gap:8px;margin-bottom:16px}
@@ -188,7 +228,8 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .ask-result:empty::before{content:'问个问题，比如：上周关于 vlog 的想法';color:var(--dim);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font)}
 .organize-btn{display:block;margin:20px auto 0;padding:14px 28px;border:1px solid var(--red);color:var(--red);font-size:11px;letter-spacing:0.3em;text-transform:uppercase}
 .tag-cloud{margin-top:24px;display:flex;flex-wrap:wrap;gap:6px}
-.tag-cloud .tag{cursor:pointer;color:var(--fg);border-color:var(--fg)}
+.tag-cloud .tag{cursor:pointer}
+.tag-cloud .tag.active,.ledger-chips button.active{color:#000;border-color:#fff;background:#fff}
 
 /* ledger view */
 .ledger-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -221,33 +262,39 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .cat-icon{display:inline-block;vertical-align:middle;color:var(--fg)}
 .ledger-day{display:flex;align-items:center;justify-content:space-between;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--dim2);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--dim);font-family:'Space Mono',ui-monospace,monospace}
 .ledger-day .day-sum{color:var(--fg);font-weight:500}
-.ledger-row{display:grid;grid-template-columns:3px 20px 1fr auto 24px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--dim2);position:relative}
-.ledger-row-bar{width:3px;height:28px;background:var(--fg);opacity:0.85}
-.ledger-row[data-cat="food"] .ledger-row-bar{background:#d97706}
-.ledger-row[data-cat="transport"] .ledger-row-bar{background:#2563eb}
-.ledger-row[data-cat="shopping"] .ledger-row-bar{background:#7c3aed}
-.ledger-row[data-cat="entertainment"] .ledger-row-bar{background:#db2777}
-.ledger-row[data-cat="housing"] .ledger-row-bar{background:#059669}
-.ledger-row[data-cat="health"] .ledger-row-bar{background:#dc2626}
-.ledger-row[data-cat="education"] .ledger-row-bar{background:#0891b2}
-.ledger-row[data-cat="travel"] .ledger-row-bar{background:#ea580c}
-.ledger-row[data-cat="business"] .ledger-row-bar{background:#525252}
-.ledger-row[data-cat="subscription"] .ledger-row-bar{background:#9333ea}
-.ledger-row[data-cat="transfer"] .ledger-row-bar{background:#737373}
-.ledger-row[data-cat="other"] .ledger-row-bar{background:#a3a3a3}
+.ledger-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto 24px;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--dim2);position:relative}
+.ledger-row-bar{display:none}
 .ledger-row-ico{display:flex;align-items:center;justify-content:center;color:var(--dim)}
+.ledger-row-thumb{width:32px;height:32px;object-fit:cover;border:1px solid var(--dim2);border-radius:2px}
+.ledger-card-thumb{display:block;max-width:100%;max-height:280px;object-fit:contain;margin-bottom:10px;border:1px solid var(--dim2);cursor:pointer}
 .ledger-row-body{min-width:0}
-.ledger-row-merchant{font-size:16px;color:var(--fg);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ledger-row-meta{font-size:10px;color:var(--dim);margin-top:3px;letter-spacing:0.04em;font-family:'Space Mono',ui-monospace,monospace}
+.ledger-row-merchant{font-size:14px;color:var(--fg);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ledger-row-meta{font-size:10px;color:var(--dim);margin-top:2px;letter-spacing:0.04em;font-family:'Space Mono',ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ledger-row-meta span{margin-right:4px}
-.ledger-row-amt{font-size:18px;color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-.ledger-row-x{background:none;border:none;color:var(--dim);font-size:18px;padding:0;cursor:pointer;width:24px;height:24px;display:flex;align-items:center;justify-content:center;opacity:0.4}
-.ledger-row-x:hover{opacity:1}
+.ledger-row-amt{font-size:15px;color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;font-family:'Space Mono',ui-monospace,monospace}
+/* legacy ledger-row-x -> .btn-del */
 .ledger-chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
+.ledger-filter-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--dim2);margin-bottom:14px}
+.ledger-filters{display:flex;gap:8px;margin-bottom:14px;padding-bottom:2px;position:relative;z-index:5}
+.ledger-dd{position:relative}
+.ledger-dd-btn{background:transparent;border:1px solid var(--dim);color:var(--fg);font-family:var(--font-cn);font-size:12px;letter-spacing:0.08em;padding:8px 12px;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;border-radius:0;display:inline-flex;align-items:center;gap:6px;line-height:1}
+.ledger-dd-btn .caret{font-family:var(--font-mono);color:var(--dim)}
+.ledger-dd-btn.active{border-color:#fff}
+.ledger-dd-btn.active .caret{color:#fff}
+.ledger-dd-menu{position:absolute;top:calc(100% + 4px);left:0;min-width:140px;background:#000;border:1px solid var(--dim);display:flex;flex-direction:column;z-index:10;max-height:60vh;overflow-y:auto}
+.ledger-dd-item{background:transparent;border:none;border-bottom:1px solid var(--dim2);color:var(--fg);font-family:var(--font-cn);font-size:12px;letter-spacing:0.08em;padding:10px 14px;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;line-height:1.2}
+.ledger-dd-item:last-child{border-bottom:none}
+.ledger-dd-item:hover{background:#111}
+.ledger-dd-item.active{background:#fff;color:#000}
+.ledger-filter-summary{font-size:12px;color:var(--fg);font-family:var(--font-cn);letter-spacing:0.08em;display:flex;gap:6px;align-items:center}
+.ledger-filter-summary .sep{color:var(--dim)}
+.ledger-filter-toggle{background:none;border:none;color:var(--dim);font-size:11px;font-family:var(--font-mono);letter-spacing:0.15em;cursor:pointer;padding:6px 8px;-webkit-appearance:none;appearance:none}
+.ledger-filter-toggle:hover{color:var(--fg)}
 .ledger-sort{display:flex;gap:6px;margin-bottom:14px}
 .ledger-sort button{flex:0 0 auto;padding:6px 10px;border:1px solid var(--dim2);font-family:var(--font-cn);font-size:11px;color:var(--dim);letter-spacing:0.06em;background:none}
 .ledger-sort button.active{color:var(--bg);border-color:var(--fg);background:var(--fg)}
-.ledger-chips button{flex:0 0 auto;padding:7px 9px;border:1px solid var(--dim2);font-family:var(--font-cn);font-size:11px;color:var(--dim);letter-spacing:0.06em}
+.ledger-chips button{flex:0 0 auto;padding:7px 11px;border:1px solid var(--dim);font-family:var(--font-cn);font-size:11px;color:var(--fg);letter-spacing:0.1em;background:transparent;line-height:1;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;border-radius:0;margin:0;font-weight:400;box-shadow:none;text-transform:none}
+.ledger-chips button:focus{outline:none}
 .ledger-chips button.active{color:var(--bg);border-color:var(--fg);background:var(--fg)}
 .ledger-group-title{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px;font-family:-apple-system,system-ui,sans-serif}
 .ledger-group-title .name{font-size:14px;font-weight:700;color:var(--fg);letter-spacing:0}
@@ -295,8 +342,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .event-card .ev-title{font-size:14px;color:var(--fg);font-weight:600;margin-bottom:4px}
 .event-card .ev-meta{font-size:12px;color:var(--dim);letter-spacing:0}
 .event-card .ev-notes{font-size:12px;color:#aaa;margin-top:6px;letter-spacing:0}
-.btn-ics{display:block;text-align:center;padding:14px;border:1px solid var(--red);color:var(--red);margin-top:12px;font-size:12px;letter-spacing:0.3em;text-transform:uppercase;text-decoration:none}
-.btn-ics:active{background:var(--red);color:#fff}
+/* legacy btn-ics -> .btn-cal.block */
 /* event sheet (auto popup) */
 #eventSheet{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;font-family:-apple-system,system-ui,sans-serif}
 #eventSheet .es-back{position:absolute;inset:0;background:rgba(0,0,0,.55);animation:esFade .18s ease}
@@ -403,6 +449,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
       <button onclick="calMove(1)">›</button>
     </div>
   </div>
+  <div class="upcoming-events" id="upcomingEvents"></div>
   <div class="cal-grid" id="calGrid"></div>
   <div class="cal-day-list" id="calDayList"></div>
   <div class="storage-card" id="storageCard"></div>
@@ -411,10 +458,6 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 <section class="view" id="view-ledger">
   <div class="ledger-head">
     <div class="ledger-title">账本</div>
-    <div class="ledger-actions">
-      <a class="ledger-export" href="" id="ledgerExport">导出</a>
-      <button onclick="loadLedger()">刷新</button>
-    </div>
   </div>
   <div id="ledgerBox"></div>
 </section>
@@ -582,6 +625,8 @@ function markShortcutReady(){
 // ===== tabs =====
 function switchTab(t){
   if(!VALID_TABS.has(t)) t = 'rec';
+  if(t !== 'ledger' && typeof resetLedgerFilters==='function') resetLedgerFilters();
+  if(t !== 'list') kindFilter = '';
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.bnav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+t).classList.add('active');
@@ -704,6 +749,12 @@ function cancelEntry(){
 }
 
 // 页面隐藏/退出时释放 mic，避免后台继续占用
+document.addEventListener('click', (e)=>{
+  if(typeof ledgerOpenMenu !== 'undefined' && ledgerOpenMenu && !e.target.closest('.ledger-dd')){
+    ledgerOpenMenu = '';
+    if(typeof renderLedger==='function') renderLedger();
+  }
+});
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden && micStream && !media){
     micStream.getTracks().forEach(t=>t.stop()); micStream=null;
@@ -791,19 +842,69 @@ async function doBulkDelete(){
   loadList(); loadStats();
 }
 
-async function loadList(){
+async function dismissEvent(eid, idx, added){
+  try{ await api('/entries/'+eid+'/events/'+idx+'/dismiss', {method:'POST'}); }catch(_){ }
+  toast(added ? '已加入日历' : '已忽略');
+  setTimeout(()=>loadUpcomingEvents(), 200);
+}
+async function deleteEntryRow(eid){
+  try{ await api('/entries/'+eid, {method:'DELETE'}); toast('已删除'); loadList(true); loadTags(); loadStats(); }
+  catch(_){ toast('删除失败'); }
+}
+function confirmInlineDelete(btn, action){
+  if(btn.dataset.confirming==='1'){
+    clearTimeout(btn._t);
+    btn.dataset.confirming='';
+    btn.classList.remove('confirming');
+    btn.textContent = '×';
+    action();
+    return;
+  }
+  document.querySelectorAll('.btn-del.confirming').forEach(el=>{ if(el!==btn){ clearTimeout(el._t); el.dataset.confirming=''; el.classList.remove('confirming'); el.textContent='×'; }});
+  btn.dataset.confirming='1';
+  btn.classList.add('confirming');
+  btn.textContent = '删除?';
+  btn._t = setTimeout(()=>{ btn.dataset.confirming=''; btn.classList.remove('confirming'); btn.textContent='×'; }, 2200);
+}
+function confirmDeleteEntry(btn, eid){ confirmInlineDelete(btn, ()=>deleteEntryRow(eid)); }
+function confirmDeleteLedger(btn, lid){ confirmInlineDelete(btn, ()=>deleteLedgerEntryNow(lid)); }
+async function loadList(forceFetch){
   let j;
-  if(__bootCache && __bootCache.entries){
+  if(!forceFetch && __listCache){
+    j = __listCache;
+  } else if(__bootCache && __bootCache.entries){
     j = __bootCache.entries;
     __bootCache.entries = null;
+    __listCache = j;
   } else {
     j = await api('/entries?limit=200');
+    __listCache = j;
   }
   const box = document.getElementById('listBox');
-  if(!j.entries.length){box.innerHTML='<div class="empty">还没有笔记 · 去录一条</div>';return}
+  // 「理」只显示：知识类截图 + 录音
+  // 跳过：任何含账单的截图（只走「账」）、任何含未来事件的截图（只走「历」）
+  const filteredEntries = (j.entries||[]).filter(e => {
+    const meta = e.meta || {};
+    const hasLedger = !!(meta.ledger_candidate && (meta.ledger_candidate.is_expense || meta.ledger_candidate.amount));
+    const hasEvents = Array.isArray(meta.events) && meta.events.some(ev=>ev && ev.start_iso);
+    const route = Array.isArray(meta.route) ? meta.route : [];
+    const hasText = !!(e.final_text || e.title || e.summary || (e.tags && e.tags.length));
+    // 额外 hint: route 包含 bill/calendar 的严格不进理
+    if(hasLedger || route.includes('bill')) return false;
+    if(hasEvents || route.includes('calendar')) return false;
+    // 录音：无图但有文本 → 保留
+    if(!e.image_file && hasText) return true;
+    // 其他是知识截图
+    return true;
+  }).filter(e => {
+    if(!kindFilter) return true;
+    const k = (e.meta && e.meta.kind) || '其它';
+    return k === kindFilter;
+  });
+  if(!filteredEntries.length){box.innerHTML='<div class="empty">还没有知识笔记 · 去录一条或截图吧</div>';return}
   let html='';
   let curDate='';
-  j.entries.forEach(e=>{
+  filteredEntries.forEach(e=>{
     if(e.local_date !== curDate){
       curDate = e.local_date;
       html += '<div class="day-head"><span>'+curDate+'</span><div class="line"></div></div>';
@@ -816,34 +917,35 @@ async function loadList(){
     const hasEvent = !!calItems.find(it=>it.start_iso);
     const state = entryState(e);
     const apiBase = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
-    const calBtn = hasEvent ? '<a class="entry-cal-btn" href="'+apiBase+'/entries/'+e.id+'/ics" onclick="event.stopPropagation()">加日历 · '+calItems.length+'</a>' : '';
+    const calBtn = hasEvent ? '<a class="btn-cal" href="'+apiBase+'/entries/'+e.id+'/ics" onclick="event.stopPropagation()">加日历 · '+calItems.length+'</a>' : '';
     const progress = state.kind==='running' ? '<div class="entry-progress">'+Array.from({length:18}).map(()=>'<b></b>').join('')+'</div>' : '';
     const bodyText = entryBodyText(e, state);
     html += '<div class="entry'+(sel?' selected':'')+(state.kind==='running'?' processing':'')+(state.kind==='failed'?' failed':'')+(hasEvent?' has-calendar':'')+'" data-eid="'+e.id+'" onclick="'+clickFn+'">'+
-      (selectMode?'<span class="entry-select"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>':'')+
-      '<div class="entry-meta"><span>'+hm+(e.source==='shortcut'?'<span class="src-badge shortcut">快捷</span>':'')+'</span><span>'+esc(state.meta)+'</span></div>'+
+      (selectMode?'<span class="entry-select"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>':'<button class="btn-del absolute" onclick="event.stopPropagation();confirmDeleteEntry(this,\''+e.id+'\')" title="删除">×</button>')+
+      '<div class="entry-meta"><span>'+hm+(e.source==='shortcut'?'<span class="src-badge shortcut">快捷</span>':'')+(e.audio_file?'<span class="src-badge audio">· 录音</span>':'')+(e.image_file?'<span class="src-badge image">· 截图</span>':'')+'</span><span>'+esc(state.meta)+'</span></div>'+
       (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
       '<div class="entry-text">'+esc(bodyText)+'</div>'+
-      (e.tags && e.tags.length?'<div class="entry-tags">'+e.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>':'')+
+      (e.tags && e.tags.length?'<div class="entry-tags">'+e.tags.slice(0,3).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+(e.tags.length>3?'<span class="tag-more">+'+(e.tags.length-3)+'</span>':'')+'</div>':'')+
       '<div class="entry-state '+state.kind+'"><span class="dot"></span><span>'+esc(state.label)+'</span></div>'+
       progress+
       calBtn +
-      (e.image_file?'<img class="entry-img" src="'+MEDIA+'/images/'+e.image_file+'" loading="lazy"/>':'')+
+      // 主页不展示图，点详情才看原图
+      ''+
     '</div>';
   });
   box.innerHTML = html;
   // poll while any entry is transcribing
-  const pending = j.entries.filter(e=>e.transcribing || e.processing_status==='running');
+  const pending = filteredEntries.filter(e=>e.transcribing || e.processing_status==='running');
   if(pending.length && !window._txPoll){
     window._txPoll = setInterval(()=>{
-      if(document.querySelector('#view-list.active')) loadList();
+      if(document.querySelector('#view-list.active')) loadList(true);
       else { clearInterval(window._txPoll); window._txPoll=null; }
     }, 8000);
   } else if(!pending.length && window._txPoll){
     clearInterval(window._txPoll); window._txPoll=null;
   }
   // 检查是否有新折叠事件需要粘出 sheet
-  checkAutoEventSheet(j.entries);
+  checkAutoEventSheet(filteredEntries);
 }
 
 function calendarItems(e){
@@ -893,7 +995,7 @@ function startProcessingPoll(){
       const j = await api('/entries?limit=30');
       const pending = (j.entries||[]).filter(e=>e.transcribing || e.processing_status==='running');
       checkAutoEventSheet(j.entries||[]);
-      if(document.querySelector('#view-list.active')) loadList();
+      if(document.querySelector('#view-list.active')) loadList(true);
       if(!pending.length && ticks > 1){
         clearInterval(_processingPoll); _processingPoll=null;
       }
@@ -998,7 +1100,7 @@ async function openEntry(id){
         '<div class="ev-meta">'+esc(type)+' · '+esc(t)+(ev.location?' · '+esc(ev.location):'')+'</div>'+
         (ev.notes?'<div class="ev-notes">'+esc(ev.notes)+'</div>':'')+'</div>';
     }).join('');
-    extras += '<a class="btn-ics" href="'+apiBase+'/entries/'+e.id+'/ics">加入日历</a>';
+    extras += '<a class="btn-cal block" href="'+apiBase+'/entries/'+e.id+'/ics">加入日历</a>';
   }
   if(codes.length){
     extras += '<div class="meta" style="margin-top:16px">码</div>';
@@ -1047,14 +1149,74 @@ async function deleteEntry(){
   if(!curEntry) return;
   if(!confirm('删除这条？')) return;
   await api('/entries/'+curEntry.id, {method:'DELETE'});
-  closeModal(); loadList(); loadStats();
+  closeModal(); loadList(true); loadStats();
 }
 
 // ===== calendar =====
 let calCur = new Date();
+let upcomingExpanded = false;
+function toggleUpcomingExpand(){ upcomingExpanded = !upcomingExpanded; loadUpcomingEvents(); }
+async function loadUpcomingEvents(){
+  const box = document.getElementById('upcomingEvents');
+  if(!box) return;
+  let entries;
+  try{
+    const j = await api('/entries?limit=200');
+    entries = j.entries || [];
+  }catch(_){ box.innerHTML=''; return; }
+  const nowMs = Date.now();
+  const items = [];
+  entries.forEach(e => {
+    const meta = e.meta || {};
+    (meta.events || []).forEach((ev, idx) => {
+      if(!ev || !ev.start_iso) return;
+      if(ev.dismissed) return;
+      const t = new Date(ev.start_iso);
+      if(isNaN(t)) return;
+      if(t.getTime() < nowMs - 86400000) return;
+      items.push({ev, idx, t, eid: e.id, image: e.image_file});
+    });
+  });
+  items.sort((a,b) => a.t - b.t);
+  // 去重：同 title 前 8 字 + 同日期同小时 → 仅保留第一条
+  const seenKey = new Set();
+  const deduped = [];
+  items.forEach(it => {
+    const t = it.t;
+    const k = (it.ev.title||'').slice(0,8) + '|' + (it.ev.start_iso||'').slice(0,16);
+    if(seenKey.has(k)) return;
+    seenKey.add(k);
+    deduped.push(it);
+  });
+  const finalItems = deduped;
+  if(!finalItems.length){ box.innerHTML=''; return; }
+  const apiBase = location.pathname.replace(/\/[^/]*$/,'').replace(/\/$/,'') + '-api';
+  let html = '<div class="upcoming-head"><span>未来事件 · '+finalItems.length+'</span><div class="line"></div></div>';
+  const shown = upcomingExpanded ? finalItems.length : Math.min(12, finalItems.length);
+  finalItems.slice(0, shown).forEach(({ev, idx, t, eid, image}) => {
+    const dStr = t.toLocaleDateString('zh-CN', {month:'2-digit', day:'2-digit', weekday:'short'});
+    const hm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+    html += '<div class="upcoming-item" data-eid="'+eid+'" data-idx="'+idx+'" onclick="openEntry(\''+eid+'\')">'+
+      '<div class="up-when"><div class="up-date">'+dStr+'</div><div class="up-time">'+hm+'</div></div>'+
+      '<div class="up-body">'+
+        '<div class="up-title">'+esc(ev.title||'事件')+'</div>'+
+        (ev.location?'<div class="up-loc">'+esc(ev.location)+'</div>':'')+
+      '</div>'+
+      '<a class="btn-cal compact" href="'+apiBase+'/entries/'+eid+'/ics" onclick="event.stopPropagation();dismissEvent(\''+eid+'\','+idx+',true)">加</a>'+
+      '<button class="btn-del" onclick="event.stopPropagation();dismissEvent(\''+eid+'\','+idx+',false)" title="忽略">×</button>'+
+    '</div>';
+  });
+  if(finalItems.length > 12){
+    html += '<button class="upcoming-more-btn" onclick="toggleUpcomingExpand()">'+(upcomingExpanded?'收起 ∧':'另 '+(finalItems.length-12)+' 件 ∨')+'</button>';
+  }
+  box.innerHTML = html;
+}
+
 async function loadCal(){
   const y=calCur.getFullYear(),m=calCur.getMonth()+1;
   document.getElementById('calTitle').textContent = y+' · '+String(m).padStart(2,'0');
+  // 加载未来事件 candidate 区
+  loadUpcomingEvents();
   let data;
   if(__bootCache && __bootCache.calendar && y===new Date().getFullYear() && m===new Date().getMonth()+1){
     data = __bootCache.calendar;
@@ -1138,25 +1300,71 @@ async function doAsk(){
   }
 }
 async function doOrganize(){
-  toast('整理中...');
+  const btn = document.querySelector('button[onclick="doOrganize()"]');
+  if(!btn) return;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.classList.add('busy');
+  let dots = 0;
+  const tick = setInterval(()=>{ dots=(dots+1)%4; btn.textContent='整理中' + '.'.repeat(dots); }, 350);
   try{
     const j = await api('/organize', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+    clearInterval(tick);
     if(j.ok){
-      toast('整理完成 · '+j.updated+' 条 · '+(j.summary||'').slice(0,30));
-      loadStats(); if(document.querySelector('#view-list.active')) loadList();
-    } else toast('整理失败：'+(j.reason||''));
+      btn.classList.remove('busy'); btn.classList.add('done');
+      btn.textContent = '✓ 已整理 · ' + j.updated + ' 条';
+      loadStats(); if(document.querySelector('#view-list.active')) loadList(true);
+      setTimeout(()=>{ btn.classList.remove('done'); btn.textContent = orig; btn.disabled = false; }, 2400);
+    } else {
+      btn.classList.remove('busy'); btn.classList.add('fail');
+      btn.textContent = '✗ 失败 · 点击重试';
+      setTimeout(()=>{ btn.classList.remove('fail'); btn.textContent = orig; btn.disabled = false; }, 2400);
+    }
   }catch(e){
-    toast('整理失败：'+e.message);
+    clearInterval(tick);
+    btn.classList.remove('busy'); btn.classList.add('fail');
+    btn.textContent = '✗ 失败 · 点击重试';
+    setTimeout(()=>{ btn.classList.remove('fail'); btn.textContent = orig; btn.disabled = false; }, 2400);
+  }
+}
+const KIND_LABELS = ['工具','种草','灵感','文章','教程','想法','待办','其它'];
+let kindFilter = '';
+function filterByKind(k){
+  kindFilter = (kindFilter === k) ? '' : k;
+  loadList();
+  // 只重渲染 chip 的 active 状态，不重抹 fetch 500 条
+  const box = document.getElementById('tagCloud');
+  if(box){
+    box.querySelectorAll('.tag').forEach(el => {
+      const label = (el.textContent||'').split('·')[0].trim();
+      el.classList.toggle('active', label === kindFilter);
+    });
   }
 }
 async function loadTags(){
-  let tags;
-  if(__bootCache && __bootCache.tags){ tags = __bootCache.tags; __bootCache.tags = null; }
-  else tags = await api('/tags');
+  // 启用固定 kind 分类集库：按 entries.meta.kind 计数，唯从 KIND_LABELS 里选
+  let entries;
+  try{
+    const j = await api('/entries?limit=500');
+    entries = j.entries || [];
+  }catch(_){ entries = []; }
+  const counts = Object.fromEntries(KIND_LABELS.map(k=>[k,0]));
+  entries.forEach(e => {
+    const meta = e.meta || {};
+    const hasLedger = !!(meta.ledger_candidate && (meta.ledger_candidate.is_expense || meta.ledger_candidate.amount));
+    const hasEvents = Array.isArray(meta.events) && meta.events.some(ev=>ev && ev.start_iso);
+    // 只统计「理」页会出现的条目
+    if(hasLedger || hasEvents) return;
+    let k = meta.kind || '其它';
+    if(!KIND_LABELS.includes(k)) k = '其它';
+    counts[k] = (counts[k]||0)+1;
+  });
   const box = document.getElementById('tagCloud');
-  if(!tags.length){box.innerHTML='<div class="empty" style="padding:20px;width:100%">还没有标签 · 先记几条再整理</div>';return}
-  box.innerHTML = tags.slice(0,30).map(t=>'<span class="tag" onclick="filterTag(\''+t.tag+'\')">'+esc(t.tag)+' · '+t.count+'</span>').join('');
+  const chips = KIND_LABELS.filter(k => counts[k] > 0)
+    .map(k => '<span class="tag '+(kindFilter===k?'active':'')+'" onclick="filterByKind(\''+k+'\')">'+k+' · '+counts[k]+'</span>');
+  box.innerHTML = chips.length ? chips.join('') : '<div class="empty" style="padding:20px;width:100%">还没有分类标签</div>';
 }
+function toggleTagCloud(){}
 function filterTag(t){
   switchTab('list');
   // simple filter via list endpoint
@@ -1231,6 +1439,15 @@ function catIconHtml(cat){
 let ledgerCategoryFilter = '';
 let ledgerSortBy = 'time';  // 'time' | 'amount'
 let ledgerTimeRange = 'month'; // 'month' | 'last' | '30d' | 'all'
+let ledgerOpenMenu = '';  // '' | 'time' | 'cat' | 'sort'
+function toggleLedgerMenu(name){
+  ledgerOpenMenu = (ledgerOpenMenu === name) ? '' : name;
+  renderLedger();
+}
+function pickLedgerTime(r){ ledgerTimeRange=['month','last','30d','all'].includes(r)?r:'month'; ledgerOpenMenu=''; renderLedger(); }
+function pickLedgerCat(c){ ledgerCategoryFilter=c||''; ledgerOpenMenu=''; renderLedger(); }
+function pickLedgerSort(s){ ledgerSortBy=(s==='amount')?'amount':'time'; ledgerOpenMenu=''; renderLedger(); }
+function resetLedgerFilters(){ ledgerTimeRange='month'; ledgerCategoryFilter=''; ledgerSortBy='time'; ledgerOpenMenu=''; }
 let __ledgerData = null;  // {pending, entries, stats} 全量缓存，category 切换不重发
 function escAttr(s){return esc(String(s||'')).replace(/"/g,'&quot;')}
 function fmtAmt(n){
@@ -1387,8 +1604,7 @@ function _ledgerGroupedEntries_OLD(entries){
 }
 async function loadLedger(){
   const box = document.getElementById('ledgerBox');
-  const exp = document.getElementById('ledgerExport');
-  if(exp) exp.href = API + '/ledger/export.csv';
+  // 账页不再有 export/refresh 按钮
   box.innerHTML = '<div class="ledger-empty">加载中</div>';
   let pending, entries, stats;
   try{
@@ -1431,10 +1647,23 @@ function renderLedger(){
   } else {
     filteredEntries.sort((a,b) => String(b.paid_at||'').localeCompare(String(a.paid_at||'')));
   }
-  let html = ledgerHeroHtml(stats, filteredEntries)
-           + ledgerTimeChipsHtml()
-           + ledgerChipsHtml(stats)
-           + ledgerSortHtml();
+  const rangeMap = {month:'本月',last:'上月','30d':'近 30 天',all:'全部'};
+  const sortMap = {time:'按时间',amount:'按金额'};
+  const catLabel = ledgerCategoryFilter ? ledgerCatLabel(ledgerCategoryFilter) : '全部类别';
+  const timeOpts = [['month','本月'],['last','上月'],['30d','近 30 天'],['all','全部']];
+  const catOpts = [['','全部类别'],...LEDGER_CATEGORIES.map(k=>[k,ledgerCatLabel(k)])];
+  const sortOpts = [['time','按时间'],['amount','按金额']];
+  function dd(name, label, opts, current, pickFn){
+    const open = ledgerOpenMenu === name;
+    const menu = open ? '<div class="ledger-dd-menu">'+opts.map(([k,v])=>'<button class="ledger-dd-item'+(k===current?' active':'')+'" onclick="'+pickFn+'(\''+k+'\')">'+esc(v)+'</button>').join('')+'</div>' : '';
+    return '<div class="ledger-dd '+(open?'open':'')+'"><button class="ledger-dd-btn'+(open?' active':'')+'" onclick="event.stopPropagation();toggleLedgerMenu(\''+name+'\')">'+esc(label)+' <span class="caret">'+(open?'∧':'∨')+'</span></button>'+menu+'</div>';
+  }
+  const filterBar = '<div class="ledger-filters">'+
+    dd('time', rangeMap[ledgerTimeRange]||'本月', timeOpts, ledgerTimeRange, 'pickLedgerTime')+
+    dd('cat', catLabel, catOpts, ledgerCategoryFilter, 'pickLedgerCat')+
+    dd('sort', sortMap[ledgerSortBy]||'按时间', sortOpts, ledgerSortBy, 'pickLedgerSort')+
+  '</div>';
+  let html = ledgerHeroHtml(stats, filteredEntries) + filterBar;
   if(pending.candidates && pending.candidates.length){
     html += '<div class="day-head"><span>待确认 · '+pending.candidates.length+'</span><div class="line"></div></div>';
     html += pending.candidates.map(ledgerCandidateHtml).join('');
@@ -1451,7 +1680,9 @@ function ledgerCandidateHtml(c){
   const failed = ledgerCandidateFailed(c);
   const amount = c.amount!==null && c.amount!==undefined && c.amount!=='' ? fmtAmt(c.amount)+' '+esc(c.currency||'CNY') : '待填';
   const cls = 'ledger-card pending'+(failed?' failed':'');
+  const thumb = c.source_image ? '<img class="ledger-card-thumb" src="'+MEDIA+'/images/'+c.source_image+'" loading="lazy" onclick="openEntry(\''+c.source_entry_id+'\')"/>' : '';
   return '<div class="'+cls+'">'+
+    thumb +
     '<div class="ledger-top"><div class="ledger-merchant">'+esc(c.merchant||'待识别账单')+'</div><div class="ledger-amount '+(amount==='待填'?'unknown':'')+'">'+amount+'</div></div>'+
     '<div class="ledger-meta">'+
       (c.paid_at?'<span>'+esc(fmtPaidAt(c.paid_at))+'</span>':'')+
@@ -1480,17 +1711,20 @@ function ledgerForm(c){
 function ledgerEntryHtml(e){
   const amount = e.amount!==null && e.amount!==undefined && e.amount!=='' ? fmtAmt(e.amount) : '';
   const cat = String(e.category||'other').toLowerCase();
-  const time = (e.paid_at||'').match(/T(\d{2}:\d{2})/);
-  const timeStr = time ? time[1] : '';
-  return '<div class="ledger-row" data-cat="'+cat+'">'+
-    '<div class="ledger-row-bar"></div>'+
+  let timeStr = '时间未知';
+  if(e.paid_at){
+    const m = String(e.paid_at).match(/^(\d{4}-\d{2}-\d{2})(?:T(\d{2}):(\d{2}))?/);
+    if(m) timeStr = m[1] + (m[2] ? ' '+m[2]+':'+m[3] : '');
+  }
+  const clickFn = e.source_entry_id ? 'openEntry(\''+e.source_entry_id+'\')' : '';
+  return '<div class="ledger-row" data-cat="'+cat+'"'+(clickFn?' onclick="'+clickFn+'" style="cursor:pointer"':'')+'>'+
     '<div class="ledger-row-ico">'+catIconHtml(cat)+'</div>'+
     '<div class="ledger-row-body">'+
-      '<div class="ledger-row-merchant">'+esc(e.merchant||'账单')+'</div>'+
-      (timeStr ? '<div class="ledger-row-meta">'+timeStr+'</div>' : '')+
+      '<div class="ledger-row-merchant">'+esc((function(s){s=s||'账单';return s.length>12?s.slice(0,12)+'…':s;})(e.merchant))+'</div>'+
+      '<div class="ledger-row-meta">'+esc(timeStr)+'</div>'+
     '</div>'+
     '<div class="ledger-row-amt">¥ '+amount+'</div>'+
-    '<button class="ledger-row-x" onclick="deleteLedgerEntry(\''+e.id+'\')" title="删除">×</button>'+
+    '<button class="btn-del" onclick="event.stopPropagation();confirmDeleteLedger(this,\''+e.id+'\')" title="删除">×</button>'+
   '</div>';
 }
 function toggleLedgerForm(id){
@@ -1531,12 +1765,12 @@ async function rejectLedger(id){
   toast('已删除');
   loadLedger();
 }
-async function deleteLedgerEntry(id){
-  if(!confirm('删除这条已入账记录？')) return;
+async function deleteLedgerEntryNow(id){
   await api('/ledger/entries/'+id, {method:'DELETE'});
   toast('已删除');
   loadLedger(); loadStats();
 }
+async function deleteLedgerEntry(id){ return deleteLedgerEntryNow(id); }
 
 // ===== stats =====
 async function loadStats(seed){
@@ -1557,6 +1791,7 @@ function toast(msg){
 
 // ===== boot: single-shot prefetch =====
 let __bootCache = null;
+let __listCache = null;
 async function bootPrefetch(initialTab){
   try{
     __bootCache = await api('/boot?tab='+encodeURIComponent(initialTab||'rec'));

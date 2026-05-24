@@ -7,6 +7,116 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.28] - 2026-05-24
+### Added
+- 账本去重：同 merchant + 同 amount + 24h 内 → 后一条标记 duplicate_of，不创建新 ledger_entry
+- 「历」候选区前端去重：同 title 前 8 字 + 同日同小时 → 只显 1 条
+- 历史清理：去除已有重复账目和重复事件
+
+## [0.6.27] - 2026-05-24
+### Changed
+- 风景/无信息截图：AI 识别完全无内容时直接删除 entry + 删图，不再产生「（空条目）」垃圾
+- 历史清理：删除所有 final_text/title/summary/events/ledger 全空的 entry
+
+## [0.6.26] - 2026-05-24
+### Changed
+- AI prompt 加入模糊时间推断规则（今天/明天/后天/本周X/下周X/这周末），不再因为"模糊"丢弃事件
+- 历史回扫：空条目（final_text/title 都空）kind 强制改回「其它」，修复 7 条种草误标
+
+## [0.6.24] - 2026-05-24
+### Added
+- 「理」每条加来源 badge：录音 / 截图
+- inline 删除确认：点 × 变「删除?」红字 2.2s 倒计时，再点执行（替换浏览器 confirm）
+- 「立刻整理今天」按钮 busy/done/fail 状态 + 动态 ...
+- 「历」未来事件 >12 条折叠，「另 N 件 ∨」按钮展开/收起
+- chip 按下 translateY(1px) 微反馈
+### Fixed
+- iOS input 焦点缩放（全局 font-size:16px）
+- 账页 hero 数字小屏溢出（<360px 改 34px）
+
+## [0.6.23] - 2026-05-24
+### Changed
+- 账页筛选改 3 个 dropdown（时间/类别/排序），点开浮层选择
+- 切 tab 自动 reset 账页筛选状态
+- 「理」kind chip 点击切换无需 refetch，~200ms 延迟消除（loadList 加内存缓存 __listCache）
+
+## [0.6.17] - 2026-05-24
+### Changed
+- 账本页彻底单色（方案 A）：删除 12 个 category 的紫橙蓝粉绿色条
+- row 左侧色条全隐藏，类别只靠文字 + 点阵 icon 区分
+- 全站只保留 1 个 accent：Nothing Red (var(--red))
+
+## [0.6.15] - 2026-05-23
+### Changed
+- 全站按钮 token 化：`.btn-del`（删除/忽略） + `.btn-cal`（加日历，含 compact/block 变体）
+- 删除 5 个 legacy class，HTML 引用全部迁移到新 class
+- 「账单」删除已有二次确认，与「理」对齐
+- .tag-more 改成 dashed 描边 chip，与 .tag 对齐
+
+## [0.6.13] - 2026-05-23
+### Added
+- 统一交互：「理」row 右上角 × 删除按钮（与「账」一致）
+- 「历」未来事件 candidate 加「忽略」× 按钮
+- 点击「加」或「忽略」后调用 dismiss API，候选区不再重复出现
+- backend: POST /api/entries/{id}/events/{idx}/dismiss
+### Fixed
+- 加日历后候选区仍显示同条事件的 bug
+
+## [0.6.12] - 2026-05-23
+### Changed
+- 「理」tag cloud 改成固定 8 类（工具/种草/灵感/文章/教程/想法/待办/其它），AI 不再自由发挥
+- entries.meta 加 kind 字段，AI prompt 强制从 8 个枚举里选 1 个
+- events 严管：一句聊天最多 1 个 event，禁止派生「提前确认」类提醒；模糊时间用 09:00 兜底不编造
+- 历史回扫：账单类 entry 清掉 route knowledge；按 final_text/tags 推断 kind
+
+## [0.6.11] - 2026-05-23
+### Changed
+- 「理」主页卡片不再展示截图（加载失败的图标也不出），所有图统一进详情页才看
+- 「理」过滤收紧：只要有 ledger_candidate 就强制跳过（不再尊重旧 route knowledge）
+- tag cloud 高频 (≥2) 默认显示，低频折叠 +N 展开
+
+## [0.6.10] - 2026-05-23
+### Changed
+- paid_at 兜底：AI 抽不到消费时间时，回退用截图 entry 的 created_at (UTC+8 ISO)
+
+## [0.6.9] - 2026-05-23
+### Changed
+- 账单列表不再显示截图缩略图，icon 位回到点阵 SVG；点击行进 entry 详情看原图
+
+## [0.6.8] - 2026-05-23
+### Changed
+- 账单时间严格用消费时间（paid_at），AI 找不到就留空，不再回退到截图时间
+- 前端账单 row 显示完整 YYYY-MM-DD HH:MM；找不到显示「时间未知」
+
+## [0.6.7] - 2026-05-23
+### Changed
+- 账单不再需要手动确认：AI 抽出的账单数据**直接进 ledger_entries**，candidate 表只保留作历史/反悔通道
+- 同一 source_entry 多次更新同一条 entry（不重复创建）
+
+## [0.6.6] - 2026-05-23
+### Changed
+- AI prompt 严格区分日历事件 vs 信息提醒：发货/物流/优惠券/退货/退款/抢购等不再进 events
+- 账本去掉「导出 / 刷新」按钮，干净
+- 账本 candidate 卡片顶部显示原始截图，点击放大
+- 账本已入账 row 用截图缩略替代点阵 icon，整行可点开看原 entry
+
+## [0.6.5] - 2026-05-23
+### Changed
+- 后端 VISION_PROMPT 升级：明确 route 多值（bill/calendar/knowledge），混合截图双落地
+- 后端 organize prompt 升级：综合 entries + 当日账单 + 未来事件，生成 100-150 字叙述话
+- 「历」tab 顶部新增「未来事件」候选区，所有未来 events 集中展示 + 加日历按钮
+
+
+## [0.6.4] - 2026-05-23
+### Changed
+- 「理」tab 路由过滤：
+  - 录音和无图文本 → 「理」
+  - 纯账单截图（只 ledger 无 knowledge）→ 跳过（走「账」）
+  - 纯日历截图（只 events 无 knowledge）→ 跳过（走「历」）
+  - 混合类型（带 knowledge 或同时有多 route）→ 仍在「理」
+- 单卡片 tag 最多 3 个，余数 +N 显示
+
+
 ## [0.6.3] - 2026-05-23
 ### Changed
 - 合并 personal-skill 远端 5d4d832 typography 改动

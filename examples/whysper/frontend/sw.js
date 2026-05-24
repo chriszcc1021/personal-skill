@@ -1,5 +1,5 @@
 // Whysper SW - minimal offline shell
-const CACHE='whysper-v15-typography-merge';
+const CACHE='whysper-v41-strict-dedup';
 const ASSETS=['./','./index.html','./manifest.webmanifest'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
 self.addEventListener('activate',e=>{
