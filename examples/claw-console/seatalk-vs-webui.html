@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SeaTalk AI vs Web UI 平台对比</title>
+<style>
+  :root{
+    --bg:#0a0a0a; --fg:#ededed; --mute:#8a8a8a; --line:#1f1f1f;
+    --good:#3ecf8e; --bad:#ff5c5c; --warn:#ffb84d; --accent:#ff3b3b;
+    --card:#111;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:ui-sans-serif,-apple-system,"Inter","PingFang SC",sans-serif;
+    line-height:1.55;padding:48px 24px;max-width:1080px;margin:0 auto}
+  h1{font-size:clamp(32px,5vw,56px);font-weight:800;letter-spacing:-.02em;margin:0 0 8px}
+  h1 .dot{color:var(--accent)}
+  .sub{color:var(--mute);font-size:14px;text-transform:uppercase;letter-spacing:.14em;margin-bottom:48px}
+  h2{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--mute);
+    margin:56px 0 16px;font-weight:600;border-top:1px solid var(--line);padding-top:24px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px}
+  .card h3{margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .card .tag{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mute);margin-bottom:18px}
+  ul{margin:0;padding:0;list-style:none}
+  li{padding:10px 0;border-bottom:1px dashed var(--line);font-size:15px;display:flex;gap:10px;align-items:flex-start}
+  li:last-child{border-bottom:0}
+  .ic{flex:0 0 18px;font-weight:700;font-size:13px;margin-top:2px}
+  .good .ic{color:var(--good)} .bad .ic{color:var(--bad)} .warn .ic{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+  th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mute);font-weight:600}
+  td.dim{color:var(--mute)}
+  .score{display:inline-block;min-width:32px;text-align:center;font-weight:700;font-family:ui-monospace,monospace}
+  .s-good{color:var(--good)} .s-bad{color:var(--bad)} .s-mid{color:var(--warn)}
+  .roadmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .r{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;position:relative}
+  .r .num{position:absolute;top:14px;right:16px;font-family:ui-monospace,monospace;
+    font-size:11px;color:var(--mute);letter-spacing:.1em}
+  .r h4{margin:0 0 6px;font-size:15px;font-weight:700}
+  .r p{margin:0;font-size:13px;color:var(--mute);line-height:1.5}
+  .pri{display:inline-block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    padding:3px 7px;border-radius:4px;margin-top:10px;font-weight:600}
+  .p-hi{background:#3a1212;color:#ff7a7a}
+  .p-md{background:#3a2c12;color:#ffb84d}
+  .p-lo{background:#12302a;color:#3ecf8e}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);
+    font-size:12px;color:var(--mute);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .verdict{margin-top:24px;padding:20px 24px;border-left:3px solid var(--accent);
+    background:#150505;border-radius:0 12px 12px 0;font-size:15px}
+  .verdict b{color:var(--fg)}
+</style>
+</head>
+<body>
+
+<h1>SeaTalk AI <span style="color:var(--mute)">vs</span> Web UI 平台<span class="dot">.</span></h1>
+<div class="sub">同一个模型 / 不同载体 / 不同上限</div>
+
+<h2>① 维度对比</h2>
+<div class="grid">
+
+  <div class="card">
+    <h3>SeaTalk AI 对话</h3>
+    <div class="tag">IM 内嵌 · 黑盒模式</div>
+    <ul>
+      <li class="good"><span class="ic">+</span>零切换：人已经在 SeaTalk，开窗即聊</li>
+      <li class="good"><span class="ic">+</span>群内可 @，社交化使用</li>
+      <li class="good"><span class="ic">+</span>移动端原生体验</li>
+      <li class="bad"><span class="ic">−</span>纯文本气泡，长代码/diff 被压扁</li>
+      <li class="bad"><span class="ic">−</span>工具调用黑盒，看不到执行过程</li>
+      <li class="bad"><span class="ic">−</span>无附件渲染（PDF/HTML/截图弱）</li>
+      <li class="bad"><span class="ic">−</span>历史检索差，翻记录到死</li>
+      <li class="bad"><span class="ic">−</span>无 session 概念，单线程</li>
+      <li class="bad"><span class="ic">−</span>无配置可视（模型/reasoning 全黑）</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Web UI 平台</h3>
+    <div class="tag">工作台 · 白盒模式</div>
+    <ul>
+      <li class="good"><span class="ic">+</span>工具调用可见，逐步可审计</li>
+      <li class="good"><span class="ic">+</span>富媒体：附件 / 截图 / HTML embed</li>
+      <li class="good"><span class="ic">+</span>代码高亮 / 长 diff 完整展示</li>
+      <li class="good"><span class="ic">+</span>多 session 并行 + 子 agent 视图</li>
+      <li class="good"><span class="ic">+</span>session 列表 & 搜索可回看</li>
+      <li class="good"><span class="ic">+</span>/status / reasoning / model 切换</li>
+      <li class="good"><span class="ic">+</span>不污染工作群消息流</li>
+      <li class="warn"><span class="ic">~</span>需主动打开页面，无 push 入侵感</li>
+      <li class="warn"><span class="ic">~</span>移动端体验弱于原生 IM</li>
+    </ul>
+  </div>
+
+</div>
+
+<h2>② 评分卡（满分 5）</h2>
+<table>
+  <thead><tr><th>维度</th><th>SeaTalk AI</th><th>Web UI</th><th class="dim">说明</th></tr></thead>
+  <tbody>
+    <tr><td>工具可观测性</td><td><span class="score s-bad">1</span></td><td><span class="score s-good">5</span></td><td class="dim">命令/读写/输出是否可见</td></tr>
+    <tr><td>富媒体渲染</td><td><span class="score s-bad">1</span></td><td><span class="score s-good">5</span></td><td class="dim">代码块/HTML/附件</td></tr>
+    <tr><td>多任务并行</td><td><span class="score s-bad">1</span></td><td><span class="score s-good">5</span></td><td class="dim">session / 子 agent</td></tr>
+    <tr><td>历史检索</td><td><span class="score s-bad">2</span></td><td><span class="score s-good">5</span></td><td class="dim">回看 / 搜索</td></tr>
+    <tr><td>配置透明</td><td><span class="score s-bad">1</span></td><td><span class="score s-good">5</span></td><td class="dim">模型/参数可见</td></tr>
+    <tr><td>触达成本</td><td><span class="score s-good">5</span></td><td><span class="score s-mid">3</span></td><td class="dim">是否要切应用</td></tr>
+    <tr><td>移动端</td><td><span class="score s-good">5</span></td><td><span class="score s-mid">3</span></td><td class="dim">原生 vs 浏览器</td></tr>
+    <tr><td>社交属性</td><td><span class="score s-good">5</span></td><td><span class="score s-bad">1</span></td><td class="dim">群内 @ / 协作</td></tr>
+    <tr style="background:#0d0d0d"><td><b>总分</b></td><td><b class="s-bad">21</b></td><td><b class="s-good">32</b></td><td class="dim">工程场景 Web UI 完胜</td></tr>
+  </tbody>
+</table>
+
+<div class="verdict">
+  <b>结论 ——</b> 模型一样，<b>载体决定上限</b>。SeaTalk 适合「轻问答 / 顺手聊」，
+  Web UI 适合「干活 / 调试 / 工程闭环」。两者不是替代关系，是<b>同一个 agent 的两张脸</b>。
+</div>
+
+<h2>③ 平台改进方向</h2>
+<div class="roadmap">
+
+  <div class="r">
+    <div class="num">01</div>
+    <h4>移动端 PWA / 原生壳</h4>
+    <p>当前移动浏览器体验是短板。做 PWA 或薄壳 App，补齐 push 通知 + 离线消息队列。</p>
+    <span class="pri p-hi">P0</span>
+  </div>
+
+  <div class="r">
+    <div class="num">02</div>
+    <h4>SeaTalk ↔ Web UI 互通</h4>
+    <p>SeaTalk 触发的任务能在 Web UI 接手继续，附件 / 上下文双向同步。把两张脸合成一个身份。</p>
+    <span class="pri p-hi">P0</span>
+  </div>
+
+  <div class="r">
+    <div class="num">03</div>
+    <h4>工具调用回放</h4>
+    <p>每个 tool call 可单步回放、diff 文件改动、重跑某一步，类似 Jupyter 单元格。</p>
+    <span class="pri p-hi">P0</span>
+  </div>
+
+  <div class="r">
+    <div class="num">04</div>
+    <h4>Session 协作 / 共享</h4>
+    <p>把一个 session 一键分享给同事只读 / 可评论，省去截图扔群的中间环节。</p>
+    <span class="pri p-md">P1</span>
+  </div>
+
+  <div class="r">
+    <div class="num">05</div>
+    <h4>子 agent 拓扑视图</h4>
+    <p>当前 sessions_spawn 出来的子任务靠列表展示。需要 DAG / 树状可视化看依赖和阻塞。</p>
+    <span class="pri p-md">P1</span>
+  </div>
+
+  <div class="r">
+    <div class="num">06</div>
+    <h4>成本面板</h4>
+    <p>实时 token / 折后金额 / 模型分布；每个 session 单独算账，老板要数能直接导出。</p>
+    <span class="pri p-md">P1</span>
+  </div>
+
+  <div class="r">
+    <div class="num">07</div>
+    <h4>Memory 编辑器</h4>
+    <p>MEMORY.md / skill 文件直接在 UI 里编辑、diff、版本回滚，不用切 IDE。</p>
+    <span class="pri p-md">P1</span>
+  </div>
+
+  <div class="r">
+    <div class="num">08</div>
+    <h4>Skill 市场</h4>
+    <p>Skill 一键安装 / 评分 / 私有仓库；当前靠手动 clone 到 ~/.openclaw/workspace/skills。</p>
+    <span class="pri p-md">P1</span>
+  </div>
+
+  <div class="r">
+    <div class="num">09</div>
+    <h4>语音输入 / TTS 默认开启</h4>
+    <p>移动场景下打字慢，PTT 录入 + TTS 朗读关键回复，匹配 SeaTalk 已有的语音习惯。</p>
+    <span class="pri p-lo">P2</span>
+  </div>
+
+  <div class="r">
+    <div class="num">10</div>
+    <h4>权限分层 / 审批流</h4>
+    <p>对外发邮件 / 跑生产命令走二次确认；目前靠 prompt 自觉，企业场景需要硬约束。</p>
+    <span class="pri p-lo">P2</span>
+  </div>
+
+  <div class="r">
+    <div class="num">11</div>
+    <h4>多模态画布</h4>
+    <p>白板式 canvas：拖文件 / 截图 / 链接进来，agent 自动理解上下文，不再线性 chat。</p>
+    <span class="pri p-lo">P2</span>
+  </div>
+
+  <div class="r">
+    <div class="num">12</div>
+    <h4>本地代理 / 内网穿透托管</h4>
+    <p>现在还要手开 cloudflare tunnel。平台直接管理 expose / 域名 / 鉴权，一键发布。</p>
+    <span class="pri p-lo">P2</span>
+  </div>
+
+</div>
+
+<footer>
+  <span>牛子哥 · 2026-05-19</span>
+  <span>projects/console/seatalk-vs-webui.html</span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>牛子哥 · 《超自然行动组》认知报告</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700;800&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-primary:#C0504D; --brand-secondary:#997E5A;
+  --brand-dark:#4D4D4D; --brand-medium:#7F7F7F; --brand-light:#BFBFBF;
+  --brand-bg:#E9D7D3; --brand-bg-alt:#F5F0EE;
+  --page:#F5F0EE; --paper:#FFFFFF; --ink:#333333; --line:#d8cac7;
+  --shadow:0 10px 28px rgba(77,77,77,.10);
+  --font-display:'EB Garamond','Noto Serif SC','Garamond','Georgia',serif;
+  --font-body:'EB Garamond','Noto Serif SC','Garamond','Georgia',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--page);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.top-rule{height:6px;background:var(--brand-primary);border-right:28vw solid var(--brand-secondary)}
+.wrap{width:min(1160px,calc(100% - 44px));margin:0 auto;padding:48px 0 96px}
+
+/* cover */
+.cover{padding:56px 0 36px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--font-display);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--brand-secondary);font-weight:600}
+.cover h1{font-family:var(--font-display);font-size:46px;line-height:1.15;margin:18px 0 14px;font-weight:700;color:#222;letter-spacing:-.01em}
+.cover h1 em{font-style:normal;color:var(--brand-primary)}
+.lead{font-size:19px;line-height:1.7;color:#444;max-width:780px;margin:0 0 22px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.meta .pill{font-size:13px;padding:5px 12px;border-radius:999px;background:var(--brand-bg);color:var(--brand-dark);font-weight:600;letter-spacing:.02em}
+
+/* nav */
+nav.toc{position:sticky;top:0;z-index:10;background:var(--page);border-bottom:1px solid var(--line);margin:0 -22px;padding:10px 22px;display:flex;gap:22px;flex-wrap:wrap;font-size:14px;font-weight:700;letter-spacing:.02em}
+nav.toc a{color:var(--brand-dark);text-decoration:none;padding:6px 0;border-bottom:2px solid transparent;transition:.15s}
+nav.toc a:hover{color:var(--brand-primary);border-bottom-color:var(--brand-primary)}
+
+/* sections */
+section{margin-top:56px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:36px 40px;box-shadow:var(--shadow)}
+section h2{font-family:var(--font-display);font-size:30px;font-weight:700;margin:0 0 24px;color:#222;display:flex;align-items:center;gap:14px;letter-spacing:-.01em}
+section h2 .num{display:inline-flex;width:36px;height:36px;border-radius:50%;background:var(--brand-primary);color:#fff;font-size:16px;font-weight:700;align-items:center;justify-content:center;font-family:var(--font-display)}
+section h3{font-family:var(--font-display);font-size:21px;font-weight:700;margin:28px 0 12px;color:#333;border-left:4px solid var(--brand-primary);padding-left:12px}
+section p{margin:8px 0 14px}
+section ul,section ol{margin:8px 0 18px;padding-left:22px}
+section li{margin:6px 0}
+section strong{color:#222}
+section em{color:var(--brand-primary);font-style:normal;font-weight:600}
+
+/* kpi grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:18px 0 26px}
+.kpi{padding:18px 18px;border:1px solid var(--line);border-radius:6px;background:var(--brand-bg-alt)}
+.kpi .v{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--brand-primary);line-height:1.1}
+.kpi .l{font-size:13px;color:var(--brand-dark);margin-top:6px;letter-spacing:.04em}
+.kpi .s{font-size:12px;color:var(--brand-medium);margin-top:4px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;margin:14px 0 22px;font-size:14.5px}
+thead th{background:var(--brand-bg-alt);text-align:left;padding:11px 14px;font-weight:700;color:var(--brand-dark);border-bottom:2px solid var(--brand-primary);font-size:13px;letter-spacing:.04em}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:nth-child(even){background:#FBF7F5}
+
+/* attitude / freq pills */
+.pill-pos,.pill-neg,.pill-neu,.pill-watch{display:inline-block;font-size:12px;padding:3px 9px;border-radius:999px;font-weight:600;letter-spacing:.04em}
+.pill-pos{background:#dce9d8;color:#3d6b2c}
+.pill-neg{background:#f0d3d1;color:#9b2722}
+.pill-neu{background:#e8e1d6;color:#6b5a3f}
+.pill-watch{background:#f5dcb3;color:#7a5114}
+
+/* two col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.two-col .col{padding:18px 22px;border:1px solid var(--line);border-radius:6px;background:var(--brand-bg-alt)}
+.two-col .col h4{font-family:var(--font-display);font-size:17px;margin:0 0 10px;color:var(--brand-primary);letter-spacing:.02em}
+.col ul{margin:6px 0 0;padding-left:18px}
+
+/* conclusion */
+.conclusion{background:linear-gradient(0deg,var(--brand-bg) 0,var(--brand-bg) 100%);border:none;border-left:6px solid var(--brand-primary);padding:28px 34px}
+.conclusion h2{margin-top:0}
+.conclusion p{font-size:17px;line-height:1.75}
+
+/* source row */
+.src{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--brand-medium);line-height:1.7}
+.src strong{color:var(--brand-dark)}
+.src code{background:var(--brand-bg-alt);padding:2px 6px;border-radius:3px;font-size:12px}
+
+@media (max-width:720px){
+  .wrap{padding:24px 0 56px}
+  .cover h1{font-size:32px}
+  section{padding:24px 22px}
+  .two-col{grid-template-columns:1fr}
+}
+@media print{
+  @page{size:A4;margin:14mm 13mm}
+  nav.toc{display:none}
+  section{box-shadow:none;page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="top-rule"></div>
+<div class="wrap">
+
+<header class="cover">
+  <div class="eyebrow">竞品认知 · 内部研究稿 · 2026-05-19</div>
+  <h1>《超自然行动组》—— 一款<em>赛道空白 + 抄得对路 + 视频时代红利</em>的三重叠加爆款</h1>
+  <p class="lead">基于 fastpublish 海外发行评估报告（刘伟，2026-05-18） + 公开评测 / 抖音 / B站 / TapTap / Apple Store 评论 / 巨人财报 综合，牛子哥给出对这款游戏的当前认知。</p>
+  <div class="meta">
+    <span class="pill">巨人网络 002558.SZ</span>
+    <span class="pill">NIGHT STUDIOS 自研</span>
+    <span class="pill">多人合作微恐 · 搜打撤</span>
+    <span class="pill">2025-01-23 国内上线</span>
+    <span class="pill">海外未发</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#a">国内基本盘</a>
+  <a href="#b">核心卖点</a>
+  <a href="#c">核心问题</a>
+  <a href="#d">玩家声音</a>
+  <a href="#e">出海路径</a>
+  <a href="#f">一句结论</a>
+</nav>
+
+<section id="a">
+  <h2><span class="num">1</span>国内基本盘 · 数据硬</h2>
+  <p>国内上线一年，几乎所有核心指标都打破巨人历史。Q1 2026 净利预增 <strong>&gt;187%</strong>，几乎全部由这一款拉动。</p>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="v">1,000万</div><div class="l">DAU 峰值</div><div class="s">2026-02 · 网易财经</div></div>
+    <div class="kpi"><div class="v">100万+</div><div class="l">同时在线</div><div class="s">2025-07 · GameLook</div></div>
+    <div class="kpi"><div class="v">TOP 4</div><div class="l">iOS 畅销榜</div><div class="s">最高 · 百度百科</div></div>
+    <div class="kpi"><div class="v">30亿+</div><div class="l">全网视频播放</div><div class="s">抖音+B站+快手累计</div></div>
+    <div class="kpi"><div class="v">236万</div><div class="l">抖音官号粉丝</div><div class="s">5088万+ 点赞</div></div>
+    <div class="kpi"><div class="v">+187%</div><div class="l">巨人 Q1 净利预增</div><div class="s">主要由本作驱动</div></div>
+  </div>
+  <p style="color:var(--brand-medium);font-size:14px;margin-top:-6px"><em>注：</em>具体留存率（次留 / 7留 / 30留）公开渠道无披露，券商研报只用"用户粘性强"定性描述。</p>
+</section>
+
+<section id="b">
+  <h2><span class="num">2</span>核心卖点 · 真稀缺</h2>
+  <table>
+    <thead><tr><th style="width:30%">差异化</th><th style="width:35%">行业现状</th><th>本作位置</th></tr></thead>
+    <tbody>
+      <tr><td><strong>手游侧微恐合作品类全球唯一破百万同接</strong></td><td>Lethal Company / R.E.P.O / PEAK 都在 Steam，峰值不过十几万</td><td><span class="pill-pos">蓝海补位</span> 手游侧无强力竞争</td></tr>
+      <tr><td>一人玩恐怖，多人玩搞笑</td><td>硬核恐怖游戏受众窄</td><td><span class="pill-pos">传播力</span> 视频时代天然契合</td></tr>
+      <tr><td>AI 大模型驱动 NPC（2026-01 上线）</td><td>行业标配脚本 AI</td><td><span class="pill-pos">差异化</span> 怪物语音 / 模仿真人 / 整活</td></tr>
+      <tr><td>中式 oriental folklore（鬼新娘 / 傩戏 / 兵俑）</td><td>西方鬼屋 / SCP / Lovecraftian 主导</td><td><span class="pill-pos">题材稀缺</span> 海外卖点</td></tr>
+      <tr><td>休闲化搜打撤，主"搜"轻"打"</td><td>Dark and Darker 硬核竞技已两款停服（KRAFTON / 腾讯）</td><td><span class="pill-pos">大 DAU 友好</span> 路径已验证</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="c">
+  <h2><span class="num">3</span>核心问题 · 部分致命</h2>
+  <div class="two-col">
+    <div class="col">
+      <h4>口碑层面</h4>
+      <ul>
+        <li><strong>缝合争议</strong>：被广泛指抄《致命公司》+《第五人格》，原创性饱受质疑</li>
+        <li><strong>主播负面事件</strong>拖累社区氛围（出轨 / 威胁前女友）</li>
+        <li><strong>未成年大额充值纠纷</strong>（2026-03 多家媒体曝光，退款难）</li>
+        <li><strong>公屏涉黄引流</strong>泛滥，监管不足</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>产品层面</h4>
+      <ul>
+        <li><strong>外挂泛滥</strong>：透视 / 自瞄横行，反外挂力度薄弱，举报形同虚设</li>
+        <li><strong>内容枯竭快</strong>：地图 / 怪物种类有限，重复感 1-2 月就堆积</li>
+        <li><strong>新手引导几乎缺失</strong>，老玩家垄断棺材点资源</li>
+        <li><strong>匹配 / 平衡差</strong>：单排崩、判定不准、穿模穿墙、移动端手感生涩</li>
+        <li><strong>付费虚高</strong>：8888 灵契 / 368 金砖单角色，性价比低</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:18px;color:var(--brand-medium);font-size:14px"><em>注：</em>民间流传"70% 玩家退坑"，来源不严谨但社媒情绪普遍。Apple Store / TapTap 评分两极分化明显。</p>
+</section>
+
+<section id="d">
+  <h2><span class="num">4</span>玩家声音 · 社媒采样</h2>
+  <table>
+    <thead><tr><th style="width:14%">立场</th><th style="width:20%">来源</th><th>关键说法</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill-pos">正向</span></td><td>抖音 / 直播切片</td><td>"一人玩恐怖，多人玩搞笑" — 整活向 UGC 量大，社交属性是核心</td></tr>
+      <tr><td><span class="pill-pos">正向</span></td><td>OurPlay 评测</td><td>上手门槛低、技能多样、画风独特，Z 世代小设计（怪物模仿语音、UGC 鬼屋）传播力强</td></tr>
+      <tr><td><span class="pill-watch">中性</span></td><td>TapTap 长评</td><td>玩法有意思，但内容量明显不够，希望加快出新地图新怪</td></tr>
+      <tr><td><span class="pill-neg">负向</span></td><td>TapTap / Apple Store</td><td>外挂太多，举报没用，单排基本崩盘</td></tr>
+      <tr><td><span class="pill-neg">负向</span></td><td>抖音 "为什么塌了"</td><td>抄袭实锤 + 运营摆烂 + 皮肤虚高，"开服三个月就觉得没东西玩了"</td></tr>
+      <tr><td><span class="pill-neg">负向</span></td><td>极目新闻 / 媒体曝光</td><td>未成年人充值数千元退款无门，公屏涉黄引流持续</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="e">
+  <h2><span class="num">5</span>海外出海判断</h2>
+  <p><strong>结论：审慎推荐出海，但巨人海外发行 infra 是最大变量</strong>（不像网易 / 腾讯 / 米哈游 / 莉莉丝有成熟体系）。产品本身稀缺性还在，能不能复制看两件事：补齐发行能力 + 把商业化重做一遍。</p>
+  <table>
+    <thead><tr><th>阶段</th><th>市场</th><th>目标</th><th>判定</th></tr></thead>
+    <tbody>
+      <tr><td>P0 · 0-3M</td><td>港澳台 + 海外华人</td><td>语言外推验证 + 海外节奏建立</td><td><span class="pill-pos">首选</span></td></tr>
+      <tr><td>P1 · 3-9M</td><td>日本</td><td>非华语接受度 + 整活直播红利</td><td><span class="pill-pos">强推</span></td></tr>
+      <tr><td>P2 · 9-18M</td><td>北美 / 西欧（+ PC / Steam 同步）</td><td>接 Lethal Company 基本盘</td><td><span class="pill-watch">条件许可</span></td></tr>
+      <tr><td>P3 · 看 P1 结果</td><td>越南 / 泰国选择性</td><td>流量市场扩量</td><td><span class="pill-neu">可选</span></td></tr>
+      <tr><td>不推荐首发</td><td>韩国（infra 缺失）</td><td>—</td><td><span class="pill-neg">缓</span></td></tr>
+      <tr><td>不推荐</td><td>印尼 / 马来 / 中东 / 印度</td><td>题材合规 / 结构不合</td><td><span class="pill-neg">略</span></td></tr>
+    </tbody>
+  </table>
+  <h3>核心商业化必须重做</h3>
+  <p>国内靠<em>中式时装 + 国漫 IP 联动</em>（敦煌 / 傩戏 / 叶罗丽 / 景德镇）<strong>这套在海外不灵</strong>，需要重建本地 IP 联动池 + 重新定价（日本 ARPU 高但对抽卡敏感，时装定价偏高问题会暴露）。</p>
+</section>
+
+<section id="f" class="conclusion">
+  <h2><span class="num">∎</span>牛子哥的一句话结论</h2>
+  <p>国内 1000 万 DAU 是真的，但很大程度是<strong>「赛道空白 + 抄得对路 + 视频时代红利」</strong>三重叠加；海外能不能复制，看巨人能不能<strong>补齐发行能力</strong>，以及<strong>把商业化重做一遍</strong>。产品本身的稀缺性窗口还在，但窗口期不会太长 —— PEAK / R.E.P.O 这些西方鼻祖热度回落留出来的空当，可能 2026 年底就有人来填。</p>
+</section>
+
+<div class="src">
+  <p><strong>源 / 时间窗 / 口径</strong></p>
+  <ul>
+    <li>主报告：<code>fastpublish/reports/2026-05-18-supernatural-action-squad-overseas-potential.md</code>（commit <code>74e62e9</code>，刘伟产出）</li>
+    <li>社媒采样：抖音 / B 站 / TapTap / Apple Store / OurPlay / 极目新闻 / 网易财经 / GameLook / 百度百科</li>
+    <li>财报数据：巨人网络 2025 年报 + 2026 Q1 预增公告</li>
+    <li>采样时间：2026-05-19 17:00 GMT+8（牛子哥）</li>
+    <li>口径说明：留存率公开渠道无披露，相关数字均为定性描述或区间[推断]。社媒情绪为采样观察，非严谨问卷调研。</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>
