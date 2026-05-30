@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>设置 · 肌肉基金</title>
+<link rel="stylesheet" href="common.css">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  h1 { font-family:"Caveat",cursive; font-size: 52px; margin: 10px 0;}
+  .card + .card { margin-top:18px;}
+  .member-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 0; border-bottom: 1px dashed #ddd;
+  }
+  .member-row:last-child{border-bottom:none;}
+  .mini { width: 48px; height: 48px; background: var(--tea); border-radius:8px; display:inline-flex; align-items:center; justify-content:center; margin-right:10px;}
+  .mini svg { width: 100%; height:100%; }
+  textarea { width:100%; min-height: 120px; border:2px solid var(--ink); border-radius:8px; padding:8px; font-family: monospace; font-size:12px;}
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<script>MFNav.renderNav('settings.html');</script>
+<div class="container">
+  <h1>设置</h1>
+
+  <div class="card">
+    <h3 style="margin-top:0">💸 罚款金额</h3>
+    <p class="muted">每个工作日不打卡，每个人扣这么多进基金。</p>
+    <div class="row">
+      <label>每次罚款 ¥</label>
+      <input type="number" id="fine" min="1" max="500" step="1">
+      <button class="btn small" id="saveFine">保存</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">👥 成员管理</h3>
+    <div id="members"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">📦 数据导入 / 导出</h3>
+    <div class="row">
+      <button class="btn small" id="exp">导出 JSON</button>
+      <button class="btn small ghost" id="imp">导入 JSON</button>
+      <button class="btn small red" id="reset">⚠️ 清空所有数据</button>
+    </div>
+    <textarea id="paste" placeholder="粘贴 JSON 到这里，然后点导入"></textarea>
+  </div>
+</div>
+
+<script src="peeps.js"></script>
+<script src="state.js"></script>
+<script>
+function refresh() {
+  const s = MF.getState();
+  document.getElementById('fine').value = s.settings.fineAmount;
+  const wrap = document.getElementById('members');
+  if (!s.members.length) { wrap.innerHTML = '<div class="muted">还没成员</div>'; return; }
+  wrap.innerHTML = '';
+  for (const m of s.members) {
+    const row = document.createElement('div');
+    row.className = 'member-row';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;">
+        <div class="mini">${Peeps.renderAvatar(m.avatar, m.growth)}</div>
+        <div><b>${m.name}</b><br><span class="muted">欠 ¥${m.debt} · 打卡 ${MF.totalCheckinDays(m)} 天</span></div>
+      </div>
+      <button class="btn small red" data-id="${m.id}">删除</button>`;
+    row.querySelector('button').onclick = (e) => {
+      if (!confirm(`确定删除 ${m.name}？`)) return;
+      MF.removeMember(e.target.dataset.id);
+      refresh();
+    };
+    wrap.appendChild(row);
+  }
+}
+refresh();
+
+document.getElementById('saveFine').onclick = () => {
+  const v = parseInt(document.getElementById('fine').value, 10);
+  if (!v || v < 1) { alert('要正数'); return; }
+  const s = MF.getState();
+  s.settings.fineAmount = v;
+  MF.saveState(s);
+  alert('保存了');
+};
+document.getElementById('exp').onclick = () => MF.exportJSON();
+document.getElementById('imp').onclick = () => {
+  const txt = document.getElementById('paste').value.trim();
+  if (!txt) { alert('先粘贴 JSON'); return; }
+  const r = MF.importJSON(txt);
+  if (r.ok) { alert('导入成功'); location.reload(); }
+  else alert('导入失败：'+r.msg);
+};
+document.getElementById('reset').onclick = () => {
+  if (!confirm('真的清空所有数据？不可恢复！')) return;
+  localStorage.removeItem('mf_state_v1');
+  location.reload();
+};
+</script>
+</body>
+</html>

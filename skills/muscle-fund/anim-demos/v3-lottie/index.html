@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>方案 3 · Lottie 顶配</title>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+<style>
+:root{
+  --bg-ocean:#4DD0E1;--ink:#0D3B4F;--sponge:#FFD600;--coral:#FF7043;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Fredoka","Noto Sans SC",sans-serif;
+  background:linear-gradient(180deg,#80E0E8 0%,var(--bg-ocean) 60%,#26B5C6 100%);
+  color:var(--ink);min-height:100vh;padding:32px 20px;
+  display:flex;flex-direction:column;align-items:center;gap:24px;
+}
+h1{font-family:"Luckiest Guy",sans-serif;font-size:42px;color:var(--sponge);
+  -webkit-text-stroke:3px var(--ink);text-shadow:5px 5px 0 var(--ink);letter-spacing:.05em;text-align:center}
+.subtitle{font-weight:700;font-size:13px;background:rgba(255,255,255,.5);padding:8px 18px;border-radius:20px;border:2px solid var(--ink);text-align:center;max-width:520px;line-height:1.5}
+
+.stage{background:rgba(255,255,255,.4);border:3px solid var(--ink);border-radius:24px;padding:24px;width:min(520px,92vw);
+  box-shadow:6px 6px 0 var(--ink);position:relative}
+.lottie-host{aspect-ratio:1/1;background:linear-gradient(180deg,#F4E4BC 0%,#E8D5A8 100%);border-radius:16px;position:relative;overflow:hidden}
+.lottie-host::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 20% 30%,#fff 0,#fff 3px,transparent 4px),
+  radial-gradient(circle at 80% 60%,#fff 0,#fff 2px,transparent 3px);
+  opacity:.4;animation:bubble 9s linear infinite;pointer-events:none}
+@keyframes bubble{0%{transform:translateY(0)}100%{transform:translateY(-40px)}}
+#lottie{width:100%;height:100%;position:relative;z-index:1}
+
+.controls{display:flex;gap:8px;background:rgba(255,255,255,.5);padding:12px 16px;border-radius:18px;border:2px solid var(--ink);align-items:center;flex-wrap:wrap;justify-content:center}
+.btn{background:var(--sponge);color:var(--ink);border:2.5px solid var(--ink);border-radius:10px;padding:8px 14px;
+  font-family:"Luckiest Guy",sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer;
+  box-shadow:3px 3px 0 var(--ink);transition:all .15s ease}
+.btn:hover{background:#FFEB3B;transform:translateY(-2px);box-shadow:5px 5px 0 var(--ink)}
+.btn.on{background:var(--coral);color:#fff}
+
+footer{font-size:12px;opacity:.85;text-align:center;max-width:560px;line-height:1.6;background:rgba(255,255,255,.4);padding:14px 18px;border-radius:14px;border:2px solid var(--ink)}
+.notice{background:rgba(255,128,128,.2);border:2px dashed var(--coral);padding:14px 18px;border-radius:14px;max-width:560px;font-size:12px;line-height:1.6;text-align:center}
+.notice b{color:var(--coral)}
+</style>
+</head>
+<body>
+<h1>方案 3 · Lottie 顶配演示</h1>
+<div class="subtitle">用 AE / Figma 做的 Lottie JSON 动画 — 真正像专业卡通片</div>
+
+<div class="stage">
+  <div class="lottie-host">
+    <div id="lottie"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn on" data-anim="weight">举哑铃</button>
+  <button class="btn" data-anim="gym">健身跳跃</button>
+  <button class="btn" data-anim="boxing">拳击</button>
+</div>
+
+<div class="notice">
+  <b>注意</b>：这里用的是 LottieFiles 社区里现成的健身动画（不是哥的角色）<br>
+  演示 Lottie <b>能做到的动画级别</b> — 真正落地需要美术用 AE / Figma 设计哥的鱼角色 + 导出 Lottie JSON
+</div>
+
+<footer>
+  <b>方案 3 实际成本</b>：哥需要找美术 / 自己用 Figma + LottieFiles plugin / After Effects 出 JSON<br>
+  接入成本：JS 代码 1 行 + 等级切动画切换<br>
+  实际效果：跟 Disney+ / Netflix 卡通片一个量级
+</footer>
+
+<script>
+const HOST = document.getElementById('lottie');
+let curAnim;
+
+// 三个公开 Lottie 动画
+const ANIMS = {
+  weight: 'https://lottie.host/0aa632c4-5a1a-4f7b-a7e5-2a2a0e3a5e1e/X9YJyJM0Yp.json', // 占位 — 用 fallback
+  gym:    'https://assets3.lottiefiles.com/packages/lf20_zw0djhar.json',
+  boxing: 'https://assets1.lottiefiles.com/packages/lf20_d3T2K6.json',
+};
+// 用 lottiefiles 公开示例（gym workout）
+const FALLBACK = {
+  weight: 'https://assets8.lottiefiles.com/packages/lf20_tnvthc4o.json',  // weightlifting
+  gym:    'https://assets6.lottiefiles.com/packages/lf20_2glqweqs.json',  // workout
+  boxing: 'https://assets4.lottiefiles.com/packages/lf20_yffvjfrl.json',  // boxing
+};
+
+function loadAnim(key){
+  if(curAnim){ curAnim.destroy(); HOST.innerHTML=''; }
+  curAnim = lottie.loadAnimation({
+    container: HOST,
+    renderer: 'svg',
+    loop: true,
+    autoplay: true,
+    path: FALLBACK[key],
+  });
+}
+
+document.querySelectorAll('.btn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.btn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    loadAnim(b.dataset.anim);
+  };
+});
+loadAnim('weight');
+</script>
+</body>
+</html>

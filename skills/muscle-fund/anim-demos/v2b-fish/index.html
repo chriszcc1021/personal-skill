@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>方案 2B · 海绵宝宝风格鱼 · lv0 vs lv4</title>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg-ocean:#4DD0E1;--ink:#0D3B4F;--sponge:#FFD600;--coral:#FF7043}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow-x:hidden}
+body{
+  font-family:"Fredoka","Noto Sans SC",sans-serif;
+  background:linear-gradient(180deg,#80E0E8 0%,var(--bg-ocean) 60%,#26B5C6 100%);
+  color:var(--ink);min-height:100vh;padding:32px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+}
+h1{font-family:"Luckiest Guy",sans-serif;font-size:clamp(32px,6vw,52px);color:var(--sponge);
+  -webkit-text-stroke:3px var(--ink);text-shadow:5px 5px 0 var(--ink);letter-spacing:.05em;text-align:center}
+.subtitle{font-weight:700;font-size:13px;background:rgba(255,255,255,.55);padding:8px 18px;border-radius:20px;border:2px solid var(--ink);text-align:center;max-width:520px;line-height:1.5}
+
+/* 比奇堡健身房舞台 */
+.gym{
+  width:min(1080px,96vw);
+  background:linear-gradient(180deg,#F4E4BC 0%,#E8D5A8 70%,#D4BF8E 100%);
+  border:3px solid var(--ink);border-radius:24px;padding:24px;
+  box-shadow:8px 8px 0 var(--ink);position:relative;overflow:hidden;
+}
+.gym::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 15% 25%,#fff 0,#fff 2.5px,transparent 4px),
+  radial-gradient(circle at 70% 15%,#fff 0,#fff 2px,transparent 3px),
+  radial-gradient(circle at 85% 60%,#fff 0,#fff 1.5px,transparent 2.5px),
+  radial-gradient(circle at 30% 75%,#fff 0,#fff 2px,transparent 3px);
+  opacity:.4;pointer-events:none;animation:bubble 11s linear infinite}
+@keyframes bubble{0%{transform:translateY(0)}100%{transform:translateY(-50px)}}
+.gym::after{content:"";position:absolute;left:0;right:0;bottom:0;height:60px;
+  background:linear-gradient(180deg,transparent 0%,rgba(166,138,82,.5) 100%);
+  pointer-events:none}
+
+.gym h2{font-family:"Luckiest Guy",sans-serif;font-size:22px;letter-spacing:.04em;position:relative;z-index:2}
+.gym .label{font-size:11px;font-weight:700;opacity:.6;margin-bottom:18px;letter-spacing:.15em;text-transform:uppercase;position:relative;z-index:2}
+
+.fishes{display:grid;grid-template-columns:1fr 1fr;gap:16px;position:relative;z-index:2}
+@media (max-width:680px){.fishes{grid-template-columns:1fr}}
+
+.fish-card{
+  background:rgba(255,255,255,.5);border:3px solid var(--ink);border-radius:18px;
+  padding:14px;display:flex;flex-direction:column;align-items:center;position:relative;
+  box-shadow:4px 4px 0 var(--ink);overflow:hidden;
+}
+.fish-card .lv{position:absolute;top:10px;right:10px;background:var(--sponge);border:2px solid var(--ink);border-radius:10px;padding:3px 10px;font-family:"Luckiest Guy",sans-serif;font-size:13px;letter-spacing:1px;z-index:3}
+.fish-card .lv.hot{background:var(--coral);color:#fff}
+.fish-card .name{font-family:"Luckiest Guy",sans-serif;font-size:17px;letter-spacing:.04em;margin-top:8px;z-index:2}
+.fish-card .meta{font-size:11px;opacity:.7;font-weight:700;margin-top:2px;z-index:2}
+
+.stage{aspect-ratio:1/1;width:100%;position:relative;overflow:hidden;border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(244,228,188,.4))}
+
+.fish-img{position:absolute;left:50%;top:50%;width:88%;height:88%;object-fit:contain;
+  transform-origin:center bottom;will-change:transform;
+  filter:drop-shadow(2px 4px 0 rgba(13,59,79,.25));}
+
+/* === lv0 待机：左右摇晃 + 喘气缩放 === */
+.fish-img.lv0{
+  transform:translate(-50%,-50%);
+  animation: lv0-sway 2.4s ease-in-out infinite, lv0-breath 1.6s ease-in-out infinite;
+}
+@keyframes lv0-sway{
+  0%,100%{transform:translate(-50%,-50%) rotate(-2deg)}
+  50%{transform:translate(-50%,-50%) rotate(2deg)}
+}
+@keyframes lv0-breath{
+  0%,100%{filter:drop-shadow(2px 4px 0 rgba(13,59,79,.25))}
+  50%{filter:drop-shadow(2px 4px 0 rgba(13,59,79,.4))}
+}
+
+/* === lv4 待机：脉冲 + 闪光 + 弹跳 === */
+.fish-img.lv4{
+  transform:translate(-50%,-50%);
+  animation: lv4-pulse 1.2s ease-in-out infinite, lv4-bounce 2.6s ease-in-out infinite;
+}
+@keyframes lv4-pulse{
+  0%,100%{filter:drop-shadow(0 0 0 rgba(255,214,0,0)) drop-shadow(3px 6px 0 rgba(13,59,79,.4))}
+  50%{filter:drop-shadow(0 0 24px rgba(255,214,0,.9)) drop-shadow(3px 6px 0 rgba(13,59,79,.4))}
+}
+@keyframes lv4-bounce{
+  0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0deg)}
+  35%{transform:translate(-50%,-58%) scale(1.04) rotate(-1deg)}
+  55%{transform:translate(-50%,-50%) scale(.98) rotate(0deg)}
+  75%{transform:translate(-50%,-54%) scale(1.02) rotate(1deg)}
+}
+
+/* === lv4 光环 === */
+.aura{position:absolute;left:50%;top:50%;width:90%;height:90%;
+  transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,214,0,.45) 0%,transparent 65%);
+  animation:aura-pulse 1.6s ease-in-out infinite}
+@keyframes aura-pulse{
+  0%,100%{opacity:.3;transform:translate(-50%,-50%) scale(.9)}
+  50%{opacity:.8;transform:translate(-50%,-50%) scale(1.1)}
+}
+
+/* === 健身房道具 SVG === */
+.equipment{position:absolute;bottom:6px;left:0;right:0;height:50px;display:flex;justify-content:space-around;align-items:flex-end;pointer-events:none;opacity:.45}
+.equipment svg{height:100%}
+
+/* === lv4 闪烁星星 === */
+.stars{position:absolute;inset:0;pointer-events:none}
+.stars span{position:absolute;font-size:18px;animation:star 1.4s ease-in-out infinite}
+.stars span:nth-child(1){top:15%;left:20%;animation-delay:0s}
+.stars span:nth-child(2){top:30%;right:18%;animation-delay:.3s}
+.stars span:nth-child(3){top:60%;left:15%;animation-delay:.6s}
+.stars span:nth-child(4){top:50%;right:22%;animation-delay:.9s}
+@keyframes star{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.2)}}
+
+/* === 按钮 === */
+.controls{display:flex;gap:10px;background:rgba(255,255,255,.5);padding:12px 16px;border-radius:18px;border:2px solid var(--ink);align-items:center;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.btn{background:var(--sponge);color:var(--ink);border:2.5px solid var(--ink);border-radius:12px;padding:10px 18px;
+  font-family:"Luckiest Guy",sans-serif;font-size:15px;letter-spacing:1.2px;cursor:pointer;
+  box-shadow:4px 4px 0 var(--ink);transition:all .15s ease}
+.btn:hover{background:#FFEB3B;transform:translateY(-2px);box-shadow:6px 6px 0 var(--ink)}
+.btn:active{transform:translateY(2px);box-shadow:2px 2px 0 var(--ink)}
+
+/* === 升级过场（点 EVOLVE 触发） === */
+.flash-overlay{position:fixed;inset:0;background:radial-gradient(circle,#fff 0%,#FFD600 35%,transparent 75%);
+  opacity:0;pointer-events:none;z-index:1000;mix-blend-mode:screen}
+.flash-overlay.go{animation:flash-blast .8s ease-out forwards}
+@keyframes flash-blast{
+  0%{opacity:0;transform:scale(0)}
+  50%{opacity:1;transform:scale(1.2)}
+  100%{opacity:0;transform:scale(2)}
+}
+
+footer{font-size:12px;opacity:.85;text-align:center;max-width:520px;line-height:1.6;background:rgba(255,255,255,.4);padding:14px 18px;border-radius:14px;border:2px solid var(--ink);margin-top:4px}
+</style>
+</head>
+<body>
+<h1>BIKINI BOTTOM GYM</h1>
+<div class="subtitle">海绵宝宝风格 · 完整动画 · lv0 新人 vs lv4 大佬</div>
+
+<div class="gym">
+  <h2>WATERPROOF FITNESS</h2>
+  <div class="label">— UNDERWATER MUSCLE TEMPLE —</div>
+
+  <div class="fishes">
+    <!-- lv0 -->
+    <div class="fish-card">
+      <div class="lv">LV 0 · NOOB</div>
+      <div class="stage">
+        <img class="fish-img lv0" src="lv0.png" alt="lv0 fish"/>
+        <div class="equipment">
+          <svg viewBox="0 0 60 40" fill="none" stroke="#0D3B4F" stroke-width="2">
+            <rect x="6" y="14" width="48" height="12" rx="2" fill="#A1887F"/>
+            <ellipse cx="14" cy="20" rx="4" ry="6" fill="#5D4037"/>
+            <ellipse cx="46" cy="20" rx="4" ry="6" fill="#5D4037"/>
+            <line x1="18" y1="20" x2="42" y2="20" stroke-width="3"/>
+          </svg>
+        </div>
+      </div>
+      <div class="name">新人鱼</div>
+      <div class="meta">刚开始练 · 累得喘不过气</div>
+    </div>
+
+    <!-- lv4 -->
+    <div class="fish-card">
+      <div class="lv hot">LV 4 · 大佬</div>
+      <div class="stage">
+        <div class="aura"></div>
+        <div class="stars">
+          <span>✨</span><span>⭐</span><span>✨</span><span>⭐</span>
+        </div>
+        <img class="fish-img lv4" src="lv4.png" alt="lv4 fish"/>
+        <div class="equipment">
+          <svg viewBox="0 0 100 40" fill="none" stroke="#0D3B4F" stroke-width="2.5">
+            <rect x="2" y="14" width="96" height="14" rx="3" fill="#37474F"/>
+            <ellipse cx="14" cy="21" rx="8" ry="11" fill="#212121"/>
+            <ellipse cx="86" cy="21" rx="8" ry="11" fill="#212121"/>
+            <line x1="22" y1="21" x2="78" y2="21" stroke-width="4"/>
+          </svg>
+        </div>
+      </div>
+      <div class="name">爆肌大佬</div>
+      <div class="meta">练到爆肌 · 戴皇冠 · 金光闪闪</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn" id="evolve">⚡ EVOLVE LV0 → LV4</button>
+  <button class="btn" id="reset">↺ RESET</button>
+</div>
+
+<footer>
+  <b>这是哥要的完整动画演示</b><br>
+  lv0 鱼：左右摇晃 + 喘气 · 哑铃在地<br>
+  lv4 鱼：脉冲发光 + 弹跳 + 金色光环 + 星星 · 大杠铃在地<br>
+  按 EVOLVE 看 lv0 闪光升级成 lv4
+</footer>
+
+<div class="flash-overlay" id="flash"></div>
+
+<script>
+const flash = document.getElementById('flash');
+const evolveBtn = document.getElementById('evolve');
+const resetBtn = document.getElementById('reset');
+const lv0Card = document.querySelector('.fish-card:nth-child(1)');
+const lv0Img = lv0Card.querySelector('.fish-img');
+
+let isEvolved = false;
+function evolve(){
+  if(isEvolved) return;
+  isEvolved = true;
+  // 闪光
+  flash.classList.remove('go');
+  void flash.offsetWidth;
+  flash.classList.add('go');
+  // 800ms 后换图 + 类
+  setTimeout(()=>{
+    lv0Img.src = 'lv4.png';
+    lv0Img.classList.remove('lv0');
+    lv0Img.classList.add('lv4');
+    // 加 aura + stars + 改 lv 标
+    const stage = lv0Card.querySelector('.stage');
+    if(!stage.querySelector('.aura')){
+      const aura = document.createElement('div'); aura.className='aura'; stage.prepend(aura);
+      const stars = document.createElement('div'); stars.className='stars';
+      stars.innerHTML='<span>✨</span><span>⭐</span><span>✨</span><span>⭐</span>';
+      stage.appendChild(stars);
+    }
+    const lv = lv0Card.querySelector('.lv');
+    lv.textContent='LV 4 · 大佬';
+    lv.classList.add('hot');
+    lv0Card.querySelector('.name').textContent='进化完成';
+    lv0Card.querySelector('.meta').textContent='从新人鱼变身爆肌怪';
+  }, 400);
+}
+function reset(){
+  if(!isEvolved) return;
+  isEvolved = false;
+  lv0Img.src='lv0.png';
+  lv0Img.classList.remove('lv4');
+  lv0Img.classList.add('lv0');
+  const stage = lv0Card.querySelector('.stage');
+  stage.querySelector('.aura')?.remove();
+  stage.querySelector('.stars')?.remove();
+  const lv = lv0Card.querySelector('.lv');
+  lv.textContent='LV 0 · NOOB';
+  lv.classList.remove('hot');
+  lv0Card.querySelector('.name').textContent='新人鱼';
+  lv0Card.querySelector('.meta').textContent='刚开始练 · 累得喘不过气';
+}
+evolveBtn.onclick = evolve;
+resetBtn.onclick = reset;
+</script>
+</body>
+</html>

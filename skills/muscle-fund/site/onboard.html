@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>加成员 · 肌肉基金</title>
+<link rel="stylesheet" href="common.css">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  h1 { font-family:"Caveat",cursive; font-size: 52px; margin: 10px 0;}
+  .wrap { display:grid; grid-template-columns: 1fr 1.2fr; gap: 20px; margin-top: 10px;}
+  @media (max-width: 800px) { .wrap { grid-template-columns: 1fr; }}
+  .stage {
+    background:#fff; border:2px solid var(--ink); border-radius:14px;
+    aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; padding: 10px;
+  }
+  .stage svg { width:92%; height:92%; }
+  .panel { display:grid; gap:12px; }
+  .opt-row {
+    background:#fff; border:2px solid var(--ink); border-radius:12px; padding:10px 12px;
+  }
+  .opt-row label { font-size:12px; text-transform:uppercase; opacity:.7; display:block; margin-bottom:8px;}
+  .opts { display:flex; flex-wrap:wrap; gap:6px; }
+  .opt { border: 1.5px solid var(--ink); background:#fff; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:13px;}
+  .opt.active { background: var(--ink); color:#fff; }
+  .name-row { margin: 12px 0; }
+  .name-row input { width: 100%; max-width: 320px; }
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<script>MFNav.renderNav('onboard.html');</script>
+<div class="container">
+  <h1>加新成员</h1>
+  <div class="muted">捏个形象，进基金。越练越壮，没练就罚款。</div>
+
+  <div class="name-row">
+    <label>名字：</label>
+    <input type="text" id="name" placeholder="比如 张鱼哥">
+  </div>
+
+  <div class="wrap">
+    <div class="stage" id="stage"></div>
+    <div class="panel">
+      <div class="opt-row" data-g="gender"><label>性别</label><div class="opts"></div></div>
+      <div class="opt-row" data-g="hair"><label>发型</label><div class="opts"></div></div>
+      <div class="opt-row" data-g="glasses"><label>眼镜</label><div class="opts"></div></div>
+      <div class="opt-row" data-g="nose"><label>鼻子</label><div class="opts"></div></div>
+      <div class="opt-row" data-g="mouth"><label>嘴巴</label><div class="opts"></div></div>
+      <div class="opt-row" data-g="shorts"><label>短裤</label><div class="opts"></div></div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px; display:flex; gap:12px;">
+    <button class="btn" id="saveBtn">入队 💪</button>
+    <a class="btn ghost" href="index.html">取消</a>
+  </div>
+</div>
+
+<script src="peeps.js"></script>
+<script src="state.js"></script>
+<script>
+const cfg = { gender:'male', hair:'buzz', glasses:'none', nose:'small_round', mouth:'smile', shorts:'classic' };
+
+function listHair() { return cfg.gender === 'female' ? Peeps.HAIR_FEMALE : Peeps.HAIR_MALE; }
+function render() { document.getElementById('stage').innerHTML = Peeps.renderAvatar(cfg, {}); }
+
+function buildOpts(g, list) {
+  const row = document.querySelector(`.opt-row[data-g="${g}"] .opts`);
+  row.innerHTML = '';
+  for (const [k,l] of list) {
+    const b = document.createElement('button');
+    b.className = 'opt' + (cfg[g]===k?' active':'');
+    b.textContent = l;
+    b.onclick = () => {
+      cfg[g] = k;
+      if (g === 'gender') {
+        const hl = listHair();
+        if (!hl.map(x=>x[0]).includes(cfg.hair)) cfg.hair = hl[0][0];
+        buildOpts('hair', hl);
+      }
+      buildOpts(g, list);
+      render();
+    };
+    row.appendChild(b);
+  }
+}
+
+buildOpts('gender', Peeps.OPTS.gender);
+buildOpts('hair', listHair());
+buildOpts('glasses', Peeps.OPTS.glasses);
+buildOpts('nose', Peeps.OPTS.nose);
+buildOpts('mouth', Peeps.OPTS.mouth);
+buildOpts('shorts', Peeps.OPTS.shorts);
+render();
+
+document.getElementById('saveBtn').onclick = () => {
+  const name = document.getElementById('name').value.trim();
+  if (!name) { alert('先起个名字 💪'); return; }
+  MF.addMember({ name, avatar: { ...cfg } });
+  location.href = 'index.html';
+};
+</script>
+</body>
+</html>

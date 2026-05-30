@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>方案 2 · JS 控制健身房动作池</title>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-ocean:#4DD0E1;--ink:#0D3B4F;--sponge:#FFD600;--coral:#FF7043;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Fredoka","Noto Sans SC",sans-serif;
+  background:linear-gradient(180deg,#80E0E8 0%,var(--bg-ocean) 60%,#26B5C6 100%);
+  color:var(--ink);min-height:100vh;padding:24px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+}
+h1{font-family:"Luckiest Guy",sans-serif;font-size:42px;color:var(--sponge);
+  -webkit-text-stroke:3px var(--ink);text-shadow:5px 5px 0 var(--ink);letter-spacing:.05em;text-align:center}
+.subtitle{font-weight:700;font-size:13px;background:rgba(255,255,255,.5);padding:8px 18px;border-radius:20px;border:2px solid var(--ink);text-align:center}
+
+.gym{
+  width:min(1100px,95vw);background:linear-gradient(180deg,#F4E4BC 0%,#E8D5A8 100%);
+  border:3px solid var(--ink);border-radius:24px;padding:20px;
+  box-shadow:8px 8px 0 var(--ink);position:relative;overflow:hidden;
+}
+.gym::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 20% 30%,#fff 0,#fff 2px,transparent 3px),
+  radial-gradient(circle at 80% 60%,#fff 0,#fff 1.5px,transparent 2.5px);
+  opacity:.3;pointer-events:none;animation:bubble 10s linear infinite}
+@keyframes bubble{0%{transform:translateY(0)}100%{transform:translateY(-40px)}}
+
+.gym h2{font-family:"Luckiest Guy",sans-serif;font-size:22px;letter-spacing:.04em;margin-bottom:6px}
+.gym .desc{font-size:12px;font-weight:700;opacity:.7;margin-bottom:16px}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;position:relative;z-index:2}
+@media (max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}}
+
+.fish-card{
+  background:rgba(255,255,255,.6);border:2.5px solid var(--ink);border-radius:18px;
+  padding:12px;display:flex;flex-direction:column;align-items:center;position:relative;
+  box-shadow:3px 3px 0 var(--ink);
+}
+.fish-card .name{font-family:"Luckiest Guy",sans-serif;font-size:15px;letter-spacing:.04em;margin-top:8px}
+.fish-card .meta{font-size:11px;opacity:.7;font-weight:700;margin-top:2px}
+.fish-card .lv{position:absolute;top:8px;right:8px;background:var(--sponge);border:2px solid var(--ink);border-radius:8px;padding:2px 8px;font-weight:900;font-size:11px}
+.fish-card .action{position:absolute;bottom:8px;left:8px;background:var(--coral);color:#fff;border:2px solid var(--ink);border-radius:8px;padding:2px 8px;font-weight:900;font-size:10px;letter-spacing:.05em}
+
+.fish-stage{aspect-ratio:1/1.05;width:100%;display:flex;align-items:flex-end;justify-content:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.2) 0%,rgba(245,228,188,.4) 100%);
+  border-radius:12px;position:relative;overflow:hidden}
+
+.equipment{position:absolute;bottom:0;left:50%;transform:translateX(-50%);z-index:1}
+
+.fish{width:90%;height:90%;position:relative;z-index:2}
+.fish g{transform-box:fill-box}
+
+/* === 等级 → 部位 scale === */
+.fish{--armScale:1;--chestScale:0;--absScale:0;--shScale:0;--legScale:1;--torsoW:1}
+.fish.lv1{--armScale:1.1;--chestScale:.3;--absScale:.2;--shScale:.3;--legScale:1.04;--torsoW:1.04}
+.fish.lv2{--armScale:1.3;--chestScale:.55;--absScale:.5;--shScale:.55;--legScale:1.1;--torsoW:1.1}
+.fish.lv3{--armScale:1.55;--chestScale:.8;--absScale:.75;--shScale:.8;--legScale:1.18;--torsoW:1.18}
+.fish.lv4{--armScale:1.95;--chestScale:1;--absScale:1;--shScale:1;--legScale:1.25;--torsoW:1.25}
+
+.fish #arm-left{transform-origin:62px 130px}
+.fish #arm-right{transform-origin:138px 130px}
+.fish #chest,.fish #abs,.fish #shoulders{transform-origin:100px 150px}
+.fish #legs{transform-origin:100px 240px}
+.fish #torso{transform-origin:100px 150px;transform:scaleX(var(--torsoW))}
+.fish #head{transform-origin:100px 75px}
+
+.fish #chest{transform:scale(var(--chestScale))}
+.fish #abs{transform:scale(var(--absScale))}
+.fish #shoulders{transform:scale(var(--shScale))}
+.fish #legs{transform:scaleY(var(--legScale))}
+
+.fish #arm-left,.fish #arm-right,.fish #chest,.fish #abs,.fish #shoulders,.fish #legs,.fish #torso{transition:transform .6s cubic-bezier(.34,1.56,.64,1)}
+
+/* === 动作 1：二头弯举 === */
+.fish.act-curl #arm-left{animation:curl-l 1.6s ease-in-out infinite}
+.fish.act-curl #arm-right{animation:curl-r 1.6s ease-in-out infinite}
+@keyframes curl-l{
+  0%,100%{transform:rotate(0deg) scale(var(--armScale))}
+  50%{transform:rotate(-90deg) scale(calc(var(--armScale) * 1.15))}
+}
+@keyframes curl-r{
+  0%,100%{transform:rotate(0deg) scale(var(--armScale))}
+  50%{transform:rotate(90deg) scale(calc(var(--armScale) * 1.15))}
+}
+
+/* === 动作 2：深蹲 === */
+.fish.act-squat{animation:squat-body 2s ease-in-out infinite}
+@keyframes squat-body{
+  0%,100%{transform:translateY(0) scaleY(1)}
+  50%{transform:translateY(15px) scaleY(.92)}
+}
+.fish.act-squat #legs{animation:legs-bend 2s ease-in-out infinite}
+@keyframes legs-bend{
+  0%,100%{transform:scaleY(var(--legScale))}
+  50%{transform:scaleY(calc(var(--legScale) * .85))}
+}
+
+/* === 动作 3：卧推 === */
+.fish.act-bench #arm-left{animation:bench-l 1.8s ease-in-out infinite}
+.fish.act-bench #arm-right{animation:bench-r 1.8s ease-in-out infinite}
+@keyframes bench-l{
+  0%,100%{transform:translateY(0) scale(var(--armScale))}
+  50%{transform:translateY(-15px) scale(calc(var(--armScale) * 1.1))}
+}
+@keyframes bench-r{
+  0%,100%{transform:translateY(0) scale(var(--armScale))}
+  50%{transform:translateY(-15px) scale(calc(var(--armScale) * 1.1))}
+}
+
+/* === 动作 4：站着喘气（新手）=== */
+.fish.act-rest #torso{animation:rest-breath 3.2s ease-in-out infinite}
+@keyframes rest-breath{
+  0%,100%{transform:scaleX(var(--torsoW)) scaleY(1)}
+  50%{transform:scaleX(calc(var(--torsoW) * 1.06)) scaleY(1.04)}
+}
+.fish.act-rest #head{animation:rest-head 3.2s ease-in-out infinite}
+@keyframes rest-head{
+  0%,100%{transform:rotate(0deg)}
+  25%{transform:rotate(2deg)}
+  75%{transform:rotate(-2deg)}
+}
+
+/* === 动作 5：双肱二头肌 pose（大佬）=== */
+.fish.act-pose #arm-left{transform:rotate(-100deg) scale(var(--armScale)) translateY(-15px);animation:pose-pulse 2s ease-in-out infinite}
+.fish.act-pose #arm-right{transform:rotate(100deg) scale(var(--armScale)) translateY(-15px);animation:pose-pulse 2s ease-in-out infinite}
+@keyframes pose-pulse{
+  0%,100%{filter:none}
+  50%{filter:brightness(1.15)}
+}
+.fish.act-pose #chest{animation:pose-flex 2s ease-in-out infinite}
+@keyframes pose-flex{
+  0%,100%{transform:scale(var(--chestScale))}
+  50%{transform:scale(calc(var(--chestScale) * 1.15))}
+}
+
+/* === 通用：体型呼吸 === */
+.fish #head{animation:idle-breath 3.5s ease-in-out infinite}
+@keyframes idle-breath{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-2px) scale(1.025)}
+}
+
+footer{font-size:12px;opacity:.7;text-align:center;max-width:600px;margin-top:8px;line-height:1.5}
+.legend{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.legend span{background:rgba(255,255,255,.6);border:1.5px solid var(--ink);border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700}
+</style>
+</head>
+<body>
+<h1>方案 2 · 水下健身房</h1>
+<div class="subtitle">6 条鱼各做各的 · 动作池按肌肉量解锁 · 错峰循环</div>
+
+<div class="gym">
+  <h2>BIKINI BOTTOM GYM</h2>
+  <div class="desc">6 个角色挂着不同等级，自动做对应动作</div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<footer>
+  动作池：<span class="legend">
+    <span>rest 喘气</span><span>curl 弯举</span><span>squat 深蹲</span><span>bench 卧推</span><span>pose 大佬秀</span>
+  </span>
+</footer>
+
+<template id="fish-tpl">
+<svg class="fish" viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">
+  <g id="legs">
+    <rect x="80" y="220" width="12" height="40" rx="4" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3"/>
+    <rect x="108" y="220" width="12" height="40" rx="4" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3"/>
+    <ellipse cx="86" cy="268" rx="14" ry="6" fill="#0D3B4F"/>
+    <ellipse cx="114" cy="268" rx="14" ry="6" fill="#0D3B4F"/>
+  </g>
+  <path d="M 70 198 L 130 198 L 128 222 L 104 222 L 100 208 L 96 222 L 72 222 Z" fill="var(--c3)" stroke="#0D3B4F" stroke-width="3"/>
+  <g id="torso">
+    <path d="M 70 110 Q 100 100 130 110 L 132 200 Q 100 208 68 200 Z" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3.5"/>
+    <path d="M 78 130 q 4 -4 8 0 M 96 130 q 4 -4 8 0 M 114 130 q 4 -4 8 0" stroke="#0D3B4F" stroke-width="1.5" fill="none"/>
+    <path d="M 82 150 q 4 -4 8 0 M 100 150 q 4 -4 8 0 M 118 150 q 4 -4 8 0" stroke="#0D3B4F" stroke-width="1.5" fill="none"/>
+  </g>
+  <g id="chest">
+    <ellipse cx="88" cy="132" rx="10" ry="8" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2.5"/>
+    <ellipse cx="112" cy="132" rx="10" ry="8" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2.5"/>
+  </g>
+  <g id="abs">
+    <rect x="86" y="160" width="10" height="10" rx="2" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2"/>
+    <rect x="104" y="160" width="10" height="10" rx="2" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2"/>
+    <rect x="86" y="174" width="10" height="10" rx="2" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2"/>
+    <rect x="104" y="174" width="10" height="10" rx="2" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2"/>
+    <rect x="86" y="188" width="10" height="10" rx="2" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2"/>
+    <rect x="104" y="188" width="10" height="10" rx="2" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2"/>
+  </g>
+  <g id="shoulders">
+    <ellipse cx="68" cy="112" rx="10" ry="7" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2.5"/>
+    <ellipse cx="132" cy="112" rx="10" ry="7" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2.5"/>
+  </g>
+  <g id="arm-left">
+    <ellipse cx="60" cy="135" rx="9" ry="14" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3"/>
+    <rect x="55" y="148" width="12" height="34" rx="5" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3"/>
+    <circle cx="61" cy="184" r="8" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3"/>
+  </g>
+  <g id="arm-right">
+    <ellipse cx="140" cy="135" rx="9" ry="14" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3"/>
+    <rect x="133" y="148" width="12" height="34" rx="5" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3"/>
+    <circle cx="139" cy="184" r="8" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3"/>
+  </g>
+  <g id="head">
+    <ellipse cx="100" cy="75" rx="38" ry="40" fill="var(--c1)" stroke="#0D3B4F" stroke-width="3.5"/>
+    <path d="M 64 60 L 50 50 L 56 72 Z" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2.5"/>
+    <path d="M 136 60 L 150 50 L 144 72 Z" fill="var(--c2)" stroke="#0D3B4F" stroke-width="2.5"/>
+    <ellipse cx="86" cy="72" rx="9" ry="11" fill="#fff" stroke="#0D3B4F" stroke-width="2.5"/>
+    <ellipse cx="114" cy="72" rx="9" ry="11" fill="#fff" stroke="#0D3B4F" stroke-width="2.5"/>
+    <circle cx="86" cy="74" r="3.5" fill="#0D3B4F"/>
+    <circle cx="114" cy="74" r="3.5" fill="#0D3B4F"/>
+    <circle cx="87" cy="72" r="1.4" fill="#fff"/>
+    <circle cx="115" cy="72" r="1.4" fill="#fff"/>
+    <path d="M 96 84 Q 100 90 104 84" stroke="#0D3B4F" stroke-width="2" fill="none"/>
+    <path d="M 85 96 Q 100 106 115 96" stroke="#0D3B4F" stroke-width="2.5" fill="#fff"/>
+    <path d="M 92 96 L 92 102 M 100 96 L 100 102 M 108 96 L 108 102" stroke="#0D3B4F" stroke-width="1.5"/>
+    <path d="M 70 85 L 72 95 M 75 84 L 77 94" stroke="#0D3B4F" stroke-width="1.5"/>
+    <path d="M 130 85 L 128 95 M 125 84 L 123 94" stroke="#0D3B4F" stroke-width="1.5"/>
+  </g>
+</svg>
+</template>
+
+<script>
+const FISH = [
+  {name:'P神',         c:['#FF80AB','#F06292','#C2185B'], lv:0, act:'rest'},
+  {name:'查尔斯',      c:['#4FC3F7','#29B6F6','#0277BD'], lv:1, act:'curl'},
+  {name:'张鱼哥',      c:['#FFD600','#FFA000','#F57F17'], lv:2, act:'squat'},
+  {name:'狗哥',        c:['#81C784','#43A047','#1B5E20'], lv:3, act:'bench'},
+  {name:'Shadow',      c:['#9575CD','#5E35B1','#311B92'], lv:4, act:'pose'},
+  {name:'YK',          c:['#FF8A65','#FF7043','#BF360C'], lv:2, act:'curl'},
+];
+const ACT_LABEL = {rest:'\u559d\u6c14',curl:'\u5f2f\u4e3e',squat:'\u6df1\u8e72',bench:'\u5367\u63a8',pose:'\u5927\u4f6c\u79c0'};
+// 按等级分配动作池
+const ACT_POOL = {
+  0:['rest','rest'],
+  1:['curl','rest'],
+  2:['curl','squat'],
+  3:['curl','squat','bench'],
+  4:['pose','bench','pose'],
+};
+
+function render(){
+  const tpl=document.getElementById('fish-tpl');
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  FISH.forEach((f,i)=>{
+    const card=document.createElement('div');
+    card.className='fish-card';
+    card.innerHTML=`
+      <div class="lv">lv ${f.lv}</div>
+      <div class="action" data-i="${i}">${ACT_LABEL[f.act]}</div>
+      <div class="fish-stage" data-i="${i}"></div>
+      <div class="name">${f.name}</div>
+      <div class="meta">\u808c\u808c\u808c</div>
+    `;
+    grid.appendChild(card);
+    const stage=card.querySelector('.fish-stage');
+    const svg=tpl.content.cloneNode(true).querySelector('svg');
+    svg.style.setProperty('--c1',f.c[0]);
+    svg.style.setProperty('--c2',f.c[1]);
+    svg.style.setProperty('--c3',f.c[2]);
+    svg.classList.add('lv'+f.lv,'act-'+f.act);
+    stage.appendChild(svg);
+  });
+}
+
+// 错峰切换动作池
+function cycle(){
+  FISH.forEach((f,i)=>{
+    setTimeout(()=>{
+      const pool=ACT_POOL[f.lv];
+      const next=pool[Math.floor(Math.random()*pool.length)];
+      if(next===f.act) return;
+      f.act=next;
+      const svg=document.querySelectorAll('.fish-stage')[i].querySelector('svg');
+      svg.className=svg.className.replace(/act-\w+/g,'');
+      svg.classList.add('act-'+next);
+      document.querySelector(`.action[data-i="${i}"]`).textContent=ACT_LABEL[next];
+    }, i * 700);  // 每个鱼错开 0.7s
+  });
+}
+
+render();
+setInterval(cycle, 5000);
+setTimeout(cycle, 1500);
+
+// 点击鱼卡片升级（测试用）
+document.getElementById('grid').addEventListener('click',e=>{
+  const card=e.target.closest('.fish-card');
+  if(!card) return;
+  const i=[...document.querySelectorAll('.fish-card')].indexOf(card);
+  FISH[i].lv = (FISH[i].lv+1) % 5;
+  render();
+});
+</script>
+</body>
+</html>

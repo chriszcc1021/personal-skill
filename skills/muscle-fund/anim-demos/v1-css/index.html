@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>方案 1 · CSS 动一动</title>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-ocean:#4DD0E1;--ink:#0D3B4F;--sponge:#FFD600;--coral:#FF7043;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Fredoka","Noto Sans SC",sans-serif;
+  background:linear-gradient(180deg,#80E0E8 0%,var(--bg-ocean) 60%,#26B5C6 100%);
+  color:var(--ink);min-height:100vh;padding:32px 20px;
+  display:flex;flex-direction:column;align-items:center;gap:24px;
+}
+h1{font-family:"Luckiest Guy",sans-serif;font-size:42px;color:var(--sponge);
+  -webkit-text-stroke:3px var(--ink);text-shadow:5px 5px 0 var(--ink);letter-spacing:.05em}
+.subtitle{font-weight:700;font-size:14px;background:rgba(255,255,255,.5);padding:8px 18px;border-radius:20px;border:2px solid var(--ink)}
+.controls{display:flex;gap:10px;background:rgba(255,255,255,.5);padding:12px 16px;border-radius:18px;border:2px solid var(--ink);align-items:center;flex-wrap:wrap;justify-content:center}
+.controls label{font-weight:700;font-size:14px}
+.controls input[type=range]{width:160px}
+.lvbadge{font-weight:900;background:var(--sponge);padding:4px 10px;border-radius:8px;border:2px solid var(--ink)}
+.stage{background:rgba(255,255,255,.4);border:3px solid var(--ink);border-radius:24px;padding:24px;width:min(420px,92vw);
+  box-shadow:6px 6px 0 var(--ink);position:relative}
+.fish-wrap{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-radius:16px;
+  background:linear-gradient(180deg,#9EE5EE 0%,#5BD0DC 100%)}
+.fish-wrap::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 20% 30%,#fff 0,#fff 2px,transparent 3px),
+  radial-gradient(circle at 80% 60%,#fff 0,#fff 1.5px,transparent 2.5px),
+  radial-gradient(circle at 70% 20%,#fff 0,#fff 2.5px,transparent 3.5px);
+  opacity:.5;animation:bubble-rise 8s linear infinite}
+@keyframes bubble-rise{0%{transform:translateY(0)}100%{transform:translateY(-30px)}}
+
+/* ============ 鱼 SVG 分层动画 ============ */
+.fish{width:80%;height:80%}
+/* 等级 0~4 用 css var 控制 */
+.fish{--armScale:1;--chestScale:0;--absScale:0;--shScale:0;--legScale:1}
+.fish.lv1{--armScale:1.1;--chestScale:.3;--absScale:.2;--shScale:.3;--legScale:1.05}
+.fish.lv2{--armScale:1.3;--chestScale:.55;--absScale:.5;--shScale:.55;--legScale:1.12}
+.fish.lv3{--armScale:1.6;--chestScale:.8;--absScale:.75;--shScale:.8;--legScale:1.2}
+.fish.lv4{--armScale:2.0;--chestScale:1;--absScale:1;--shScale:1;--legScale:1.28}
+
+.fish #arm-left{transform-origin:62px 130px;animation:curl-left 2.4s ease-in-out infinite}
+.fish #arm-right{transform-origin:138px 130px;animation:curl-right 2.4s ease-in-out infinite}
+.fish #chest,.fish #abs,.fish #shoulders{transform-origin:100px 150px}
+.fish #chest{transform:scale(var(--chestScale))}
+.fish #abs{transform:scale(var(--absScale))}
+.fish #shoulders{transform:scale(var(--shScale))}
+.fish #legs{transform-origin:100px 240px;transform:scaleY(var(--legScale))}
+.fish #head{animation:breath 3.4s ease-in-out infinite;transform-origin:100px 75px}
+
+@keyframes curl-left{
+  0%,100%{transform:rotate(0deg) scale(var(--armScale))}
+  50%{transform:rotate(-85deg) scale(calc(var(--armScale) * 1.1))}
+}
+@keyframes curl-right{
+  0%,100%{transform:rotate(0deg) scale(var(--armScale))}
+  50%{transform:rotate(85deg) scale(calc(var(--armScale) * 1.1))}
+}
+@keyframes breath{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.04)}
+}
+
+/* 平滑过渡（等级切换） */
+.fish #arm-left,.fish #arm-right,.fish #chest,.fish #abs,.fish #shoulders,.fish #legs{transition:transform .6s cubic-bezier(.34,1.56,.64,1)}
+
+footer{font-size:12px;opacity:.7;text-align:center;max-width:420px}
+</style>
+</head>
+<body>
+<h1>方案 1 · CSS 动一动</h1>
+<div class="subtitle">一张分层 SVG + 纯 CSS @keyframes</div>
+
+<div class="controls">
+  <label>肌肉等级 <span class="lvbadge" id="lvbadge">lv 0</span></label>
+  <input type="range" id="lv" min="0" max="4" value="0" step="1">
+</div>
+
+<div class="stage">
+  <div class="fish-wrap">
+    <svg class="fish lv0" id="fish" viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">
+      <!-- LEGS -->
+      <g id="legs">
+        <rect x="80" y="220" width="12" height="40" rx="4" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+        <rect x="108" y="220" width="12" height="40" rx="4" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+        <ellipse cx="86" cy="268" rx="14" ry="6" fill="#0D3B4F"/>
+        <ellipse cx="114" cy="268" rx="14" ry="6" fill="#0D3B4F"/>
+      </g>
+      <!-- 短裤 -->
+      <path d="M 70 198 L 130 198 L 128 222 L 104 222 L 100 208 L 96 222 L 72 222 Z" fill="#FF7043" stroke="#0D3B4F" stroke-width="3"/>
+      <!-- TORSO 鱼身 -->
+      <g>
+        <path d="M 70 110 Q 100 100 130 110 L 132 200 Q 100 208 68 200 Z" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3.5"/>
+        <!-- 鱼鳞 -->
+        <path d="M 78 130 q 4 -4 8 0 M 96 130 q 4 -4 8 0 M 114 130 q 4 -4 8 0" stroke="#0D3B4F" stroke-width="1.5" fill="none"/>
+        <path d="M 82 150 q 4 -4 8 0 M 100 150 q 4 -4 8 0 M 118 150 q 4 -4 8 0" stroke="#0D3B4F" stroke-width="1.5" fill="none"/>
+      </g>
+      <!-- CHEST 胸肌 -->
+      <g id="chest">
+        <ellipse cx="88" cy="132" rx="10" ry="8" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2.5"/>
+        <ellipse cx="112" cy="132" rx="10" ry="8" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2.5"/>
+      </g>
+      <!-- ABS 腹肌 -->
+      <g id="abs">
+        <rect x="86" y="160" width="10" height="10" rx="2" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2"/>
+        <rect x="104" y="160" width="10" height="10" rx="2" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2"/>
+        <rect x="86" y="174" width="10" height="10" rx="2" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2"/>
+        <rect x="104" y="174" width="10" height="10" rx="2" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2"/>
+        <rect x="86" y="188" width="10" height="10" rx="2" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2"/>
+        <rect x="104" y="188" width="10" height="10" rx="2" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2"/>
+      </g>
+      <!-- SHOULDERS -->
+      <g id="shoulders">
+        <ellipse cx="68" cy="112" rx="10" ry="7" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2.5"/>
+        <ellipse cx="132" cy="112" rx="10" ry="7" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2.5"/>
+      </g>
+      <!-- ARMS -->
+      <g id="arm-left">
+        <ellipse cx="60" cy="135" rx="9" ry="14" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+        <rect x="55" y="148" width="12" height="34" rx="5" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+        <circle cx="61" cy="184" r="8" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+      </g>
+      <g id="arm-right">
+        <ellipse cx="140" cy="135" rx="9" ry="14" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+        <rect x="133" y="148" width="12" height="34" rx="5" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+        <circle cx="139" cy="184" r="8" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+      </g>
+      <!-- HEAD 鱼头 -->
+      <g id="head">
+        <ellipse cx="100" cy="75" rx="38" ry="40" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3.5"/>
+        <!-- 头鳍 -->
+        <path d="M 64 60 L 50 50 L 56 72 Z" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2.5"/>
+        <path d="M 136 60 L 150 50 L 144 72 Z" fill="#29B6F6" stroke="#0D3B4F" stroke-width="2.5"/>
+        <!-- 眼睛 -->
+        <ellipse cx="86" cy="72" rx="9" ry="11" fill="#fff" stroke="#0D3B4F" stroke-width="2.5"/>
+        <ellipse cx="114" cy="72" rx="9" ry="11" fill="#fff" stroke="#0D3B4F" stroke-width="2.5"/>
+        <circle cx="86" cy="74" r="3.5" fill="#0D3B4F"/>
+        <circle cx="114" cy="74" r="3.5" fill="#0D3B4F"/>
+        <circle cx="87" cy="72" r="1.4" fill="#fff"/>
+        <circle cx="115" cy="72" r="1.4" fill="#fff"/>
+        <!-- 鼻头 -->
+        <path d="M 96 84 Q 100 90 104 84" stroke="#0D3B4F" stroke-width="2" fill="none"/>
+        <!-- 嘴 -->
+        <path d="M 85 96 Q 100 106 115 96" stroke="#0D3B4F" stroke-width="2.5" fill="#fff"/>
+        <path d="M 92 96 L 92 102 M 100 96 L 100 102 M 108 96 L 108 102" stroke="#0D3B4F" stroke-width="1.5"/>
+        <!-- 鳃 -->
+        <path d="M 70 85 L 72 95 M 75 84 L 77 94" stroke="#0D3B4F" stroke-width="1.5"/>
+        <path d="M 130 85 L 128 95 M 125 84 L 123 94" stroke="#0D3B4F" stroke-width="1.5"/>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<footer>
+  滑动控制肌肉等级 · 手臂在做二头弯举 · 头会呼吸<br>
+  这是方案 1 最基础版 — 只有循环动作，无场景动作切换
+</footer>
+
+<script>
+const slider=document.getElementById('lv');
+const badge=document.getElementById('lvbadge');
+const fish=document.getElementById('fish');
+slider.addEventListener('input',()=>{
+  const v=+slider.value;
+  badge.textContent='lv '+v;
+  fish.className='fish lv'+v;
+});
+</script>
+</body>
+</html>

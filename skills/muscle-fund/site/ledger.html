@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>账本 · 肌肉基金</title>
+<link rel="stylesheet" href="common.css">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  h1 { font-family:"Caveat",cursive; font-size: 52px; margin: 10px 0;}
+  .total {
+    background: var(--orange); color:#fff; padding:18px; border-radius:14px;
+    border:2px solid var(--ink); margin-bottom: 20px; display:flex; justify-content:space-between;align-items:center;
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .total .big { font-family:"Caveat",cursive; font-size: 64px; line-height:1;}
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<script>MFNav.renderNav('ledger.html');</script>
+<div class="container">
+  <h1>基金账本</h1>
+  <div class="total">
+    <div>当前基金总额</div>
+    <div class="big" id="total">¥0</div>
+  </div>
+
+  <div class="card" id="tableWrap"></div>
+
+  <div style="margin-top:18px; display:flex; gap:12px;">
+    <button class="btn" id="csv">导出 CSV</button>
+    <a class="btn ghost" href="index.html">返回首页</a>
+  </div>
+</div>
+
+<script src="peeps.js"></script>
+<script src="state.js"></script>
+<script>
+MF.settleOverdue();
+const s = MF.getState();
+document.getElementById('total').textContent = s.settings.currency + s.fundTotal;
+
+const wrap = document.getElementById('tableWrap');
+if (!s.members.length) {
+  wrap.innerHTML = '<div class="muted">还没成员</div>';
+} else {
+  let rows = '';
+  for (const m of s.members) {
+    const days = MF.totalCheckinDays(m);
+    const cur = MF.currentMonthDebt(m, s.settings.fineAmount);
+    rows += `<tr>
+      <td><b>${m.name}</b></td>
+      <td>${days} 天</td>
+      <td>${s.settings.currency}${m.debt}</td>
+      <td>${s.settings.currency}${cur}</td>
+    </tr>`;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>成员</th><th>累计打卡天数</th><th>累计欠款</th><th>本月欠款(估算)</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+document.getElementById('csv').onclick = () => MF.exportCSV();
+</script>
+</body>
+</html>

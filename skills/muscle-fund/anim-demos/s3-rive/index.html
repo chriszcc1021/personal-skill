@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>方案 3 · Rive 运行时</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--sand:#F4E4BC;--ink:#0D3B4F;--cyan:#4FC3F7;--yellow:#FFD600;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);overflow-x:hidden;
+            background:radial-gradient(ellipse at 50% 60%, #fff5d6 0%, var(--sand) 60%, #e6cf94 100%);}
+  body{display:flex;flex-direction:column;align-items:center;padding:18px 12px 30px}
+  h1{font-size:22px;margin-bottom:4px;letter-spacing:.05em}
+  .sub{opacity:.6;font-size:13px;margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px;width:min(640px,96vw)}
+  .card{background:#fff;border:2px solid var(--ink);border-radius:20px;padding:14px;box-shadow:0 8px 18px rgba(13,59,79,.18)}
+  .card h3{font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .card h3 .tag{font-size:10px;background:var(--yellow);color:var(--ink);padding:2px 8px;border-radius:10px;border:1.5px solid var(--ink)}
+  canvas{display:block;width:100%;aspect-ratio:1/1;background:#FAF4E1;border-radius:14px;border:1.5px dashed rgba(13,59,79,.3)}
+  .note{font-size:12px;line-height:1.7;opacity:.75;margin-top:10px}
+  .note b{color:var(--ink)}
+  .err{color:#c33;background:#fee;padding:8px;border-radius:8px;font-size:12px;margin-top:8px;display:none}
+  .err.show{display:block}
+  .meta{margin-top:14px;font-size:11px;opacity:.55;text-align:center;line-height:1.7;max-width:640px}
+  code{background:#f1f1f1;padding:1px 5px;border-radius:4px;font-size:11px}
+</style>
+</head>
+<body>
+  <h1>海绵宝宝风格鱼 · 举哑铃</h1>
+  <div class="sub">方案 3 — Rive 运行时演示</div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🚧 诚实说明 <span class="tag">必读</span></h3>
+      <div class="note">
+        没有 Rive 编辑器环境（一个 GUI 桌面/网页 app），<b>没办法原创</b>一只海绵宝宝鱼的 <code>.riv</code> 文件。
+        Rive 文件是二进制的，必须用 <a href="https://rive.app/editor" target="_blank">rive.app/editor</a> 拖关节、画矢量、绑骨骼、设 state machine 才能导出。
+        <br><br>
+        所以方案 3 给两个东西：
+        <br>1️⃣ 用 <code>@rive-app/canvas</code> 加载 Rive 社区的公开 <code>.riv</code> 文件演示 <b>运行时能力</b>（关节驱动、state machine、输入响应）。
+        <br>2️⃣ 列出制作流程：如果哥要原创鱼，下面这套就是制作步骤。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🎬 Demo 1 · Rive 社区公开动画</h3>
+      <canvas id="riveCanvas1"></canvas>
+      <div class="err" id="err1"></div>
+      <div class="note">
+        加载 Rive CDN 上的 <code>vehicles.riv</code>（官方示例）。Rive 运行时全功能：矢量缩放无损、关节插值、文件 ~30 KB。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🛠️ 如果原创海绵宝宝鱼，制作步骤</h3>
+      <div class="note">
+        <b>1.</b> 打开 rive.app/editor，新建 Artboard 400×400。<br>
+        <b>2.</b> 矢量画鱼：椭圆身体（青蓝 #4FC3F7）+ 三角鳃 + 三角头鳍 + 大眼 + 厚黄唇 + 三角粉鼻。<br>
+        <b>3.</b> 加 Bone：肩骨（2 根）→ 上臂骨 → 前臂骨 → 手骨，绑哑铃 group 到手骨末端。<br>
+        <b>4.</b> 时间轴关键帧：0s 上臂 0° / 前臂 0° → 0.5s 上臂 -10° / 前臂 -140° → 1.0s 回 0°。<br>
+        <b>5.</b> 加 State Machine：<code>idle</code> ↔ <code>curl</code>，input <code>isLifting</code> 触发切换。<br>
+        <b>6.</b> 加配料动画：呼吸（身体 scale）、眨眼（眼睑 mask）、尾鳍摆（rotation）。<br>
+        <b>7.</b> Export → <code>spongebob-fish-curl.riv</code>（~25-40 KB）。<br>
+        <b>8.</b> 网页用 <code>new rive.Rive({src:'fish.riv', artboard:'Fish', stateMachines:'sm'})</code> 加载。
+      </div>
+    </div>
+  </div>
+
+  <div class="meta">
+    Rive 优势：矢量无损 · 文件小（~30 KB vs PNG 序列 6 MB）· State Machine 交互 · 运行时控制参数<br>
+    劣势：必须用 Rive 编辑器（无 code-only 工作流）· 学习成本高 · 社区资源比 Lottie 少
+  </div>
+
+<!-- Rive 运行时 CDN -->
+<script src="https://unpkg.com/@rive-app/canvas@2.21.6"></script>
+<script>
+  function loadRive(canvasId, errId, src){
+    const cv = document.getElementById(canvasId);
+    const err = document.getElementById(errId);
+    try{
+      const r = new rive.Rive({
+        src: src,
+        canvas: cv,
+        autoplay: true,
+        stateMachines: undefined,
+        onLoad: () => { r.resizeDrawingSurfaceToCanvas(); },
+        onLoadError: (e) => { err.textContent='❌ 加载失败: '+(e?.message||e); err.classList.add('show'); }
+      });
+      window.addEventListener('resize', ()=>r.resizeDrawingSurfaceToCanvas());
+    }catch(e){
+      err.textContent='❌ Rive 初始化失败: '+e.message; err.classList.add('show');
+    }
+  }
+  // Rive 官方示例（公开 CDN）
+  loadRive('riveCanvas1','err1','https://cdn.rive.app/animations/vehicles.riv');
+</script>
+</body>
+</html>

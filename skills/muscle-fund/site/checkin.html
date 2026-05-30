@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>打卡 · 肌肉基金</title>
+<link rel="stylesheet" href="common.css">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  h1 { font-family:"Caveat",cursive; font-size: 52px; margin: 10px 0;}
+  .layout { display:grid; grid-template-columns: 360px 1fr; gap:24px; margin-top:14px;}
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr;}}
+  .stage { background:#fff;border:2px solid var(--ink); border-radius:14px;
+    aspect-ratio:1/1; display:flex; align-items:center;justify-content:center; padding:10px;}
+  .stage svg{width:100%;height:100%;}
+  .picker { margin: 10px 0 18px; }
+  .parts-grid {
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap:12px;
+  }
+  .part {
+    background:#fff; border:3px solid var(--ink); border-radius:14px;
+    padding: 18px; text-align:center; cursor:pointer;
+    font-size: 18px; font-weight:700; user-select:none;
+  }
+  .part .emoji { font-size: 36px; display:block; margin-bottom:6px;}
+  .part .count { font-size:12px; color:#777; font-weight:400; }
+  .part.on { background: var(--orange); color:#fff; border-color: var(--ink); box-shadow: 4px 4px 0 var(--ink);}
+  .actions { margin-top: 24px; display:flex; gap:12px; flex-wrap:wrap;}
+  .done-banner {
+    background: #2EA043; color:#fff; padding: 16px; border-radius:12px; border:2px solid var(--ink);
+    margin: 10px 0; font-weight:700;
+  }
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<script>MFNav.renderNav('checkin.html');</script>
+<div class="container">
+  <h1>今日打卡</h1>
+
+  <div class="picker">
+    <label>选成员：</label>
+    <select id="who"></select>
+  </div>
+
+  <div id="content"></div>
+</div>
+
+<script src="peeps.js"></script>
+<script src="state.js"></script>
+<script>
+const PARTS = [
+  ['arms', '手臂', '💪'],
+  ['chest', '胸肌', '🫁'],
+  ['back', '背', '🦴'],
+  ['abs', '腹肌', '🧱'],
+  ['shoulders', '肩', '🪨'],
+  ['legs', '腿', '🦵'],
+];
+
+MF.settleOverdue();
+const s = MF.getState();
+const sel = document.getElementById('who');
+if (!s.members.length) {
+  document.getElementById('content').innerHTML = `<div class="card">还没成员。<a href="onboard.html">加一个</a></div>`;
+} else {
+  for (const m of s.members) {
+    const o = document.createElement('option');
+    o.value = m.id; o.textContent = m.name;
+    sel.appendChild(o);
+  }
+  const params = new URLSearchParams(location.search);
+  const wanted = params.get('id');
+  if (wanted && s.members.find(m=>m.id===wanted)) sel.value = wanted;
+  sel.onchange = renderMember;
+  renderMember();
+}
+
+let chosen = new Set();
+
+function renderMember() {
+  const id = sel.value;
+  const s = MF.getState();
+  const m = s.members.find(x => x.id === id);
+  if (!m) return;
+  chosen = new Set();
+  const today = MF.todayStr();
+  const already = m.checkins[today] && m.checkins[today].length;
+  const html = `
+    <div class="layout">
+      <div class="stage">${Peeps.renderAvatar(m.avatar, m.growth)}</div>
+      <div>
+        ${already ? `<div class="done-banner">✅ ${m.name} 今天已打卡：${m.checkins[today].map(p=>PARTS.find(q=>q[0]===p)?.[1]).join(' / ')}</div>` : ''}
+        <h3 style="margin-top:0">${already ? '已完成' : '选今天练了什么（可多选）'}</h3>
+        <div class="parts-grid" id="parts"></div>
+        ${already ? '' : `<div class="actions">
+          <button class="btn" id="okBtn">确认今日训练</button>
+          <a class="btn ghost" href="index.html">返回</a>
+        </div>`}
+      </div>
+    </div>`;
+  document.getElementById('content').innerHTML = html;
+  const grid = document.getElementById('parts');
+  for (const [k, name, emoji] of PARTS) {
+    const div = document.createElement('div');
+    div.className = 'part';
+    div.innerHTML = `<span class="emoji">${emoji}</span>${name}<div class="count">已练 ${m.growth[k]||0} 次</div>`;
+    if (already) {
+      if (m.checkins[today].includes(k)) div.classList.add('on');
+    } else {
+      div.onclick = () => {
+        if (chosen.has(k)) { chosen.delete(k); div.classList.remove('on');}
+        else { chosen.add(k); div.classList.add('on'); }
+      };
+    }
+    grid.appendChild(div);
+  }
+  if (!already) {
+    document.getElementById('okBtn').onclick = () => {
+      if (!chosen.size) { alert('至少选一个部位'); return; }
+      const r = MF.checkin(m.id, [...chosen]);
+      if (!r.ok) { alert(r.msg); return; }
+      alert('打卡成功！💪');
+      location.href = 'index.html';
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>动画 3 方案对比</title>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"Fredoka","Noto Sans SC",sans-serif;
+  background:linear-gradient(180deg,#80E0E8 0%,#4DD0E1 60%,#26B5C6 100%);
+  min-height:100vh;padding:40px 20px;color:#0D3B4F;
+  display:flex;flex-direction:column;align-items:center;gap:24px;
+}
+h1{font-family:"Luckiest Guy",sans-serif;font-size:54px;color:#FFD600;
+  -webkit-text-stroke:4px #0D3B4F;text-shadow:6px 6px 0 #0D3B4F;letter-spacing:.05em;text-align:center}
+.subtitle{font-weight:700;font-size:14px;background:rgba(255,255,255,.6);padding:10px 20px;border-radius:24px;border:2.5px solid #0D3B4F}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:min(1280px,96vw);margin-top:8px}
+@media (max-width:920px){.grid{grid-template-columns:1fr}}
+
+.card{
+  background:rgba(255,255,255,.55);border:3px solid #0D3B4F;border-radius:22px;
+  padding:20px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:6px 6px 0 #0D3B4F;
+}
+.card h2{font-family:"Luckiest Guy",sans-serif;font-size:26px;letter-spacing:.05em}
+.tag{display:inline-block;background:#FFD600;border:2px solid #0D3B4F;border-radius:10px;padding:3px 10px;font-weight:900;font-size:11px;letter-spacing:1px;margin-right:6px}
+.tag.coral{background:#FF7043;color:#fff}
+.tag.green{background:#81C784}
+.desc{font-size:13px;font-weight:600;line-height:1.6;opacity:.85}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+.metrics div{background:rgba(255,255,255,.5);border:1.5px solid #0D3B4F;border-radius:8px;padding:6px 10px}
+.metrics b{display:block;font-size:10px;opacity:.6;letter-spacing:.1em;text-transform:uppercase}
+iframe{width:100%;aspect-ratio:1/1.1;border:2.5px solid #0D3B4F;border-radius:14px;background:#fff}
+.cta{background:#0D3B4F;color:#FFD600;font-family:"Luckiest Guy",sans-serif;font-size:14px;
+  padding:10px 14px;border-radius:10px;text-align:center;text-decoration:none;letter-spacing:1px;
+  border:2.5px solid #0D3B4F;display:inline-block;transition:all .15s ease}
+.cta:hover{background:#FFD600;color:#0D3B4F;transform:translateY(-2px);box-shadow:4px 4px 0 #0D3B4F}
+
+footer{font-size:13px;font-weight:600;opacity:.85;text-align:center;max-width:680px;background:rgba(255,255,255,.5);padding:14px 20px;border-radius:14px;border:2px solid #0D3B4F;margin-top:6px;line-height:1.6}
+</style>
+</head>
+<body>
+<h1>3 个动画方案</h1>
+<div class="subtitle">点开看效果 · 哥拍一个我去做完整版</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>方案 1 · CSS 动一动</h2>
+    <div>
+      <span class="tag green">最简单</span>
+      <span class="tag">30 分钟</span>
+    </div>
+    <div class="desc">一张分层 SVG + CSS @keyframes。手臂上下挥、肚子起伏、肌肉等级滑块控制。</div>
+    <iframe src="v1-css/"></iframe>
+    <div class="metrics">
+      <div><b>哥要给</b>分层 SVG 1 张</div>
+      <div><b>动作种类</b>1-2 种</div>
+      <div><b>文件大小</b>5-10 KB</div>
+      <div><b>可演示</b>立刻能跑</div>
+    </div>
+    <a class="cta" href="v1-css/" target="_blank">单独查看 →</a>
+  </div>
+
+  <div class="card">
+    <h2>方案 2 · JS 健身房</h2>
+    <div>
+      <span class="tag">中等</span>
+      <span class="tag">1-2 小时</span>
+    </div>
+    <div class="desc">分层 SVG + JS 动作池。6 条鱼在水下健身房各做各的，等级越高动作越狠。点鱼可升级测试。</div>
+    <iframe src="v2-js/"></iframe>
+    <div class="metrics">
+      <div><b>哥要给</b>分层 SVG 1 张</div>
+      <div><b>动作种类</b>5 种 + 错峰</div>
+      <div><b>文件大小</b>15-25 KB</div>
+      <div><b>可演示</b>立刻能跑</div>
+    </div>
+    <a class="cta" href="v2-js/" target="_blank">单独查看 →</a>
+  </div>
+
+  <div class="card">
+    <h2>方案 3 · Lottie 顶配</h2>
+    <div>
+      <span class="tag coral">最强</span>
+      <span class="tag">美术成本高</span>
+    </div>
+    <div class="desc">AE / Figma 设计完整动画 → Lottie JSON。卡通级流畅，可做爆肌过场 / 跳舞 / 表情切换。</div>
+    <iframe src="v3-lottie/"></iframe>
+    <div class="metrics">
+      <div><b>哥要给</b>AE / Figma 设计</div>
+      <div><b>动作种类</b>无限</div>
+      <div><b>文件大小</b>50-200 KB/动画</div>
+      <div><b>可演示</b>示例非自家鱼</div>
+    </div>
+    <a class="cta" href="v3-lottie/" target="_blank">单独查看 →</a>
+  </div>
+</div>
+
+<footer>
+  我推荐方案 2 · 哥只给 1 张分层 SVG 鱼，就能跑「6 个鱼水下健身房」全套<br>
+  方案 3 想要的话也能做，但成本主要在美术那一端
+</footer>
+</body>
+</html>

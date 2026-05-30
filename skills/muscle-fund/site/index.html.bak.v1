@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>肌肉基金 Muscle Fund</title>
+<link rel="stylesheet" href="common.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  .hero { text-align:center; padding: 40px 20px 20px; }
+  .hero h1 {
+    font-family:"Caveat",cursive; font-size: clamp(50px,9vw,110px);
+    margin: 0; color: var(--ink); line-height: 1;
+  }
+  .hero .sub { font-size: 18px; color: #555; margin-top: 8px; }
+  .fund-card {
+    background: var(--orange);
+    border: 3px solid var(--ink); border-radius: 18px;
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 30px; text-align: center; margin: 30px 0;
+  }
+  .fund-card .label { color:#fff; font-size:16px; letter-spacing:2px; font-weight:700;}
+  .fund-card .amount {
+    font-family:"Caveat",cursive; font-size: clamp(80px,15vw,180px);
+    color:#fff; line-height: 1; text-shadow: 5px 5px 0 var(--ink);
+  }
+  .fund-card .hint { color: #fff; font-size:13px; opacity:.85; }
+  .cta-row { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin: 20px 0 40px;}
+  .members-grid {
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 16px;
+  }
+  .member-card {
+    background:#fff; border:2px solid var(--ink); border-radius: 14px;
+    padding: 14px; text-align:center; cursor:pointer;
+    transition: transform .15s;
+  }
+  .member-card:hover { transform: translateY(-4px); box-shadow: 4px 4px 0 var(--ink);}
+  .member-card .stage {
+    aspect-ratio: 1/1; background: var(--tea); border-radius: 10px;
+    display:flex; align-items:center; justify-content:center; padding: 4px;
+  }
+  .member-card .stage svg { width: 100%; height: 100%; }
+  .member-card .name { font-weight:700; margin-top: 10px; font-size:16px;}
+  .member-card .stat { font-size:12px; color:#666; margin-top:2px; }
+  .empty {
+    text-align:center; padding: 60px 20px; border: 2px dashed var(--ink); border-radius:14px;
+    color:#666;
+  }
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<script>MFNav.renderNav('index.html');</script>
+
+<div class="container">
+  <div class="hero">
+    <h1>肌肉基金</h1>
+    <div class="sub">Muscle Fund · 不练就罚钱，越练越壮</div>
+  </div>
+
+  <div class="fund-card">
+    <div class="label">当前基金余额</div>
+    <div class="amount" id="fundAmount">¥0</div>
+    <div class="hint">每个工作日不打卡 = 缴罚款进基金</div>
+  </div>
+
+  <div class="cta-row">
+    <a class="btn" href="checkin.html">✅ 今日打卡</a>
+    <a class="btn ghost" href="ledger.html">📒 查看账本</a>
+    <a class="btn ghost" href="onboard.html">➕ 加成员</a>
+    <a class="btn ghost" href="settings.html">⚙️ 设置</a>
+  </div>
+
+  <h2 style="font-family:'Caveat',cursive;font-size:42px;margin:30px 0 14px;">角色展厅</h2>
+  <div id="members"></div>
+</div>
+
+<script src="peeps.js"></script>
+<script src="state.js"></script>
+<script>
+  // 进首页时先结算一次（追算工作日缺勤）
+  MF.settleOverdue();
+  const s = MF.getState();
+  document.getElementById('fundAmount').textContent = s.settings.currency + s.fundTotal;
+
+  const wrap = document.getElementById('members');
+  if (!s.members.length) {
+    wrap.innerHTML = `<div class="empty">还没有成员，去 <a href="onboard.html">加成员</a> 开练 💪</div>`;
+  } else {
+    const grid = document.createElement('div');
+    grid.className = 'members-grid';
+    for (const m of s.members) {
+      const div = document.createElement('div');
+      div.className = 'member-card';
+      const totalDays = MF.totalCheckinDays(m);
+      div.innerHTML = `
+        <div class="stage">${Peeps.renderAvatar(m.avatar, m.growth)}</div>
+        <div class="name">${m.name}</div>
+        <div class="stat">打卡 ${totalDays} 天 · 欠 ${s.settings.currency}${m.debt}</div>`;
+      div.onclick = () => { location.href = `checkin.html?id=${m.id}`; };
+      grid.appendChild(div);
+    }
+    wrap.appendChild(grid);
+  }
+</script>
+</body>
+</html>

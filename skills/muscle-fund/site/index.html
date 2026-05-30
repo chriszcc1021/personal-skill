@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>肌肉基金</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@500;600;700&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-ocean:#4DD0E1;
+  --bg-deep:#00838F;
+  --bg-sand:#F9E4A6;
+  --ink:#0D3B4F;
+  --sponge:#FFD600;
+  --patrick:#FF80AB;
+  --coral:#FF7043;
+  --bubble:rgba(255,255,255,0.65);
+  --white:#FFFFFF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Fredoka","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  color:var(--ink);
+  background:linear-gradient(180deg,#80E0E8 0%,var(--bg-ocean) 40%,#26B5C6 100%);
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+/* bubbles */
+.bubble{position:fixed;border-radius:50%;background:var(--bubble);pointer-events:none;animation:rise linear infinite;z-index:0}
+@keyframes rise{
+  0%{transform:translateY(0) scale(.6);opacity:0}
+  10%{opacity:.7}
+  100%{transform:translateY(-110vh) scale(1.1);opacity:0}
+}
+/* topbar */
+.topbar{
+  position:fixed;top:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 24px;z-index:50;
+  backdrop-filter:blur(8px);
+  background:rgba(255,255,255,0.25);
+  border-bottom:1px solid rgba(13,59,79,0.08);
+}
+.topbar .brand{
+  font-family:"Luckiest Guy","Fredoka",sans-serif;
+  font-size:24px;color:var(--ink);letter-spacing:1.5px;
+  font-weight:900;
+}
+.topbar .right{display:flex;gap:6px;align-items:center}
+.icon-btn{
+  width:36px;height:36px;border-radius:10px;
+  background:transparent;border:1.5px solid rgba(13,59,79,0.25);
+  color:var(--ink);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s ease;
+}
+.icon-btn:hover{background:var(--ink);color:var(--sponge);border-color:var(--ink)}
+.icon-btn:active{transform:scale(.95)}
+
+main{position:relative;z-index:10;max-width:1280px;margin:0 auto;padding:88px 32px 48px;display:flex;flex-direction:column;gap:36px}
+
+/* ===== HERO: Fund Amount ===== */
+.hero{
+  text-align:center;
+  padding:24px 0 8px;
+}
+.hero .amount{
+  font-family:"Fredoka","Noto Sans SC",sans-serif;
+  font-size:clamp(80px,15vw,220px);
+  line-height:.95;
+  color:var(--sponge);
+  -webkit-text-stroke:5px var(--ink);
+  text-shadow:6px 6px 0 var(--ink);
+  letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;
+  user-select:none;
+  font-weight:700;
+  display:inline-flex;align-items:baseline;gap:.04em;
+}
+.hero .amount .currency{
+  font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:.7em;line-height:1;font-weight:900;
+  -webkit-text-stroke:4px var(--ink);
+}
+@media (max-width:520px){
+  .hero .amount{font-size:clamp(72px,18vw,140px);-webkit-text-stroke:4px var(--ink);text-shadow:4px 4px 0 var(--ink)}
+  .hero .amount .currency{-webkit-text-stroke:3px var(--ink)}
+}
+
+/* ===== Members Showcase ===== */
+.showcase{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:18px;
+  align-items:end;
+}
+@media (max-width:900px){.showcase{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:520px){.showcase{grid-template-columns:repeat(2,1fr);gap:14px}}
+
+.member{
+  position:relative;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+  padding:8px 4px 16px;
+  border-radius:18px;
+  transition:all .2s ease;
+}
+.member:hover{transform:translateY(-4px)}
+.member .avatar-wrap{
+  width:100%;aspect-ratio:1/1.4;
+  background:rgba(255,255,255,0.35);
+  border-radius:18px;
+  border:2px solid rgba(13,59,79,0.15);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.member.checked-today .avatar-wrap{
+  border-color:var(--patrick);
+  box-shadow:0 0 0 4px rgba(255,128,171,0.35);
+  background:rgba(255,255,255,0.55);
+}
+.member .name{
+  margin-top:10px;
+  font-weight:900;font-size:15px;color:var(--ink);
+  letter-spacing:.02em;
+}
+.member .badge{
+  position:absolute;top:-6px;right:-6px;
+  background:var(--ink);color:var(--white);
+  padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;
+  font-family:"Fredoka",sans-serif;
+}
+.member .badge.ok{background:var(--patrick);color:var(--ink)}
+.member .badge.debt{background:var(--coral);color:var(--white)}
+.member.empty .avatar-wrap{
+  border-style:dashed;background:rgba(255,255,255,0.18);
+  cursor:pointer;
+}
+.member.empty .placeholder{
+  font-size:42px;color:rgba(13,59,79,0.45);font-weight:300;
+}
+.member.empty .name{color:rgba(13,59,79,0.5);font-weight:600;font-size:13px}
+
+/* ===== Checkin row ===== */
+.checkin{
+  background:rgba(255,255,255,0.4);
+  border-radius:24px;
+  padding:24px 28px;
+  border:2px solid rgba(13,59,79,0.1);
+}
+.checkin .who{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;flex-wrap:wrap;gap:12px;
+}
+.checkin .who label{font-size:13px;color:var(--ink);opacity:.7;font-weight:700}
+.checkin select{
+  border:2px solid var(--ink);background:var(--white);color:var(--ink);
+  padding:8px 14px;border-radius:12px;font-weight:700;font-size:14px;
+  font-family:inherit;cursor:pointer;
+}
+.parts{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:12px;
+}
+@media (max-width:760px){.parts{grid-template-columns:repeat(3,1fr)}}
+.part{
+  cursor:pointer;user-select:none;
+  background:var(--white);border:2.5px solid var(--ink);
+  border-radius:16px;padding:14px 8px;text-align:center;
+  font-weight:700;color:var(--ink);font-size:14px;
+  transition:all .15s ease;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.part .ico{font-size:28px;line-height:1}
+.part:hover{background:var(--bg-sand)}
+.part.on{background:var(--sponge);transform:translateY(-2px);box-shadow:4px 4px 0 var(--ink)}
+.part.done{background:var(--patrick);color:var(--ink);cursor:not-allowed;opacity:.7}
+.cta-row{margin-top:18px;display:flex;justify-content:flex-end;gap:10px}
+.btn-primary{
+  background:var(--sponge);color:var(--ink);
+  border:3px solid var(--ink);border-radius:14px;padding:16px 32px;
+  font-family:"Luckiest Guy","ZCOOL KuaiLe","Fredoka",sans-serif;font-size:22px;letter-spacing:2px;
+  cursor:pointer;transition:all .15s ease;
+  box-shadow:5px 5px 0 var(--ink);
+  font-weight:900;
+}
+.btn-primary:hover{background:#FFEB3B;transform:translateY(-2px);box-shadow:6px 6px 0 var(--ink)}
+.btn-primary:active{transform:translateY(2px);box-shadow:2px 2px 0 var(--ink)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{
+  background:transparent;color:var(--ink);
+  border:2px solid var(--ink);border-radius:14px;padding:14px 22px;
+  font-weight:700;font-size:14px;cursor:pointer;
+}
+.btn-ghost:hover{background:var(--ink);color:var(--sponge)}
+
+/* sand bottom decor */
+.seafloor{
+  position:fixed;left:0;right:0;bottom:0;height:90px;z-index:1;pointer-events:none;
+}
+.seafloor svg{width:100%;height:100%;display:block}
+
+/* calendar */
+.calendar-card{
+  background:rgba(255,255,255,0.4);
+  border-radius:24px;padding:20px 24px;
+  border:2px solid rgba(13,59,79,0.1);
+}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-title{font-family:"Luckiest Guy","Fredoka",sans-serif;font-size:20px;color:var(--ink);letter-spacing:.06em}
+.cal-grid{display:grid;gap:6px}
+.cal-row{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center}
+.cal-row .who{font-weight:900;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:8px;position:sticky;left:0;background:rgba(255,255,255,0.7);backdrop-filter:blur(6px);padding-right:6px;z-index:2;min-width:0}
+.cal-row .who .av{width:24px;height:34px;flex:none}
+.cal-row .days{display:grid;gap:4px;grid-auto-flow:column;grid-auto-columns:28px}
+@media (max-width:760px){
+  .cal-row{grid-template-columns:70px 1fr}
+  .cal-row .days{grid-auto-columns:24px}
+  .cal-row .who{font-size:12px}
+}
+.cal-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.cal-cell{
+  aspect-ratio:1/1;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:rgba(13,59,79,.55);
+  background:rgba(255,255,255,0.35);position:relative;cursor:default;
+}
+.cal-cell.weekend{background:rgba(13,59,79,0.06);color:rgba(13,59,79,.3)}
+.cal-cell.future{opacity:.5}
+.cal-cell.done{background:var(--sponge);color:var(--ink)}
+.cal-cell.miss{background:rgba(255,112,67,0.18);color:var(--coral)}
+.cal-cell .num{font-size:10px;position:absolute;top:2px;left:4px;opacity:.5}
+.cal-headrow{font-size:10px;letter-spacing:.1em;color:var(--ink);opacity:.55;text-transform:uppercase;font-weight:700}
+.cal-headrow .days{display:grid;gap:4px;grid-auto-flow:column;grid-auto-columns:28px}
+@media (max-width:760px){.cal-headrow .days{grid-auto-columns:24px}}
+.cal-headrow .cal-cell{background:transparent;aspect-ratio:auto;padding:4px 0}
+
+/* drawer (member detail / settings / ledger) */
+.drawer-mask{
+  position:fixed;inset:0;background:rgba(13,59,79,0.5);
+  z-index:100;display:none;
+}
+.drawer-mask.show{display:block}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;width:min(440px,92vw);
+  background:#fff;z-index:101;
+  transform:translateX(100%);transition:transform .25s ease;
+  padding:24px 26px;overflow-y:auto;
+}
+.drawer.show{transform:translateX(0)}
+.drawer h2{
+  font-family:"Luckiest Guy","ZCOOL KuaiLe","Fredoka",sans-serif;
+  font-size:28px;margin-bottom:18px;color:var(--ink);letter-spacing:.04em;
+}
+.drawer .row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(13,59,79,0.1)}
+.drawer .row:last-child{border-bottom:none}
+.drawer label{font-size:13px;color:var(--ink);opacity:.7;font-weight:700}
+.drawer input[type="number"],.drawer input[type="text"]{
+  border:2px solid var(--ink);border-radius:10px;padding:8px 12px;
+  font-family:inherit;font-weight:700;width:120px;text-align:right;
+}
+.drawer .close{
+  position:absolute;top:14px;right:18px;
+  background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--ink);
+}
+.danger{color:var(--coral)}
+.muted{color:rgba(13,59,79,0.5);font-size:13px}
+
+/* onboard inline */
+.onboard{
+  display:grid;grid-template-columns:1fr 1.2fr;gap:24px;
+  margin-top:16px;
+}
+@media (max-width:680px){.onboard{grid-template-columns:1fr}}
+.onboard .preview{background:rgba(13,59,79,0.05);border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;min-height:280px}
+.onboard .picker{display:flex;flex-direction:column;gap:14px}
+.opt-row{display:flex;flex-direction:column;gap:6px}
+.opt-row .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink);opacity:.6;text-transform:uppercase}
+.opt-row .opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{
+  border:2px solid var(--ink);background:#fff;border-radius:10px;
+  padding:6px 12px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink);
+}
+.opt.on{background:var(--sponge);box-shadow:2px 2px 0 var(--ink)}
+.onboard .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid rgba(13,59,79,0.1)}
+th{font-size:11px;color:var(--ink);opacity:.6;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+
+/* mobile tweaks */
+@media (max-width:520px){
+  main{padding:80px 16px 36px;gap:24px}
+  .topbar{padding:10px 14px}
+  .topbar .brand{font-size:15px}
+  .checkin{padding:18px 16px}
+  .part{padding:18px 6px;min-height:78px}
+  .part .ico{font-size:24px}
+  .calendar-card{padding:16px 14px}
+  #gate-name{font-size:16px}
+  .btn-primary{padding:16px 24px}
+  .member .name{font-size:13px}
+  .icon-btn{width:40px;height:40px}
+  .hero .amount{text-shadow:4px 4px 0 var(--ink)}
+}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- bubbles -->
+<div id="bubbles"></div>
+
+<div class="topbar">
+  <div class="brand">MUSCLE FUND</div>
+  <div class="right">
+    <div id="me-chip" style="display:none;align-items:center;gap:8px;padding:6px 12px;border:1.5px solid var(--ink);border-radius:999px;font-weight:700;font-size:13px;color:var(--ink);background:rgba(255,255,255,0.5);cursor:pointer;">
+      <span id="me-name"></span>
+      <span style="opacity:.5">▾</span>
+    </div>
+    <button class="icon-btn" id="btn-ledger" title="账本">📊</button>
+    <button class="icon-btn" id="btn-settings" title="设置">⚙</button>
+  </div>
+</div>
+
+<!-- LOGIN GATE -->
+<div id="gate" style="position:fixed;inset:0;z-index:200;background:linear-gradient(180deg,#80E0E8 0%,var(--bg-ocean) 100%);display:none;align-items:center;justify-content:center;flex-direction:column;gap:24px;padding:24px;">
+  <div style="font-family:'Luckiest Guy','ZCOOL KuaiLe',sans-serif;font-size:clamp(80px,16vw,120px);color:var(--sponge);-webkit-text-stroke:5px var(--ink);text-shadow:7px 7px 0 var(--ink);letter-spacing:.06em;text-align:center;line-height:.95;font-weight:900">MUSCLE<br>FUND</div>
+  <div style="background:rgba(255,255,255,0.7);border:2px solid var(--ink);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:14px;width:min(360px,92vw);box-shadow:6px 6px 0 var(--ink)">
+    <div style="font-size:12px;letter-spacing:.14em;color:var(--ink);opacity:.7;font-weight:700;text-transform:uppercase">你是谁</div>
+    <input id="gate-name" type="text" placeholder="输入你的名字 · 比如张鱼哥" style="border:2px solid var(--ink);border-radius:12px;padding:14px 16px;font-family:inherit;font-weight:700;font-size:16px;outline:none">
+    <div id="gate-hint" style="font-size:13px;color:var(--coral);font-weight:600;display:none"></div>
+    <button class="btn-primary" id="gate-enter">进入基金</button>
+    <div style="font-size:12px;color:var(--ink);opacity:.55;text-align:center">设备会记住你，下次不用再填</div>
+  </div>
+</div>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="amount" id="amount"><span class="currency">¥</span><span id="amount-num">0</span></div>
+  </section>
+
+  <!-- SHOWCASE -->
+  <section class="showcase" id="showcase"></section>
+
+  <!-- CHECKIN (own only) -->
+  <section class="checkin" id="checkin-card">
+    <div class="who">
+      <label id="checkin-label">今天练什么 →</label>
+      <span id="who-tag" style="font-family:'Luckiest Guy','Fredoka',sans-serif;color:var(--ink);font-size:22px;letter-spacing:.04em"></span>
+    </div>
+    <div class="parts" id="parts"></div>
+    <div class="cta-row">
+      <button class="btn-primary" id="btn-checkin">确认打卡</button>
+    </div>
+  </section>
+
+  <!-- CALENDAR (比基尼海滩日历) -->
+  <section class="calendar-card" id="calendar-card">
+    <div class="cal-head">
+      <button class="icon-btn" id="cal-prev">◀</button>
+      <div class="cal-title" id="cal-title"></div>
+      <button class="icon-btn" id="cal-next">▶</button>
+    </div>
+    <div class="cal-scroll"><div class="cal-grid" id="cal-grid"></div></div>
+  </section>
+</main>
+
+<!-- seafloor -->
+<div class="seafloor">
+  <svg viewBox="0 0 1200 90" preserveAspectRatio="none">
+    <path d="M0 90 L0 50 Q120 30 240 50 T480 50 T720 50 T960 50 T1200 50 L1200 90 Z" fill="#F9E4A6"/>
+    <!-- seaweed -->
+    <path d="M120 50 Q116 30 124 18 Q118 10 126 0" stroke="#00838F" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M380 50 Q376 28 384 14 Q378 6 386 -2" stroke="#00838F" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M820 50 Q816 30 824 18 Q818 10 826 0" stroke="#00838F" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M1080 50 Q1076 28 1084 14 Q1078 6 1086 -2" stroke="#00838F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+</div>
+
+<!-- Drawer mask & content -->
+<div class="drawer-mask" id="mask"></div>
+<aside class="drawer" id="drawer">
+  <button class="close" id="drawer-close">✕</button>
+  <div id="drawer-content"></div>
+</aside>
+
+<script src="peeps.js"></script>
+<script src="state.js"></script>
+<script>
+// ============== UI Wiring ==============
+const SEED_NAMES = ['P神','查尔斯','张鱼哥','狗哥','Shadow','YK'];
+const ADMIN_NAME = '张鱼哥';
+let currentMemberId=null;
+let calCursor=new Date();
+function isAdmin(){
+  const s=MFState.getState();
+  const me=s.members.find(m=>m.id===currentMemberId);
+  return me && me.name===ADMIN_NAME;
+}
+
+function todayStr(){
+  const d=new Date(); const tz=d.getTimezoneOffset();
+  return new Date(d.getTime()-tz*60000).toISOString().slice(0,10);
+}
+function isoOf(d){ const tz=d.getTimezoneOffset(); return new Date(d.getTime()-tz*60000).toISOString().slice(0,10); }
+
+function randomAvatar(){
+  const opts=Peeps.OPTS;
+  const gender=['male','female'][Math.floor(Math.random()*2)];
+  const hairList=gender==='male'?Peeps.HAIR_MALE:Peeps.HAIR_FEMALE;
+  return {
+    gender,
+    hair:hairList[Math.floor(Math.random()*hairList.length)][0],
+    glasses:opts.glasses[Math.floor(Math.random()*opts.glasses.length)][0],
+    nose:opts.nose[Math.floor(Math.random()*opts.nose.length)][0],
+    mouth:opts.mouth[Math.floor(Math.random()*opts.mouth.length)][0],
+    shorts:opts.shorts[Math.floor(Math.random()*opts.shorts.length)][0],
+  };
+}
+
+function ensureSeed(){
+  const s=MFState.getState();
+  if(s.members.length===0){
+    SEED_NAMES.forEach(n=>{
+      MFState.addMember({name:n, avatar:randomAvatar()});
+    });
+  }
+}
+
+// bubbles
+function spawnBubbles(){
+  const root=document.getElementById('bubbles');
+  for(let i=0;i<14;i++){
+    const b=document.createElement('div');
+    b.className='bubble';
+    const sz=8+Math.random()*28;
+    b.style.width=sz+'px';b.style.height=sz+'px';
+    b.style.left=Math.random()*100+'vw';
+    b.style.bottom='-40px';
+    b.style.animationDuration=(8+Math.random()*14)+'s';
+    b.style.animationDelay=(Math.random()*10)+'s';
+    root.appendChild(b);
+  }
+}
+
+let selectedParts=new Set();
+
+function tryRestoreSession(){
+  const id=MFState.getCurrentUserId();
+  const s=MFState.getState();
+  if(id && s.members.find(m=>m.id===id)){
+    currentMemberId=id;
+    return true;
+  }
+  return false;
+}
+
+function showGate(){
+  document.getElementById('gate').style.display='flex';
+  document.getElementById('me-chip').style.display='none';
+  document.querySelector('main').style.display='none';
+  setTimeout(()=>document.getElementById('gate-name').focus(),50);
+}
+function hideGate(){
+  document.getElementById('gate').style.display='none';
+  document.querySelector('main').style.display='flex';
+}
+
+document.getElementById('gate-enter').onclick=tryLogin;
+document.getElementById('gate-name').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+function tryLogin(){
+  const v=document.getElementById('gate-name').value.trim();
+  const hint=document.getElementById('gate-hint');
+  if(!v){hint.style.display='block';hint.textContent='输个名字呀';return;}
+  const r=MFState.login(v);
+  if(!r.ok){hint.style.display='block';hint.textContent=r.msg;return;}
+  hint.style.display='none';
+  currentMemberId=r.member.id;
+  hideGate();render();
+}
+
+// me chip dropdown
+document.getElementById('me-chip').onclick=()=>{
+  if(confirm('退出登录？（数据保留）'))
+    { MFState.logout(); currentMemberId=null; showGate(); }
+};
+
+function render(){
+  MFState.settleOverdue();
+  const s=MFState.getState();
+  const me=s.members.find(m=>m.id===currentMemberId);
+  if(!me){ currentMemberId=null; MFState.logout(); showGate(); return; }
+
+  document.getElementById('me-chip').style.display='flex';
+  document.getElementById('me-name').textContent=me.name;
+  document.getElementById('amount-num').textContent=s.fundTotal.toLocaleString();
+
+  const sc=document.getElementById('showcase');
+  sc.innerHTML='';
+  s.members.forEach(m=>{
+    const checkedToday=(m.checkins[todayStr()]||[]).length>0;
+    const debt=m.debt||0;
+    const wrap=document.createElement('div');
+    wrap.className='member'+(checkedToday?' checked-today':'');
+    wrap.dataset.id=m.id;
+    const isMe=m.id===currentMemberId;
+    const miss=m.missDays||0;
+    let badge='';
+    if(checkedToday) badge=`<div class="badge ok">今日 ✓</div>`;
+    else if(debt>0) badge=`<div class="badge debt">欠 ¥${debt}</div>`;
+    const missTag = miss>0 ? `<div style="font-size:11px;color:var(--coral);font-weight:700;margin-top:2px">漏打 ${miss} 次</div>` : '';
+    wrap.innerHTML=`
+      <div class="avatar-wrap">${Peeps.renderAvatar(m.avatar,m.growth)}</div>
+      <div class="name">${m.name}${isMe?' · 你':''}</div>
+      ${missTag}
+      ${badge}
+    `;
+    wrap.addEventListener('click',()=>openMemberDrawer(m.id));
+    sc.appendChild(wrap);
+  });
+  for(let i=s.members.length;i<6;i++){
+    const wrap=document.createElement('div');
+    wrap.className='member empty';
+    wrap.innerHTML=`<div class="avatar-wrap"><div class="placeholder">+</div></div><div class="name">加成员</div>`;
+    wrap.addEventListener('click',openAddDrawer);
+    sc.appendChild(wrap);
+  }
+
+  document.getElementById('who-tag').textContent=me.name;
+  renderParts();
+  renderCalendar();
+}
+
+function renderParts(){
+  const s=MFState.getState();
+  const m=s.members.find(x=>x.id===currentMemberId);
+  if(!m) return;
+  const todayParts=(m.checkins[todayStr()]||[]);
+  const root=document.getElementById('parts');
+  root.innerHTML='';
+  const PART_DEF=[
+    ['arms','手臂','💪'],['chest','胸','🫁'],['back','背','🦴'],
+    ['abs','腹','🧱'],['legs','腿','🦵'],['shoulders','肩','🪨'],
+  ];
+  PART_DEF.forEach(([k,lbl,ico])=>{
+    const done=todayParts.includes(k);
+    const on=selectedParts.has(k);
+    const el=document.createElement('div');
+    el.className='part'+(done?' done':'')+(on?' on':'');
+    el.innerHTML=`<div class="ico">${ico}</div><div>${lbl}</div>`;
+    if(!done){
+      el.addEventListener('click',()=>{
+        if(selectedParts.has(k)) selectedParts.delete(k);
+        else selectedParts.add(k);
+        renderParts();
+      });
+    }
+    root.appendChild(el);
+  });
+  const btn=document.getElementById('btn-checkin');
+  btn.disabled=selectedParts.size===0;
+  if(todayParts.length>0 && selectedParts.size===0){
+    btn.textContent='今天已打卡 ✓';
+  } else {
+    btn.textContent='确认打卡';
+  }
+}
+
+document.getElementById('btn-checkin').addEventListener('click',()=>{
+  if(selectedParts.size===0) return;
+  const r=MFState.checkin(currentMemberId,[...selectedParts]);
+  if(!r.ok){ alert(r.msg); return; }
+  selectedParts.clear();
+  render();
+});
+
+// ===== Calendar =====
+function renderCalendar(){
+  const s=MFState.getState();
+  const y=calCursor.getFullYear(), mo=calCursor.getMonth();
+  document.getElementById('cal-title').textContent=`${y} 年 ${mo+1} 月`;
+  const daysIn=new Date(y,mo+1,0).getDate();
+  const today=todayStr();
+  let head=`<div class="cal-headrow"><div class="cal-row"><div></div><div class="days">`;
+  for(let d=1;d<=daysIn;d++){ head+=`<div class="cal-cell">${d}</div>`; }
+  head+=`</div></div></div>`;
+  let rows='';
+  s.members.forEach(m=>{
+    let cells='';
+    for(let d=1;d<=daysIn;d++){
+      const date=new Date(y,mo,d);
+      const iso=isoOf(date);
+      const dow=date.getDay();
+      const weekend=(dow===0||dow===6);
+      const future=iso>today;
+      const parts=(m.checkins||{})[iso]||[];
+      let cls='cal-cell',txt='',title='';
+      if(weekend){cls+=' weekend';title=`${iso} 周末`}
+      else if(future){cls+=' future';title=`${iso}`}
+      else if(parts.length){cls+=' done';txt='·';title=`${iso} · ${parts.map(p=>Peeps.PART_LABEL[p]||p).join(' · ')}`}
+      else {cls+=' miss';txt='✕';title=`${iso} 缺勤`}
+      cells+=`<div class="${cls}" title="${title}">${txt}</div>`;
+    }
+    rows+=`<div class="cal-row"><div class="who"><div class="av">${Peeps.renderAvatar(m.avatar,m.growth)}</div>${m.name}</div><div class="days">${cells}</div></div>`;
+  });
+  document.getElementById('cal-grid').innerHTML=head+rows;
+}
+document.getElementById('cal-prev').onclick=()=>{calCursor=new Date(calCursor.getFullYear(),calCursor.getMonth()-1,1);renderCalendar()};
+document.getElementById('cal-next').onclick=()=>{calCursor=new Date(calCursor.getFullYear(),calCursor.getMonth()+1,1);renderCalendar()};
+
+// ===== Drawer =====
+const mask=document.getElementById('mask');
+const drawer=document.getElementById('drawer');
+const drawerContent=document.getElementById('drawer-content');
+function openDrawer(html){ drawerContent.innerHTML=html; mask.classList.add('show'); drawer.classList.add('show'); }
+function closeDrawer(){ mask.classList.remove('show'); drawer.classList.remove('show'); }
+mask.addEventListener('click',closeDrawer);
+document.getElementById('drawer-close').addEventListener('click',closeDrawer);
+
+// Member detail
+function openMemberDrawer(id){
+  const s=MFState.getState();
+  const m=s.members.find(x=>x.id===id); if(!m) return;
+  const days=Object.keys(m.checkins||{}).length;
+  const partsRows=Peeps.PARTS.map(p=>{
+    const lv=Peeps.levelFor(m.growth[p]||0);
+    return `<div class="row"><span>${Peeps.PART_LABEL[p]}</span><span class="num" style="font-weight:700">${m.growth[p]||0} 次 · Lv ${lv}</span></div>`;
+  }).join('');
+  openDrawer(`
+    <h2>${m.name}</h2>
+    <div style="margin-bottom:14px">${Peeps.renderAvatar(m.avatar,m.growth)}</div>
+    <div class="row"><span>累计打卡</span><span class="num">${days} 天</span></div>
+    <div class="row"><span class="danger">累计欠款</span><span class="num danger">¥${m.debt||0}</span></div>
+    <div style="margin:18px 0 8px;font-size:11px;letter-spacing:.1em;color:var(--ink);opacity:.6;font-weight:700;text-transform:uppercase">部位成长</div>
+    ${partsRows}
+    <div style="margin-top:18px"><button class="btn-ghost" data-act="remove">移除</button></div>
+  `);
+  drawer.querySelector('[data-act=remove]').onclick=()=>{
+    if(confirm(`移除 ${m.name}？历史欠款仍保留在基金里。`)){
+      MFState.removeMember(id);
+      closeDrawer();render();
+    }
+  };
+}
+
+// Add new
+function openAddDrawer(){
+  const draft={
+    name:'',
+    avatar:randomAvatar(),
+  };
+  const opts=Peeps.OPTS;
+  function tabBtns(field,arr,sel){
+    return arr.map(([v,l])=>`<button class="opt ${sel===v?'on':''}" data-field="${field}" data-val="${v}">${l}</button>`).join('');
+  }
+  function renderForm(){
+    const hairList=draft.avatar.gender==='male'?Peeps.HAIR_MALE:Peeps.HAIR_FEMALE;
+    if(!hairList.find(h=>h[0]===draft.avatar.hair)) draft.avatar.hair=hairList[0][0];
+    openDrawer(`
+      <h2>新成员</h2>
+      <div class="onboard">
+        <div class="preview" id="preview">${Peeps.renderAvatar(draft.avatar,{arms:0,chest:0,back:0,abs:0,shoulders:0,legs:0})}</div>
+        <div class="picker">
+          <div class="opt-row">
+            <span class="lbl">名字</span>
+            <input type="text" id="new-name" placeholder="比如 P神" value="${draft.name}" style="border:2px solid var(--ink);border-radius:10px;padding:8px 12px;font-family:inherit;font-weight:700">
+          </div>
+          <div class="opt-row"><span class="lbl">性别</span><div class="opts">${tabBtns('gender',opts.gender,draft.avatar.gender)}</div></div>
+          <div class="opt-row"><span class="lbl">发型</span><div class="opts">${tabBtns('hair',hairList,draft.avatar.hair)}</div></div>
+          <div class="opt-row"><span class="lbl">眼镜</span><div class="opts">${tabBtns('glasses',opts.glasses,draft.avatar.glasses)}</div></div>
+          <div class="opt-row"><span class="lbl">鼻子</span><div class="opts">${tabBtns('nose',opts.nose,draft.avatar.nose)}</div></div>
+          <div class="opt-row"><span class="lbl">嘴巴</span><div class="opts">${tabBtns('mouth',opts.mouth,draft.avatar.mouth)}</div></div>
+          <div class="opt-row"><span class="lbl">短裤</span><div class="opts">${tabBtns('shorts',opts.shorts,draft.avatar.shorts)}</div></div>
+          <div class="actions">
+            <button class="btn-ghost" id="rand-btn">随机</button>
+            <button class="btn-primary" id="save-btn">加入基金</button>
+          </div>
+        </div>
+      </div>
+    `);
+    drawer.querySelector('#new-name').oninput=e=>{draft.name=e.target.value};
+    drawer.querySelectorAll('.opt').forEach(b=>{
+      b.onclick=()=>{
+        const f=b.dataset.field, v=b.dataset.val;
+        if(f==='gender') draft.avatar.gender=v;
+        else draft.avatar[f]=v;
+        renderForm();
+      };
+    });
+    drawer.querySelector('#rand-btn').onclick=()=>{draft.avatar=randomAvatar();renderForm()};
+    drawer.querySelector('#save-btn').onclick=()=>{
+      if(!draft.name.trim()){alert('给个名字');return;}
+      MFState.addMember({name:draft.name.trim(),avatar:draft.avatar});
+      closeDrawer();render();
+    };
+  }
+  renderForm();
+}
+
+// Ledger
+document.getElementById('btn-ledger').onclick=()=>{
+  const s=MFState.getState();
+  const rows=s.members.map(m=>{
+    const days=Object.keys(m.checkins||{}).length;
+    return `<tr><td>${m.name}</td><td class="num">${days}</td><td class="num danger">¥${m.debt||0}</td></tr>`;
+  }).join('');
+  openDrawer(`
+    <h2>基金账本</h2>
+    <div class="row"><span>当前余额</span><span class="num" style="font-size:22px;color:var(--coral)">¥${s.fundTotal.toLocaleString()}</span></div>
+    <div class="row"><span>罚款 / 缺勤日</span><span class="num">¥${s.settings.fineAmount}</span></div>
+    <table>
+      <thead><tr><th>成员</th><th class="num">累计打卡</th><th class="num">累计欠款</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn-ghost" id="exp-csv">导出 CSV</button>
+      <button class="btn-ghost" id="exp-json">导出 JSON</button>
+      <button class="btn-ghost" id="imp-json">导入 JSON</button>
+    </div>
+  `);
+  drawer.querySelector('#exp-csv').onclick=()=>{
+    const csv=['成员,累计打卡,累计欠款',...s.members.map(m=>`${m.name},${Object.keys(m.checkins||{}).length},${m.debt||0}`)].join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`muscle-fund-${todayStr()}.csv`;a.click();
+    URL.revokeObjectURL(url);
+  };
+  drawer.querySelector('#exp-json').onclick=()=>{
+    const blob=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`muscle-fund-${todayStr()}.json`;a.click();
+    URL.revokeObjectURL(url);
+  };
+  drawer.querySelector('#imp-json').onclick=()=>{
+    const inp=document.createElement('input');inp.type='file';inp.accept='application/json';
+    inp.onchange=e=>{
+      const f=e.target.files[0];if(!f)return;
+      const r=new FileReader();
+      r.onload=()=>{ try{ MFState.replaceState(JSON.parse(r.result)); closeDrawer();render(); }catch(err){alert('JSON 格式错')} };
+      r.readAsText(f);
+    };
+    inp.click();
+  };
+};
+
+// Settings
+document.getElementById('btn-settings').onclick=()=>{
+  const s=MFState.getState();
+  const admin=isAdmin();
+  openDrawer(`
+    <h2>设置</h2>
+    <div class="row">
+      <label>每日罚款金额</label>
+      ${admin
+        ? `<input type="number" id="fine" min="0" max="200" value="${s.settings.fineAmount}">`
+        : `<span class="num" style="font-weight:700">¥${s.settings.fineAmount}</span>`}
+    </div>
+    <div class="row">
+      <span class="muted">仅工作日（周一~五）缺勤算欠款 · 第二天自动入账</span>
+    </div>
+    ${admin?'':`<div class="row"><span class="muted" style="color:var(--coral)">只有张鱼哥能改金额</span></div>`}
+    <div style="margin-top:14px;font-size:11px;letter-spacing:.1em;color:var(--ink);opacity:.6;font-weight:700;text-transform:uppercase">成员管理</div>
+    ${s.members.map(m=>`
+      <div class="row"><span>${m.name}</span><button class="btn-ghost danger" data-id="${m.id}" style="border-color:var(--coral);color:var(--coral);padding:6px 12px">移除</button></div>
+    `).join('')}
+    <div class="row"><span class="muted">数据存在本地浏览器，换电脑请用账本里的导入/导出</span></div>
+  `);
+  if(admin){
+    drawer.querySelector('#fine').oninput=e=>{
+      const v=parseInt(e.target.value)||0;
+      const s2=MFState.getState();s2.settings.fineAmount=v;MFState.saveState(s2);
+    };
+  }
+  drawer.querySelectorAll('[data-id]').forEach(b=>{
+    b.onclick=()=>{
+      if(confirm('确定移除？')){
+        MFState.removeMember(b.dataset.id);
+        closeDrawer();render();
+      }
+    };
+  });
+};
+
+// Init
+ensureSeed();
+spawnBubbles();
+if(tryRestoreSession()){ hideGate(); render(); }
+else showGate();
+</script>
+</body>
+</html>

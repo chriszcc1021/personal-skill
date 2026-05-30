@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>方案 2 · SVG + GSAP 骨骼动画</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--cyan:#4FC3F7;--yellow:#FFD600;--ink:#0D3B4F;--sand:#F4E4BC;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:var(--sand);font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);overflow:hidden}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 60%, #fff5d6 0%, var(--sand) 60%, #e6cf94 100%)}
+  h1{font-size:22px;margin-bottom:8px;letter-spacing:.05em}
+  .sub{opacity:.6;font-size:13px;margin-bottom:10px}
+  .stage{width:min(560px,92vw);aspect-ratio:1/1;position:relative;filter:drop-shadow(0 10px 20px rgba(13,59,79,.25))}
+  svg{width:100%;height:100%;display:block}
+  .bubbles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .bubble{position:absolute;bottom:-30px;border-radius:50%;background:rgba(255,255,255,.55);border:1px solid rgba(13,59,79,.15);animation:rise linear infinite}
+  @keyframes rise{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:.8}90%{opacity:.8}100%{transform:translateY(-110vh) translateX(20px);opacity:0}}
+  .legend{margin-top:14px;font-size:12px;opacity:.55;text-align:center;max-width:560px;line-height:1.6;padding:0 12px}
+</style>
+</head>
+<body>
+  <h1>海绵宝宝风格鱼 · 举哑铃</h1>
+  <div class="sub">方案 2 — SVG + GSAP 骨骼动画（真正的关节旋转）</div>
+  <div class="stage">
+    <div class="bubbles" id="bubbles"></div>
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <!-- 鳃定义 -->
+      <defs>
+        <radialGradient id="bodyGrad" cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="#7FD9FB"/>
+          <stop offset="100%" stop-color="#4FC3F7"/>
+        </radialGradient>
+        <radialGradient id="bellyGrad" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stop-color="#FFF6D6"/>
+          <stop offset="100%" stop-color="#FFE49A"/>
+        </radialGradient>
+      </defs>
+
+      <!-- 尾鳍（在身体后） -->
+      <g id="tail" transform="translate(60 200)">
+        <path d="M 0 0 L -40 -35 L -35 0 L -40 35 Z" fill="#FFD600" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+      </g>
+
+      <!-- 背鳍 -->
+      <g id="dorsal" transform="translate(200 95)">
+        <path d="M -30 0 Q 0 -30 30 0 Z" fill="#FFD600" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+      </g>
+
+      <!-- 身体主体 + 头（合一椭圆，SpongeBob fish 风格） -->
+      <g id="body">
+        <ellipse cx="200" cy="200" rx="120" ry="110" fill="url(#bodyGrad)" stroke="#0D3B4F" stroke-width="4"/>
+        <!-- 肚皮 -->
+        <ellipse cx="200" cy="230" rx="70" ry="55" fill="url(#bellyGrad)" stroke="#0D3B4F" stroke-width="2" opacity=".95"/>
+
+        <!-- 三角鳃 (右侧脸颊) -->
+        <g stroke="#0D3B4F" stroke-width="2.5" fill="#3FA8D6" stroke-linejoin="round">
+          <path d="M 290 175 L 305 180 L 290 188 Z"/>
+          <path d="M 290 195 L 305 200 L 290 208 Z"/>
+          <path d="M 290 215 L 305 220 L 290 228 Z"/>
+        </g>
+        <!-- 三角鳃 (左侧脸颊) -->
+        <g stroke="#0D3B4F" stroke-width="2.5" fill="#3FA8D6" stroke-linejoin="round">
+          <path d="M 110 175 L 95 180 L 110 188 Z"/>
+          <path d="M 110 195 L 95 200 L 110 208 Z"/>
+          <path d="M 110 215 L 95 220 L 110 228 Z"/>
+        </g>
+
+        <!-- 头侧三角鳍（顶部装饰） -->
+        <path d="M 130 110 L 110 80 L 145 100 Z" fill="#FFD600" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M 270 110 L 290 80 L 255 100 Z" fill="#FFD600" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+
+        <!-- 眼睛 -->
+        <g id="eyes">
+          <ellipse cx="160" cy="160" rx="28" ry="32" fill="#fff" stroke="#0D3B4F" stroke-width="3"/>
+          <ellipse cx="240" cy="160" rx="28" ry="32" fill="#fff" stroke="#0D3B4F" stroke-width="3"/>
+          <circle id="pupilL" cx="165" cy="165" r="11" fill="#0D3B4F"/>
+          <circle id="pupilR" cx="245" cy="165" r="11" fill="#0D3B4F"/>
+          <circle cx="168" cy="162" r="3" fill="#fff"/>
+          <circle cx="248" cy="162" r="3" fill="#fff"/>
+          <!-- 眨眼盖 -->
+          <rect id="lidL" x="132" y="128" width="56" height="0" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+          <rect id="lidR" x="212" y="128" width="56" height="0" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3"/>
+        </g>
+
+        <!-- 三角鼻 -->
+        <path d="M 200 195 L 188 215 L 212 215 Z" fill="#FF8AA8" stroke="#0D3B4F" stroke-width="2.5" stroke-linejoin="round"/>
+
+        <!-- 厚嘴唇 -->
+        <g>
+          <path d="M 175 240 Q 200 255 225 240 Q 225 250 200 258 Q 175 250 175 240 Z" fill="#FFD600" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M 175 240 Q 200 230 225 240" fill="none" stroke="#0D3B4F" stroke-width="2.5"/>
+        </g>
+      </g>
+
+      <!-- 左肩关节（鱼自己的左侧 = 屏幕右侧） -->
+      <g id="shoulder-left" transform="translate(305 245)">
+        <g id="upper-arm-left">
+          <!-- 上臂 -->
+          <path d="M -8 0 L 8 0 L 12 50 L -12 50 Z" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+          <!-- 前臂关节 -->
+          <g id="forearm-left" transform="translate(0 50)">
+            <path d="M -10 0 L 10 0 L 14 55 L -14 55 Z" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+            <!-- 手（白手套） -->
+            <g transform="translate(0 55)">
+              <circle r="12" fill="#fff" stroke="#0D3B4F" stroke-width="3"/>
+              <!-- 哑铃 -->
+              <g id="dumbbell-left">
+                <rect x="-22" y="-5" width="44" height="10" fill="#222" stroke="#0D3B4F" stroke-width="2" rx="2"/>
+                <rect x="-30" y="-12" width="12" height="24" fill="#222" stroke="#0D3B4F" stroke-width="2" rx="3"/>
+                <rect x="18" y="-12" width="12" height="24" fill="#222" stroke="#0D3B4F" stroke-width="2" rx="3"/>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- 右肩关节（鱼自己的右侧 = 屏幕左侧） -->
+      <g id="shoulder-right" transform="translate(95 245)">
+        <g id="upper-arm-right">
+          <path d="M -8 0 L 8 0 L 12 50 L -12 50 Z" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+          <g id="forearm-right" transform="translate(0 50)">
+            <path d="M -10 0 L 10 0 L 14 55 L -14 55 Z" fill="#4FC3F7" stroke="#0D3B4F" stroke-width="3" stroke-linejoin="round"/>
+            <g transform="translate(0 55)">
+              <circle r="12" fill="#fff" stroke="#0D3B4F" stroke-width="3"/>
+              <g id="dumbbell-right">
+                <rect x="-22" y="-5" width="44" height="10" fill="#222" stroke="#0D3B4F" stroke-width="2" rx="2"/>
+                <rect x="-30" y="-12" width="12" height="24" fill="#222" stroke="#0D3B4F" stroke-width="2" rx="3"/>
+                <rect x="18" y="-12" width="12" height="24" fill="#222" stroke="#0D3B4F" stroke-width="2" rx="3"/>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <div class="legend">骨骼层级：肩关节 → 上臂 → 前臂关节 → 手 → 哑铃。GSAP 控制 upper-arm 和 forearm 独立旋转，前臂在上臂坐标系内继续旋转 — 真正的两段关节弯举。</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+  // 气泡背景
+  const bub = document.getElementById('bubbles');
+  for(let i=0;i<14;i++){
+    const b = document.createElement('div');
+    b.className='bubble';
+    const s = 6+Math.random()*22;
+    b.style.width=s+'px'; b.style.height=s+'px';
+    b.style.left=(Math.random()*100)+'%';
+    b.style.animationDuration=(6+Math.random()*8)+'s';
+    b.style.animationDelay=(Math.random()*8)+'s';
+    bub.appendChild(b);
+  }
+
+  // 设定旋转中心 = 肩关节原点 (transform-origin: 0 0 在 group 内)
+  gsap.set(['#upper-arm-left','#upper-arm-right'], {transformOrigin:'0px 0px'});
+  gsap.set(['#forearm-left','#forearm-right'], {transformOrigin:'0px 0px'});
+
+  // === 二头弯举 timeline ===
+  // 起始：上臂朝下（0°），前臂朝下（0°，相对上臂）→ 哑铃在腰
+  // 顶峰：上臂略后摆（-10°），前臂卷起（-140°，相对上臂）→ 哑铃到肩
+  const curl = gsap.timeline({repeat:-1, defaults:{ease:'sine.inOut'}});
+  curl.to('#upper-arm-left',  {rotation:-10, duration:1.0}, 0)
+      .to('#upper-arm-right', {rotation: 10, duration:1.0}, 0)
+      .to('#forearm-left',    {rotation:-140, duration:1.0}, 0)
+      .to('#forearm-right',   {rotation: 140, duration:1.0}, 0)
+      // 顶峰小停顿
+      .to({},{duration:0.15})
+      // 下降
+      .to('#upper-arm-left',  {rotation:0, duration:1.0}, '>-0')
+      .to('#upper-arm-right', {rotation:0, duration:1.0}, '<')
+      .to('#forearm-left',    {rotation:0, duration:1.0}, '<')
+      .to('#forearm-right',   {rotation:0, duration:1.0}, '<')
+      .to({},{duration:0.15});
+
+  // 哑铃保持水平（反向旋转抵消前臂角度）→ 重力错觉
+  gsap.to('#dumbbell-left',  {rotation: 140, duration:1.0, repeat:-1, yoyo:true, ease:'sine.inOut', transformOrigin:'50% 50%'});
+  gsap.to('#dumbbell-right', {rotation:-140, duration:1.0, repeat:-1, yoyo:true, ease:'sine.inOut', transformOrigin:'50% 50%'});
+
+  // 身体呼吸 — Y 微缩
+  gsap.to('#body', {scaleY:1.025, scaleX:0.985, duration:1.6, repeat:-1, yoyo:true, ease:'sine.inOut', transformOrigin:'50% 60%'});
+
+  // 头部摇摆（轻微同步用力）
+  gsap.to('#body', {y:-4, rotation:-1, duration:1.0, repeat:-1, yoyo:true, ease:'sine.inOut', transformOrigin:'50% 80%'});
+
+  // 尾鳍摆动
+  gsap.to('#tail', {rotation:15, duration:0.6, repeat:-1, yoyo:true, ease:'sine.inOut', transformOrigin:'0px 0px'});
+
+  // 背鳍轻摆
+  gsap.to('#dorsal', {rotation:-8, duration:0.8, repeat:-1, yoyo:true, ease:'sine.inOut', transformOrigin:'50% 100%'});
+
+  // 眼珠跟着用力（顶峰瞪大 → 起始放松）
+  gsap.to(['#pupilL','#pupilR'], {y:-3, duration:1.0, repeat:-1, yoyo:true, ease:'sine.inOut'});
+
+  // 眨眼（每 4 秒一次）
+  function blink(){
+    gsap.timeline()
+      .to(['#lidL','#lidR'], {attr:{height:32}, duration:0.08, ease:'power1.in'})
+      .to(['#lidL','#lidR'], {attr:{height:0},  duration:0.12, ease:'power1.out'});
+  }
+  setInterval(blink, 4200);
+</script>
+</body>
+</html>

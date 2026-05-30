@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>三方案对比 · 海绵宝宝鱼举哑铃</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--sand:#F4E4BC;--ink:#0D3B4F;--cyan:#4FC3F7;--yellow:#FFD600;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);
+            background:linear-gradient(135deg,#FFF8E0 0%,#F4E4BC 50%,#E8D89A 100%); min-height:100vh}
+  body{padding:24px 16px 40px}
+  header{max-width:1400px;margin:0 auto 22px;text-align:center}
+  h1{font-size:30px;letter-spacing:.04em}
+  h1 .accent{color:var(--cyan)}
+  .lead{margin-top:8px;font-size:14px;opacity:.7;line-height:1.7}
+
+  .grid{max-width:1400px;margin:0 auto;display:grid;
+        grid-template-columns:repeat(3,1fr); gap:18px}
+  @media (max-width:1100px){.grid{grid-template-columns:1fr}}
+
+  .col{background:#fff;border:2.5px solid var(--ink);border-radius:22px;overflow:hidden;
+       display:flex;flex-direction:column;box-shadow:0 12px 24px rgba(13,59,79,.22)}
+  .col header.ch{padding:14px 16px;background:var(--ink);color:#fff;border-bottom:2.5px solid var(--ink);text-align:left}
+  .col header.ch .tag{display:inline-block;background:var(--yellow);color:var(--ink);
+                      padding:2px 8px;border-radius:10px;font-size:11px;margin-right:6px;font-weight:bold}
+  .col header.ch h2{font-size:17px;margin-bottom:4px}
+  .col header.ch .pros{font-size:11px;opacity:.85;line-height:1.6;margin-top:6px}
+  .col header.ch .pros b{color:var(--yellow)}
+
+  iframe{width:100%;flex:1;min-height:540px;border:none;background:#fff;display:block}
+
+  .stats{padding:10px 14px;background:#FAF4E1;border-top:1.5px dashed rgba(13,59,79,.3);font-size:11px;line-height:1.7;color:var(--ink)}
+  .stats span{display:inline-block;margin-right:10px}
+  .stats b{color:var(--cyan)}
+
+  .verdict{max-width:1400px;margin:28px auto 0;background:var(--ink);color:#fff;border-radius:20px;padding:22px 26px}
+  .verdict h2{font-size:18px;margin-bottom:10px;color:var(--yellow)}
+  .verdict p{font-size:13px;line-height:1.85;opacity:.92}
+  .verdict p b{color:var(--yellow)}
+  .verdict .rank{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+  .verdict .rank div{background:rgba(255,255,255,.08);padding:8px 14px;border-radius:12px;font-size:12px;border:1px solid rgba(255,255,255,.18)}
+</style>
+</head>
+<body>
+  <header>
+    <h1>海绵宝宝风格鱼 · <span class="accent">举哑铃</span> 三方案对比</h1>
+    <p class="lead">同一个动作，三种实现路径 — PNG 序列帧 / SVG 骨骼 / Rive 运行时</p>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <header class="ch">
+        <span class="tag">方案 1</span>
+        <h2>PNG 序列帧</h2>
+        <div class="pros"><b>优</b>：生成最快、视觉最"真"卡通 · <b>劣</b>：体积 6 MB、AI 帧间脸有 drift</div>
+      </header>
+      <iframe src="../s1-png-sequence/index.html"></iframe>
+      <div class="stats"><span><b>6 张 PNG</b></span><span>~6.2 MB</span><span>steps(6)</span><span>5 fps</span></div>
+    </div>
+
+    <div class="col">
+      <header class="ch">
+        <span class="tag">方案 2</span>
+        <h2>SVG + GSAP 骨骼</h2>
+        <div class="pros"><b>优</b>：矢量无损 · 关节真旋转 · ~10 KB · <b>劣</b>：手画 SVG 像素感稍弱</div>
+      </header>
+      <iframe src="../s2-svg-gsap/index.html"></iframe>
+      <div class="stats"><span><b>单文件 HTML</b></span><span>~10 KB</span><span>GSAP 3.12</span><span>60 fps</span></div>
+    </div>
+
+    <div class="col">
+      <header class="ch">
+        <span class="tag">方案 3</span>
+        <h2>Rive 运行时</h2>
+        <div class="pros"><b>优</b>：state machine、矢量、~30 KB · <b>劣</b>：必须 Rive 编辑器才能原创</div>
+      </header>
+      <iframe src="../s3-rive/index.html"></iframe>
+      <div class="stats"><span><b>社区 .riv</b></span><span>~30 KB</span><span>@rive-app/canvas 2.21</span><span>60 fps</span></div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h2>🏆 牛子哥的诚实评估</h2>
+    <p>
+      <b>方案 2（SVG + GSAP）动作最自然</b>。理由：上臂 / 前臂 / 哑铃 三段独立旋转中心、sine.inOut 缓动、顶峰停顿、哑铃水平校正 — 是真正的二头弯举力学，不是抖动。
+      <br><br>
+      <b>方案 1</b> 视觉风格最"海绵宝宝"（毕竟 OpenAI 直接画了卡通），但 6 帧之间脸有微 drift，瞳孔大小会跳，循环时眼睛在小幅"闪烁"。
+      <br><br>
+      <b>方案 3</b> 是诚实演示 — 没有 Rive 编辑器造不出原创鱼的 .riv，只能用社区资源验证运行时能力。要真上线，要么花 2 小时学 Rive Editor，要么走方案 2。
+    </p>
+    <div class="rank">
+      <div>🥇 动作自然度：方案 2</div>
+      <div>🥈 视觉风格度：方案 1</div>
+      <div>🥉 工程化潜力：方案 3</div>
+      <div>📦 最小体积：方案 2（10 KB）</div>
+      <div>🎯 综合推荐：<b style="color:var(--yellow)">方案 2</b></div>
+    </div>
+  </div>
+</body>
+</html>
