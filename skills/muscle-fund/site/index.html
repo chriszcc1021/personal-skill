@@ -395,6 +395,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
 </aside>
 
 <script src="peeps.js"></script>
+<script src="fish.js"></script>
 <script src="state.js"></script>
 <script>
 // ============== UI Wiring ==============
@@ -520,7 +521,7 @@ function render(){
     else if(debt>0) badge=`<div class="badge debt">欠 ¥${debt}</div>`;
     const missTag = miss>0 ? `<div style="font-size:11px;color:var(--coral);font-weight:700;margin-top:2px">漏打 ${miss} 次</div>` : '';
     wrap.innerHTML=`
-      <div class="avatar-wrap">${Peeps.renderAvatar(m.avatar,m.growth)}</div>
+      <div class="avatar-wrap">${Peeps.renderAvatar(m.avatar,m.growth,m)}</div>
       <div class="name">${m.name}${isMe?' · 你':''}</div>
       ${missTag}
       ${badge}
@@ -611,7 +612,7 @@ function renderCalendar(){
       else {cls+=' miss';txt='✕';title=`${iso} 缺勤`}
       cells+=`<div class="${cls}" title="${title}">${txt}</div>`;
     }
-    rows+=`<div class="cal-row"><div class="who"><div class="av">${Peeps.renderAvatar(m.avatar,m.growth)}</div>${m.name}</div><div class="days">${cells}</div></div>`;
+    rows+=`<div class="cal-row"><div class="who"><div class="av">${Peeps.renderAvatar(m.avatar,m.growth,m)}</div>${m.name}</div><div class="days">${cells}</div></div>`;
   });
   document.getElementById('cal-grid').innerHTML=head+rows;
 }
@@ -638,7 +639,7 @@ function openMemberDrawer(id){
   }).join('');
   openDrawer(`
     <h2>${m.name}</h2>
-    <div style="margin-bottom:14px">${Peeps.renderAvatar(m.avatar,m.growth)}</div>
+    <div style="margin-bottom:14px">${Peeps.renderAvatar(m.avatar,m.growth,m)}</div>
     <div class="row"><span>累计打卡</span><span class="num">${days} 天</span></div>
     <div class="row"><span class="danger">累计欠款</span><span class="num danger">¥${m.debt||0}</span></div>
     <div style="margin:18px 0 8px;font-size:11px;letter-spacing:.1em;color:var(--ink);opacity:.6;font-weight:700;text-transform:uppercase">部位成长</div>
