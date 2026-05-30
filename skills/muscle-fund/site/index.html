@@ -24,7 +24,7 @@ html,body{height:100%}
 body{
   font-family:"Fredoka","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   color:var(--ink);
-  background:linear-gradient(180deg,#80E0E8 0%,var(--bg-ocean) 40%,#26B5C6 100%);
+  background:url('bg-seabed.png') center top/cover no-repeat fixed,linear-gradient(180deg,#80E0E8 0%,var(--bg-ocean) 40%,#26B5C6 100%);
   min-height:100vh;
   overflow-x:hidden;
   position:relative;
@@ -173,7 +173,7 @@ main{position:relative;z-index:10;max-width:1280px;margin:0 auto;padding:88px 32
   transition:all .15s ease;
   display:flex;flex-direction:column;align-items:center;gap:6px;
 }
-.part .ico{font-size:28px;line-height:1}
+.part .ico{font-size:28px;line-height:1;width:42px;height:42px;object-fit:contain}
 .part:hover{background:var(--bg-sand)}
 .part.on{background:var(--sponge);transform:translateY(-2px);box-shadow:4px 4px 0 var(--ink)}
 .part.done{background:var(--patrick);color:var(--ink);cursor:not-allowed;opacity:.7}
@@ -202,37 +202,43 @@ main{position:relative;z-index:10;max-width:1280px;margin:0 auto;padding:88px 32
 }
 .seafloor svg{width:100%;height:100%;display:block}
 
-/* calendar */
+/* calendar — 手绘纸贴风 */
 .calendar-card{
-  background:rgba(255,255,255,0.4);
-  border-radius:24px;padding:20px 24px;
-  border:2px solid rgba(13,59,79,0.1);
+  background:url('cal-paper.png') center/100% 100% no-repeat;
+  border-radius:0;padding:60px 40px 50px;
+  position:relative;
+  min-height:380px;
 }
-.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.cal-title{font-family:"Luckiest Guy","Fredoka",sans-serif;font-size:20px;color:var(--ink);letter-spacing:.06em}
-.cal-grid{display:grid;gap:6px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2}
+.cal-title{font-family:"Luckiest Guy","Fredoka",sans-serif;font-size:24px;color:var(--ink);letter-spacing:.04em;
+  background:rgba(255,255,255,.7);padding:4px 14px;border:2px solid var(--ink);border-radius:10px;transform:rotate(-1deg)}
+.cal-grid{display:grid;gap:6px;position:relative;z-index:2}
 .cal-row{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center}
-.cal-row .who{font-weight:900;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:8px;position:sticky;left:0;background:rgba(255,255,255,0.7);backdrop-filter:blur(6px);padding-right:6px;z-index:2;min-width:0}
-.cal-row .who .av{width:24px;height:34px;flex:none}
-.cal-row .days{display:grid;gap:4px;grid-auto-flow:column;grid-auto-columns:28px}
+.cal-row .who{font-family:"Luckiest Guy","Fredoka",sans-serif;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:8px;position:sticky;left:0;background:rgba(245,235,200,.9);padding:4px 6px 4px 4px;z-index:2;min-width:0;letter-spacing:.04em;border-radius:6px}
+.cal-row .who .av{width:32px;height:42px;flex:none;border-radius:6px;overflow:hidden}
+.cal-row .who .av img{width:100%;height:100%;object-fit:contain}
+.cal-row .days{display:grid;gap:3px;grid-auto-flow:column;grid-auto-columns:30px}
 @media (max-width:760px){
   .cal-row{grid-template-columns:70px 1fr}
-  .cal-row .days{grid-auto-columns:24px}
-  .cal-row .who{font-size:12px}
+  .cal-row .days{grid-auto-columns:26px}
+  .cal-row .who{font-size:13px}
 }
 .cal-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
 .cal-cell{
-  aspect-ratio:1/1;border-radius:8px;
+  aspect-ratio:1/1;border:2px solid var(--ink);border-radius:4px;
   display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;color:rgba(13,59,79,.55);
-  background:rgba(255,255,255,0.35);position:relative;cursor:default;
+  font-weight:900;color:var(--ink);background:rgba(255,255,255,.6);position:relative;
+  font-family:"Luckiest Guy","Fredoka",sans-serif;font-size:14px;
 }
-.cal-cell.weekend{background:rgba(13,59,79,0.06);color:rgba(13,59,79,.3)}
-.cal-cell.future{opacity:.5}
-.cal-cell.done{background:var(--sponge);color:var(--ink)}
-.cal-cell.miss{background:rgba(255,112,67,0.18);color:var(--coral)}
-.cal-cell .num{font-size:10px;position:absolute;top:2px;left:4px;opacity:.5}
-.cal-headrow{font-size:10px;letter-spacing:.1em;color:var(--ink);opacity:.55;text-transform:uppercase;font-weight:700}
+.cal-cell.weekend{background:rgba(13,59,79,.08);border-style:dashed;opacity:.5}
+.cal-cell.future{opacity:.4}
+.cal-cell.done{background:var(--sponge);transform:rotate(-1deg)}
+.cal-cell.done::after{content:"✓";position:absolute;font-size:18px;color:var(--ink);font-weight:900}
+.cal-cell.miss{background:rgba(255,255,255,.7)}
+.cal-cell.miss::after{content:"✕";position:absolute;font-size:22px;color:var(--coral);font-weight:900;
+  text-shadow:1px 1px 0 var(--ink);transform:rotate(8deg)}
+.cal-cell .num{font-size:9px;position:absolute;top:1px;left:3px;opacity:.4;font-weight:700}
+.cal-headrow{font-family:"Luckiest Guy","Fredoka",sans-serif;font-size:11px;letter-spacing:.1em;color:var(--ink);opacity:.7;text-transform:uppercase}
 .cal-headrow .days{display:grid;gap:4px;grid-auto-flow:column;grid-auto-columns:28px}
 @media (max-width:760px){.cal-headrow .days{grid-auto-columns:24px}}
 .cal-headrow .cal-cell{background:transparent;aspect-ratio:auto;padding:4px 0}
@@ -543,15 +549,15 @@ function renderParts(){
   const root=document.getElementById('parts');
   root.innerHTML='';
   const PART_DEF=[
-    ['arms','手臂','💪'],['chest','胸','🫁'],['back','背','🦴'],
-    ['abs','腹','🧱'],['legs','腿','🦵'],['shoulders','肩','🪨'],
+    ['arms','手臂','arms.png'],['chest','胸','chest.png'],['back','背','back.png'],
+    ['abs','腹','abs.png'],['legs','腿','legs.png'],['shoulders','肩','shoulders.png'],
   ];
   PART_DEF.forEach(([k,lbl,ico])=>{
     const done=todayParts.includes(k);
     const on=selectedParts.has(k);
     const el=document.createElement('div');
     el.className='part'+(done?' done':'')+(on?' on':'');
-    el.innerHTML=`<div class="ico">${ico}</div><div>${lbl}</div>`;
+    el.innerHTML=`<img class="ico" src="assets/icons/${ico}" alt="${lbl}"/><div>${lbl}</div>`;
     if(!done){
       el.addEventListener('click',()=>{
         if(selectedParts.has(k)) selectedParts.delete(k);
