@@ -244,7 +244,44 @@ main{position:relative;z-index:10;max-width:1280px;margin:0 auto;padding:88px 32
 @media (max-width:760px){.cal-headrow .days{grid-auto-columns:24px}}
 .cal-headrow .cal-cell{background:transparent;aspect-ratio:auto;padding:4px 0}
 
-/* drawer (member detail / settings / ledger) */
+/* === 风格化弹窗 mf-modal === */
+.mf-modal-mask{position:fixed;inset:0;background:rgba(13,59,79,.55);z-index:300;display:none;backdrop-filter:blur(2px)}
+.mf-modal-mask.show{display:block;animation:mfFade .18s ease-out}
+@keyframes mfFade{from{opacity:0}to{opacity:1}}
+.mf-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.85);opacity:0;z-index:301;
+  width:min(420px,92vw);background:#fff;border:3px solid var(--ink);border-radius:24px;
+  box-shadow:8px 8px 0 var(--ink);padding:26px 26px 22px;
+  pointer-events:none;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .2s ease}
+.mf-modal.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.mf-modal-head{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.mf-modal-icon{width:48px;height:48px;border-radius:14px;border:3px solid var(--ink);
+  background:var(--sponge);display:flex;align-items:center;justify-content:center;
+  font-family:"Luckiest Guy",sans-serif;font-size:30px;color:var(--ink);
+  box-shadow:3px 3px 0 var(--ink);flex:none;line-height:1}
+.mf-modal.type-warn .mf-modal-icon{background:var(--coral);color:#fff}
+.mf-modal.type-success .mf-modal-icon{background:var(--patrick);color:var(--ink)}
+.mf-modal.type-input .mf-modal-icon{background:var(--bg-sand)}
+.mf-modal-title{font-family:"Luckiest Guy","ZCOOL KuaiLe","Fredoka",sans-serif;font-size:24px;
+  color:var(--ink);letter-spacing:.04em;margin:0;line-height:1.1}
+.mf-modal-body{font-family:"Fredoka","Noto Sans SC",sans-serif;font-size:15px;font-weight:600;
+  color:var(--ink);line-height:1.55;margin-bottom:18px;white-space:pre-wrap}
+.mf-modal-input{width:100%;border:2.5px solid var(--ink);border-radius:12px;padding:12px 14px;
+  font-family:inherit;font-weight:700;font-size:15px;outline:none;margin-bottom:18px;color:var(--ink);
+  background:#FFFEF7}
+.mf-modal-input:focus{box-shadow:3px 3px 0 var(--ink);transform:translate(-1px,-1px);transition:transform .12s}
+.mf-modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.mf-modal-btn{font-family:"Luckiest Guy","Fredoka",sans-serif;font-size:16px;letter-spacing:1.5px;
+  border:2.5px solid var(--ink);border-radius:12px;padding:10px 22px;cursor:pointer;
+  font-weight:900;transition:all .12s ease}
+.mf-modal-btn.primary{background:var(--sponge);color:var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.mf-modal-btn.primary:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink);background:#FFEB3B}
+.mf-modal-btn.primary:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.mf-modal-btn.ghost{background:#fff;color:var(--ink)}
+.mf-modal-btn.ghost:hover{background:var(--ink);color:var(--sponge)}
+.mf-modal.type-warn .mf-modal-btn.primary{background:var(--coral);color:#fff}
+.mf-modal.type-warn .mf-modal-btn.primary:hover{background:#FF5722}
+.mf-modal-actions .mf-modal-btn.hide{display:none}
+
 .drawer-mask{
   position:fixed;inset:0;background:rgba(13,59,79,0.5);
   z-index:100;display:none;
@@ -396,11 +433,86 @@ td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
   <div id="drawer-content"></div>
 </aside>
 
+<!-- 风格化弹窗（替代原生 alert/confirm）-->
+<div class="mf-modal-mask" id="mf-modal-mask"></div>
+<div class="mf-modal" id="mf-modal" role="dialog" aria-modal="true">
+  <div class="mf-modal-head">
+    <div class="mf-modal-icon" id="mf-modal-icon">!</div>
+    <h3 class="mf-modal-title" id="mf-modal-title">提示</h3>
+  </div>
+  <div class="mf-modal-body" id="mf-modal-body"></div>
+  <input type="text" id="mf-modal-input" class="mf-modal-input" style="display:none" />
+  <div class="mf-modal-actions">
+    <button class="mf-modal-btn ghost" id="mf-modal-cancel">取消</button>
+    <button class="mf-modal-btn primary" id="mf-modal-ok">确认</button>
+  </div>
+</div>
+
 <script src="peeps.js"></script>
 <script src="fish.js"></script>
 <script src="state.js"></script>
 <script src="animations.js"></script>
 <script>
+// === 风格化弹窗 ===
+const MFModal = (function(){
+  const mask=document.getElementById('mf-modal-mask');
+  const m=document.getElementById('mf-modal');
+  const icon=document.getElementById('mf-modal-icon');
+  const title=document.getElementById('mf-modal-title');
+  const body=document.getElementById('mf-modal-body');
+  const input=document.getElementById('mf-modal-input');
+  const okBtn=document.getElementById('mf-modal-ok');
+  const cancelBtn=document.getElementById('mf-modal-cancel');
+  let resolver=null;
+  const ICONS={info:'!',warn:'✕',success:'✓',input:'?',confirm:'?'};
+  function close(val){
+    m.classList.remove('show');
+    mask.classList.remove('show');
+    const r=resolver;resolver=null;
+    if(r) r(val);
+  }
+  okBtn.onclick=()=>{
+    const v = input.style.display==='block' ? input.value.trim() : true;
+    close(v);
+  };
+  cancelBtn.onclick=()=>close(false);
+  mask.onclick=()=>close(false);
+  document.addEventListener('keydown',e=>{
+    if(!m.classList.contains('show')) return;
+    if(e.key==='Escape') close(false);
+    if(e.key==='Enter' && input.style.display!=='block') { e.preventDefault(); okBtn.click(); }
+  });
+  function open(opts){
+    m.classList.remove('type-warn','type-success','type-input','type-confirm');
+    const type=opts.type||'info';
+    if(type!=='info') m.classList.add('type-'+type);
+    icon.textContent=ICONS[type]||'!';
+    title.textContent=opts.title||'提示';
+    body.textContent=opts.message||'';
+    if(opts.input){
+      input.style.display='block';
+      input.value=opts.defaultValue||'';
+      input.placeholder=opts.placeholder||'';
+      setTimeout(()=>input.focus(),120);
+    } else {
+      input.style.display='none';
+    }
+    okBtn.textContent=opts.okText||'确认';
+    cancelBtn.textContent=opts.cancelText||'取消';
+    if(opts.showCancel===false) cancelBtn.classList.add('hide');
+    else cancelBtn.classList.remove('hide');
+    mask.classList.add('show');
+    requestAnimationFrame(()=>m.classList.add('show'));
+    return new Promise(res=>{resolver=res;});
+  }
+  return {
+    alert:(message,title)=>open({type:'info',message,title:title||'提示',showCancel:false,okText:'好'}),
+    warn:(message,title)=>open({type:'warn',message,title:title||'出错了',showCancel:false,okText:'好'}),
+    confirm:(message,title,type)=>open({type:type||'confirm',message,title:title||'确认',okText:'确认',cancelText:'取消'}),
+    prompt:(message,defaultValue,title)=>open({type:'input',message,title:title||'输入',input:true,defaultValue:defaultValue||'',okText:'提交'}),
+  };
+})();
+
 // ============== UI Wiring ==============
 const SEED_NAMES = ['P神','查尔斯','张鱼哥','狗哥','Shadow','YK'];
 const ADMIN_NAME = '张鱼哥';
@@ -496,8 +608,8 @@ function tryLogin(){
 }
 
 // me chip dropdown
-document.getElementById('me-chip').onclick=()=>{
-  if(confirm('退出登录？（数据保留）'))
+document.getElementById('me-chip').onclick=async()=>{
+  if(await MFModal.confirm('退出登录？数据保留在本地浏览器。','退出登录'))
     { MFState.logout(); currentMemberId=null; showGate(); }
 };
 
@@ -586,7 +698,7 @@ function renderParts(){
 document.getElementById('btn-checkin').addEventListener('click',()=>{
   if(selectedParts.size===0) return;
   const r=MFState.checkin(currentMemberId,[...selectedParts]);
-  if(!r.ok){ alert(r.msg); return; }
+  if(!r.ok){ MFModal.warn(r.msg,'打卡失败'); return; }
   selectedParts.clear();
   if(window.MFAnim) MFAnim.pendingBurst=true;
   render();
@@ -654,8 +766,8 @@ function openMemberDrawer(id){
     ${partsRows}
     <div style="margin-top:18px"><button class="btn-ghost" data-act="remove">移除</button></div>
   `);
-  drawer.querySelector('[data-act=remove]').onclick=()=>{
-    if(confirm(`移除 ${m.name}？历史欠款仍保留在基金里。`)){
+  drawer.querySelector('[data-act=remove]').onclick=async()=>{
+    if(await MFModal.confirm(`移除 ${m.name}？历史欠款仍保留在基金里。`,'移除成员','warn')){
       MFState.removeMember(id);
       closeDrawer();render();
     }
@@ -708,7 +820,7 @@ function openAddDrawer(){
     });
     drawer.querySelector('#rand-btn').onclick=()=>{draft.avatar=randomAvatar();renderForm()};
     drawer.querySelector('#save-btn').onclick=()=>{
-      if(!draft.name.trim()){alert('给个名字');return;}
+      if(!draft.name.trim()){MFModal.warn('先给个名字');return;}
       MFState.addMember({name:draft.name.trim(),avatar:draft.avatar});
       closeDrawer();render();
     };
@@ -755,7 +867,7 @@ document.getElementById('btn-ledger').onclick=()=>{
     inp.onchange=e=>{
       const f=e.target.files[0];if(!f)return;
       const r=new FileReader();
-      r.onload=()=>{ try{ MFState.replaceState(JSON.parse(r.result)); closeDrawer();render(); }catch(err){alert('JSON 格式错')} };
+      r.onload=()=>{ try{ MFState.replaceState(JSON.parse(r.result)); closeDrawer();render(); }catch(err){MFModal.warn('JSON 格式错误，换个文件试试');} };
       r.readAsText(f);
     };
     inp.click();
@@ -791,8 +903,8 @@ document.getElementById('btn-settings').onclick=()=>{
     };
   }
   drawer.querySelectorAll('[data-id]').forEach(b=>{
-    b.onclick=()=>{
-      if(confirm('确定移除？')){
+    b.onclick=async()=>{
+      if(await MFModal.confirm('确定移除这个成员？','移除','warn')){
         MFState.removeMember(b.dataset.id);
         closeDrawer();render();
       }
