@@ -253,12 +253,11 @@ main{position:relative;z-index:10;max-width:1280px;margin:0 auto;padding:88px 32
 .drawer{
   position:fixed;top:0;right:0;bottom:0;width:min(440px,92vw);
   background:#fff;z-index:101;
-  padding:24px 26px;overflow-y:auto;
   transform:translateX(100%);transition:transform .25s ease;
+  padding:24px 26px;overflow-y:auto;
   will-change:transform;
 }
-.drawer.show{transform:translateX(0)} /* GSAP overrides via inline transform when bound */
-.drawer-mask{transition:opacity .15s linear}
+.drawer.show{transform:translateX(0)}
 .drawer h2{
   font-family:"Luckiest Guy","ZCOOL KuaiLe","Fredoka",sans-serif;
   font-size:28px;margin-bottom:18px;color:var(--ink);letter-spacing:.04em;
@@ -546,7 +545,7 @@ function render(){
   document.getElementById('who-tag').textContent=me.name;
   renderParts();
   renderCalendar();
-  if(window.MFAnim){ MFAnim.bindDrawer(); MFAnim.afterRender(s.fundTotal); }
+  if(window.MFAnim){ MFAnim.afterRender(s.fundTotal); }
 }
 
 function renderParts(){
