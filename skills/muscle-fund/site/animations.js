@@ -47,21 +47,10 @@
     MFAnim._lastFund = toVal;
   }
 
-  // ===== Showcase 入场 + halo 脉冲 =====
+  // ===== Showcase: halo 脉冲（只保留给已打卡者） =====
   function animateShowcase(){
     const sc = document.getElementById('showcase');
     if(!sc) return;
-    const hash = membersHash(sc);
-    const isNewLayout = hash !== MFAnim._lastMembersHash;
-    MFAnim._lastMembersHash = hash;
-    if(isNewLayout){
-      gsap.from(sc.children, {
-        y: 36, opacity: 0, scale: 0.92,
-        duration: 0.7, ease: 'back.out(1.4)',
-        stagger: { each: 0.06, from: 'start' },
-      });
-    }
-    // halo 脉冲（已打卡）
     sc.querySelectorAll('.member.checked-today .avatar-wrap').forEach(el=>{
       if(el.dataset.haloed) return;
       el.dataset.haloed = '1';
@@ -69,16 +58,6 @@
         boxShadow: '0 0 0 8px rgba(255,128,171,0.5)',
         duration: 1.1, ease: 'sine.inOut',
         yoyo: true, repeat: -1,
-      });
-    });
-    // 空闲微晃
-    sc.querySelectorAll('.member .avatar-wrap').forEach((el,i)=>{
-      if(el.dataset.sway) return;
-      el.dataset.sway = '1';
-      gsap.to(el, {
-        y: '+=4', duration: 2.4 + Math.random()*1.2,
-        ease: 'sine.inOut', yoyo: true, repeat: -1,
-        delay: i*0.15,
       });
     });
   }
@@ -97,17 +76,7 @@
           yoyo:true, repeat:1 });
     }, true);
   }
-  function animatePartsIn(){
-    const root = document.getElementById('parts');
-    if(!root) return;
-    if(MFAnim._partsAnimated) return;
-    MFAnim._partsAnimated = true;
-    gsap.from(root.children, {
-      y: 20, opacity: 0, duration: 0.5,
-      ease: 'back.out(1.6)',
-      stagger: 0.05, delay: 0.25,
-    });
-  }
+  function animatePartsIn(){ /* disabled: 入场交给 CSS，避免跨设备 stagger 卵难 */ }
 
   // ===== 打卡爆点 =====
   function burstAtAmount(){
@@ -136,25 +105,11 @@
     }
   }
 
-  // ===== Hero 入场 =====
-  function animateHeroFirst(){
-    if(!MFAnim._firstPaint) return;
-    const checkin = document.getElementById('checkin-card');
-    const cal = document.getElementById('calendar-card');
-    if(checkin) gsap.from(checkin, { y: 30, opacity: 0, duration: 0.7, ease:'power3.out', delay: 0.5 });
-    if(cal) gsap.from(cal, { y: 30, opacity: 0, duration: 0.7, ease:'power3.out', delay: 0.65 });
-  }
+  // ===== Hero 首帧：只让金额本体弹一下，不动其他区域 =====
+  function animateHeroFirst(){ /* disabled */ }
 
   // ===== 日历换月入场 =====
-  function animateCalendarRows(){
-    const grid = document.getElementById('cal-grid');
-    if(!grid) return;
-    const rows = grid.querySelectorAll('.cal-row');
-    gsap.from(rows, {
-      x: 24, opacity: 0, duration: 0.4,
-      ease: 'power2.out', stagger: 0.04,
-    });
-  }
+  function animateCalendarRows(){ /* disabled */ }
 
   // ===== 公开 API =====
   MFAnim.afterRender = function(fundTotal){
