@@ -7,16 +7,28 @@
     dazed:'慒慒鱼', working:'打工鱼', flat:'躺平鱼',
   };
 
-  // 按名字稳定分配 fishId（hash）
+  // 6 人 1:1 写死映射
+  const NAME_TO_FISH = {
+    '张鱼哥': 'cool',
+    'P神':   'dopey',
+    '查尔斯': 'working',
+    '狗哥':   'dazed',
+    'Shadow': 'flat',
+    'YK':     'limp',
+  };
+
+  // 按名字稳定分配 fishId（写死优先，未命中 hash）
   function pickFishId(name){
     if(!name) return 'limp';
+    if(NAME_TO_FISH[name]) return NAME_TO_FISH[name];
     let h=0;
     for(let i=0;i<name.length;i++){ h=(h*31 + name.charCodeAt(i)) & 0xffffffff; }
     return FISH_IDS[Math.abs(h) % FISH_IDS.length];
   }
 
-  // 取 fishId：avatar.fishId 优先，否则按 name hash
+  // 取 fishId：NAME_TO_FISH 写死优先，避免老 localStorage 脱高
   function resolveFishId(avatar, name){
+    if(name && NAME_TO_FISH[name]) return NAME_TO_FISH[name];
     if(avatar && avatar.fishId && FISH_IDS.includes(avatar.fishId)) return avatar.fishId;
     return pickFishId(name||'');
   }
@@ -76,11 +88,14 @@
   // 兼容 Peeps API：renderAvatar(avatar, growth, member)
   function renderAvatar(avatar, growth, member){
     let fishId, name;
-    if(typeof avatar === 'object' && avatar){
+    // 优先 从 member.name 取（避免 老 avatar 里存的错 fishId）
+    if(member && member.name){
+      name = member.name;
+    } else if(typeof avatar === 'object' && avatar){
       fishId = avatar.fishId;
       name = avatar.name;
     }
-    if(!fishId) fishId = resolveFishId(avatar, name);
+    fishId = resolveFishId(avatar, name);
     return renderFish(fishId, growth, member);
   }
 
