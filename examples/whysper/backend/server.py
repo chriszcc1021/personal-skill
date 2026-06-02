@@ -394,8 +394,9 @@ def update_ledger_candidate_from_ai(source_entry_id: str, data: dict):
         sets = ",".join(f"{k}=?" for k in fields)
         c.execute(f"UPDATE ledger_candidates SET {sets} WHERE source_entry_id=?", (*fields.values(), source_entry_id))
         c.execute("UPDATE ledger_candidates SET status='confirmed' WHERE source_entry_id=?", (source_entry_id,))
-        # 有商家或金额 才写入 ledger_entries
-        if fields["merchant"] or fields["amount"] is not None:
+        # 有商家或金额 才写入 ledger_entries，且必须已支付 (is_paid=true)。待支付只留 candidate 不入账。
+        is_paid = bool(data.get("is_paid"))
+        if (fields["merchant"] or fields["amount"] is not None) and is_paid:
             cand = c.execute("SELECT id, created_at FROM ledger_candidates WHERE source_entry_id=?", (source_entry_id,)).fetchone()
             existing = c.execute("SELECT id FROM ledger_entries WHERE source_entry_id=?", (source_entry_id,)).fetchone()
             tags_json = json.dumps(data.get("tags") or [], ensure_ascii=False) if isinstance(data.get("tags"), list) else None
@@ -432,6 +433,41 @@ def update_ledger_candidate_from_ai(source_entry_id: str, data: dict):
                            fields["merchant"], fields["amount"], fields["currency"], paid_at_val,
                            fields["category"], fields["payment_method"], fields["note"], tags_json))
 
+def insert_extra_ledger_entry(source_entry_id: str, data: dict, tags_data: list | None = None):
+    """多笔账单中的「额外笔」直接进 ledger_entries，不占 candidate。走同样的剩付 / 去重兑底。"""
+    is_paid = bool(data.get("is_paid"))
+    if not is_paid:
+        return  # 待支付不入账
+    merchant = (data.get("merchant") or "").strip()
+    amount = as_float(data.get("amount"))
+    if not (merchant or amount is not None):
+        return
+    currency = (data.get("currency") or "CNY").strip() or "CNY"
+    paid_at = (data.get("paid_at") or "").strip()
+    category = normalize_ledger_category(data.get("category"))
+    payment_method = (data.get("payment_method") or "").strip()
+    note = (data.get("note") or "").strip()
+    tags_json = json.dumps(tags_data or [], ensure_ascii=False) if isinstance(tags_data, list) else None
+    with db() as c:
+        if not paid_at:
+            src_row = c.execute("SELECT created_at FROM entries WHERE id=?", (source_entry_id,)).fetchone()
+            if src_row and src_row["created_at"]:
+                paid_at = (dt.datetime.utcfromtimestamp(src_row["created_at"]) + dt.timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%S+08:00")
+        # 同样去重：merchant + amount + paid_at 三元组
+        if merchant and amount is not None and paid_at:
+            dup = c.execute("""SELECT id FROM ledger_entries
+                                WHERE merchant=? AND amount=? AND paid_at=? LIMIT 1""",
+                            (merchant, amount, paid_at)).fetchone()
+            if dup:
+                print(f"[ledger_extra] {source_entry_id} skip dup of {dup['id']} ({merchant} {amount})")
+                return
+        entry_id = uuid.uuid4().hex[:12]
+        c.execute("""INSERT INTO ledger_entries(id,candidate_id,source_entry_id,created_at,confirmed_at,merchant,amount,currency,paid_at,category,payment_method,note,tags)
+                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                  (entry_id, None, source_entry_id, now_ts(), now_ts(),
+                   merchant, amount, currency, paid_at, category, payment_method, note, tags_json))
+        print(f"[ledger_extra] {source_entry_id} +entry {entry_id} ({merchant} {amount})")
+
 def maybe_ledger_data(data: dict) -> dict | None:
     ledger = data.get("ledger") or {}
     if not isinstance(ledger, dict):
@@ -446,6 +482,58 @@ def maybe_ledger_data(data: dict) -> dict | None:
     ledger["amount"] = amount
     ledger["category"] = normalize_ledger_category(ledger.get("category"))
     return ledger
+
+def maybe_ledger_items(data: dict) -> list[dict]:
+    """提取 ledger_items 数组，兼容老 ledger 单字段。返回清洗后的 list。"""
+    raw_items = data.get("ledger_items")
+    items: list[dict] = []
+    if isinstance(raw_items, list):
+        for it in raw_items:
+            if not isinstance(it, dict):
+                continue
+            if it.get("is_expense") is False:
+                continue
+            amt = as_float(it.get("amount"))
+            mer = (it.get("merchant") or "").strip()
+            if amt is None and not mer:
+                continue
+            cleaned = dict(it)
+            cleaned["amount"] = amt
+            cleaned["merchant"] = mer
+            cleaned["category"] = normalize_ledger_category(it.get("category"))
+            items.append(cleaned)
+
+    # 兑底：没 ledger_items 就看老 ledger 字段
+    if not items:
+        old = maybe_ledger_data(data)
+        if old:
+            items = [old]
+
+    # 防重　1：去除「同一笔」完全重复（merchant + amount + paid_at 三元组一致）
+    seen = set()
+    dedup = []
+    for it in items:
+        key = ((it.get("merchant") or "").strip().lower(), it.get("amount"), (it.get("paid_at") or "").strip())
+        if key in seen:
+            continue
+        seen.add(key)
+        dedup.append(it)
+    items = dedup
+
+    # 防重　2：汇总行检测——如果某一项 amount == 其他项 amount 之和，或 merchant 含「合计/总额/小计/汇总/total」，且其他项加起来 ≈ 该项 →判为重复汇总行，刹掉。
+    if len(items) >= 3:
+        amounts = [(i, as_float(it.get("amount"))) for i, it in enumerate(items)]
+        amounts = [(i, a) for i, a in amounts if a is not None]
+        if len(amounts) >= 3:
+            for i, a in amounts:
+                rest = sum(b for j, b in amounts if j != i)
+                if rest > 0 and abs(rest - a) < 0.02:
+                    mer = (items[i].get("merchant") or "").lower()
+                    if a >= rest * 0.95 or any(kw in mer for kw in ("合计","总额","小计","汇总","总计","total","subtotal")):
+                        print(f"[ledger_items] drop aggregate row idx={i} amount={a} (sum_rest={rest})")
+                        items = [it for j, it in enumerate(items) if j != i]
+                        break
+    return items
 
 # ---------- AI ----------
 async def ai_chat(messages, max_tokens=900, temperature=0.4) -> str:
@@ -515,10 +603,13 @@ async def _transcribe_and_update(eid: str, audio_path: Path):
                          processing_status='running', processing_error=NULL WHERE id=?""", (eid,))
         tx = await transcribe(audio_path)
         if tx and tx.strip():
+            tx_clean = tx.strip()
             with db() as c:
                 c.execute("""UPDATE entries SET final_text=?, transcribing=0, processing_stage='transcribe',
-                             processing_status='done', processing_error=NULL WHERE id=?""", (tx.strip(), eid))
+                             processing_status='done', processing_error=NULL WHERE id=?""", (tx_clean, eid))
             print(f"[transcribe] {eid} done: {tx[:40]}")
+            # chain: extract events/tasks from transcribed text
+            asyncio.create_task(_text_extract_and_update(eid, tx_clean))
         else:
             with db() as c:
                 c.execute("""UPDATE entries SET transcribing=0, processing_stage='transcribe',
@@ -541,7 +632,8 @@ VISION_PROMPT = """你是个个人外挂大脑。看这张截图，抽取用户�
   "title": "一句话标题 (不超 18 字)",
   "text": "图里的关键文本内容提取 (OCR + 理解后的难表述，完整 250 字以内)",
   "tags": ["..."],
-  "ledger": {{"is_expense": false, "merchant": "", "amount": null, "currency": "CNY", "paid_at": "", "category": "food|transport|shopping|entertainment|housing|health|education|travel|business|subscription|transfer|other", "payment_method": "", "note": "", "confidence": 0.0}},
+  "ledger": {{"is_expense": false, "is_paid": false, "merchant": "", "amount": null, "currency": "CNY", "paid_at": "", "category": "food|transport|shopping|entertainment|housing|health|education|travel|business|subscription|transfer|other", "payment_method": "", "note": "", "confidence": 0.0}},
+  "ledger_items": [],
   "events": [{{"title":"...", "start_iso":"2026-05-18T14:00:00+08:00", "end_iso":"2026-05-18T15:00:00+08:00", "location":"...", "notes":"...", "alert_min":30}}],
   "codes": [{{"kind":"取件码/兑换码/取餐号", "value":"1234", "expire_iso":null}}],
   "tasks": [{{"text":"...", "due_iso":null}}],
@@ -599,12 +691,96 @@ route 只有 bill / calendar 时 kind 填 "其它" 或留空。
 - 推断时间时遵照当地 +08:00。“明天”就是 {today}+1。
 - 机票/火车票 alert_min 设 120，其他默认 30。
 - 如果是支付、收据、订单、账单、转账或消费记录，ledger.is_expense=true，并尽量提取 merchant/amount/paid_at/category/payment_method；category 必须从枚举里选，娱乐消费用 entertainment；不要编造金额。
+- **多笔截图（重要）**：如果截图里有多个独立扣款/订单/账单行，每一笔单独填到 `ledger_items` 数组里，结构同 ledger（is_expense/is_paid/merchant/amount/currency/paid_at/category/payment_method/note/confidence）。`ledger` 顶层字段仍填**第一笔**（兼容老逻辑）。
+- **绝对禁止把「汇总/合计/总金额/小计」当成一笔再写一遍**：如果截图同时有汇总行 + 明细列表 → `ledger_items` 只填明细，不要把汇总当成额外一条。如果整张图只有汇总没有明细 → ledger_items 给 1 条（merchant 标「多笔合并」，amount=合计）。单笔截图 → ledger_items 1 条（与 ledger 顶层一致）。无账单 → ledger_items: []。
+- ledger_items[].amount 必须是该单笔的实际金额，不要复用合计。
+- **is_paid 必须准确判断**：只有明确显示「已支付/付款成功/交易成功/订单完成/已付款」才填 true。出现「待支付/未支付/预约成功待支付/该笔金额人后支付/预订」等 → is_paid=false。默认 false。
 - **paid_at 特别注意**：这是**消费发生时间**（付款时间 / 下单时间），不是截图时间，也不是今天。仅从图里读取明文标示的消费/支付/下单时间；找不到就填空字符串 "" ，不要编造、不要用今天兑底。
 - codes 只抽实际可复制使用的短码（取件码、核销码、热锁、取餐号）。
 - tasks 限明确“我”需要完成的事项。
 - 如果是文章/帖子，重点摆 key_points，不产生 events/codes/ledger。
 - 不要手动转义引号，在 JSON 里用双引号即可。
 """
+
+TEXT_PROMPT = """你是个个人外挂大脑。下面是用户语音转写的一段话，抽取应该提醒、加入日历、收藏的结构化信息。
+今天是 {today} (Asia/Singapore)。严格输出 JSON，不要任何解释：
+
+{{
+  "title": "一句话概括(不超 18 字)",
+  "summary": "一句话总结 (不超 50 字)",
+  "tags": ["..."],
+  "events": [{{"title":"...", "start_iso":"2026-05-28T07:55:00+08:00", "end_iso":null, "location":"", "notes":"", "alert_min":30}}],
+  "tasks": [{{"text":"...", "due_iso":null}}],
+  "key_points": ["..."]
+}}
+
+**events 抽取规则**：
+✅ 凡是含有「具体日期或时间 + 行动/提醒/约定」的，比如「5月28号7点55分叫我」「下周二三点开会」「明天早上提醒我吃药」 → 必须填 events。start_iso 用当地 +08:00。
+✅ 周期/定期任务（「每三个月做一次X」「每周一寄货」）→ 填 tasks，due_iso 用第一次发生时间，notes 写明周期；如果用户说「从6月1号开始每三个月」→ events 填第一次 6/1 + tasks 写循环
+✅ alert_min：闹钟/叫醒类 0；其他默认 30；机票/火车 120
+❌ 不要把纯信息（地址、电话、想法、不带时间的备忘）放进 events/tasks
+❌ 不要编造时间。原文没说几点就用 09:00 兑底，没说日期就完全不填该条 event
+- start_iso 必须 ISO 8601 + 时区，例：「5月28号7点55分」(今年) → 2026-05-28T07:55:00+08:00
+- 不要手动转义引号，JSON 里用双引号。
+
+用户的转写文本：
+```
+{text}
+```
+"""
+
+async def _text_extract_and_update(eid: str, text: str):
+    """Background task: 从纯文本（语音转写）抽 events/tasks/title/summary 并合并到 meta。"""
+    if not AI_KEY:
+        return
+    if not text or not text.strip():
+        return
+    try:
+        today = ts_to_local_date(now_ts())
+        prompt = TEXT_PROMPT.format(today=today, text=text.strip())
+        raw = await ai_chat([{"role":"user","content":prompt}], max_tokens=900, temperature=0.2)
+        data = _extract_json(raw) or {}
+        title = (data.get("title") or "").strip()
+        summary = (data.get("summary") or "").strip()
+        tags = data.get("tags") or []
+        events = data.get("events") or []
+        _bad_kw = ['完成支付','当日支付','当天支付','记得付','提前准备','出发准备','提前确认','行程前联系','提前报到','准备资料']
+        events = [ev for ev in events if isinstance(ev,dict) and ev.get('start_iso') and not any(k in (ev.get('title') or '') for k in _bad_kw)]
+        _seen=set(); _dedup=[]
+        for ev in events:
+            k=(ev.get('start_iso') or '')[:16]
+            if k in _seen: continue
+            _seen.add(k); _dedup.append(ev)
+        events = _dedup
+        tasks = [t for t in (data.get("tasks") or []) if isinstance(t,dict)]
+        key_points = data.get("key_points") or []
+        with db() as c:
+            row = c.execute("SELECT meta, title, summary, tags FROM entries WHERE id=?", (eid,)).fetchone()
+            if not row:
+                return
+            try:
+                meta = json.loads(row["meta"] or "{}")
+            except Exception:
+                meta = {}
+            meta["events"] = events
+            meta["tasks"] = tasks
+            if key_points:
+                meta["key_points"] = key_points
+            # title/summary 仅在原本为空时补
+            new_title = row["title"] or title
+            new_summary = row["summary"] or summary
+            try:
+                existing_tags = json.loads(row["tags"] or "[]")
+            except Exception:
+                existing_tags = []
+            merged_tags = list(dict.fromkeys([*existing_tags, *tags]))
+            c.execute("UPDATE entries SET title=?, summary=?, tags=?, meta=?, organized=1 WHERE id=?",
+                      (new_title, new_summary, json.dumps(merged_tags, ensure_ascii=False),
+                       json.dumps(meta, ensure_ascii=False), eid))
+        print(f"[text-extract] {eid} done: events={len(events)} tasks={len(tasks)} title={title[:30]}")
+    except Exception as e:
+        print(f"[text-extract] {eid} error: {e}")
+
 
 async def _vision_extract_and_update(eid: str, image_path: Path, capture_mode: str = "auto"):
     """Background task: send image to multimodal Claude, store structured meta."""
@@ -632,11 +808,22 @@ async def _vision_extract_and_update(eid: str, image_path: Path, capture_mode: s
         }]
         raw = await ai_chat(msg, max_tokens=1800, temperature=0.2)
         data = _extract_json(raw) or {}
-        ledger_data = maybe_ledger_data(data)
+        ledger_items = maybe_ledger_items(data)
+        # 兑底：ledger 单字段兑底（仅供第一笔 + 老逻辑兼容）
+        ledger_data = ledger_items[0] if ledger_items else maybe_ledger_data(data)
         if capture_mode == "ledger" and not ledger_data:
             ledger_data = {"is_expense": True, "merchant": "", "amount": None, "currency": "CNY", "category": "other", "note": "AI 未能从截图中稳定提取消费信息", "confidence": 0.0}
+            ledger_items = [ledger_data]
         if ledger_data:
             update_ledger_candidate_from_ai(eid, ledger_data)
+        # 额外笔（多笔账单第 2..N 条）直接进 ledger_entries
+        if len(ledger_items) > 1:
+            extra_tags = (data.get("tags") or []) + ["ledger"]
+            for extra in ledger_items[1:]:
+                try:
+                    insert_extra_ledger_entry(eid, extra, extra_tags)
+                except Exception as ex:
+                    print(f"[ledger_extra] {eid} insert fail: {ex}")
         text = (data.get("text") or "").strip()
         title = (data.get("title") or "").strip()
         summary = (data.get("summary") or "").strip()

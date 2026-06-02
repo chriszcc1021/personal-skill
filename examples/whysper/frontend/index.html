@@ -130,6 +130,15 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .btn-del:hover{opacity:1;color:var(--red)}
 .btn-del.absolute{position:absolute;top:8px;right:8px;z-index:2}
 
+/* ──── swipe-to-delete ──── */
+.swipe-wrap{position:relative;overflow:hidden;margin-bottom:10px}
+.swipe-wrap .entry,.swipe-wrap .ledger-row,.swipe-wrap .upcoming-item{margin-bottom:0!important}
+.swipe-wrap .swipe-action{position:absolute;top:0;right:0;bottom:0;width:80px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;-webkit-user-select:none;user-select:none;z-index:1;border:none;padding:0}
+.swipe-wrap .swipe-action.confirm{background:#9f0f17;letter-spacing:0.1em}
+.swipe-wrap .swipe-content{position:relative;z-index:2;background:var(--bg);transform:translateX(0);transition:transform 0.25s cubic-bezier(.2,.8,.2,1);will-change:transform}
+.swipe-wrap.swiping .swipe-content{transition:none}
+.swipe-wrap.open .swipe-content{transform:translateX(-80px)}
+
 /* 统一「加日历」按钮 */
 .btn-cal{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--red);color:var(--red);font-family:var(--font-mono);font-size:11px;letter-spacing:0.2em;text-decoration:none;cursor:pointer;background:transparent;line-height:1;padding:8px 14px}
 .btn-cal:active{background:var(--red);color:#fff}
@@ -225,6 +234,7 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .select-bar button{flex:1;padding:12px;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;border:1px solid var(--dim2);color:var(--fg)}
 .select-bar button.danger{border-color:var(--red);color:var(--red)}
 .ask-result{white-space:pre-wrap;font-family:-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.6;color:#ccc;letter-spacing:0;padding:14px;border:1px solid var(--dim2);min-height:80px}
+.ask-result.thinking{color:var(--dim);font-family:var(--font-mono);letter-spacing:0.2em;text-transform:uppercase;font-size:11px}
 .ask-result:empty::before{content:'问个问题，比如：上周关于 vlog 的想法';color:var(--dim);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font)}
 .organize-btn{display:block;margin:20px auto 0;padding:14px 28px;border:1px solid var(--red);color:var(--red);font-size:11px;letter-spacing:0.3em;text-transform:uppercase}
 .tag-cloud{margin-top:24px;display:flex;flex-wrap:wrap;gap:6px}
@@ -296,6 +306,40 @@ button{font-family:inherit;background:transparent;color:inherit;border:none;curs
 .ledger-chips button{flex:0 0 auto;padding:7px 11px;border:1px solid var(--dim);font-family:var(--font-cn);font-size:11px;color:var(--fg);letter-spacing:0.1em;background:transparent;line-height:1;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;border-radius:0;margin:0;font-weight:400;box-shadow:none;text-transform:none}
 .ledger-chips button:focus{outline:none}
 .ledger-chips button.active{color:var(--bg);border-color:var(--fg);background:var(--fg)}
+/* ledger chart view */
+.ledger-view-tog{flex:0 0 auto;width:32px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--dim2);background:transparent;color:var(--dim);cursor:pointer;padding:0;-webkit-appearance:none;appearance:none;border-radius:0;margin-left:auto}
+.ledger-view-tog:hover{color:var(--fg);border-color:var(--dim)}
+.ledger-view-tog.active{color:#000;background:var(--fg);border-color:var(--fg)}
+.ledger-view-tog svg{display:block}
+.ledger-filters{display:flex;align-items:stretch;gap:8px;flex-wrap:nowrap}
+.ledger-chart{border:1px solid var(--dim2);padding:18px 14px 16px;margin-bottom:14px}
+.ledger-chart-head{display:flex;align-items:center;justify-content:space-between;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);font-family:'Space Mono',ui-monospace,monospace;margin-bottom:14px}
+.ledger-chart-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:14px;align-items:center}
+@media (max-width:380px){.ledger-chart-grid{grid-template-columns:1fr;gap:18px}.ledger-donut-wrap{justify-self:center}}
+.ledger-donut-wrap{position:relative;width:100%;max-width:180px;aspect-ratio:1/1}
+.ledger-donut-wrap svg{width:100%;height:100%;display:block}
+.ledger-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.ledger-donut-center .amt{font-family:-apple-system,system-ui,sans-serif;font-size:22px;font-weight:600;letter-spacing:-0.01em;color:var(--fg);line-height:1;font-variant-numeric:tabular-nums}
+.ledger-donut-center .lab{font-size:9px;letter-spacing:0.2em;color:var(--dim);margin-top:6px;text-transform:uppercase;font-family:'Space Mono',ui-monospace,monospace}
+.ledger-donut-arc{transition:opacity 0.18s ease, stroke-width 0.18s ease;cursor:pointer}
+.ledger-donut-arc.dim{opacity:0.25}
+.ledger-legend{display:flex;flex-direction:column;gap:10px;font-family:-apple-system,system-ui,sans-serif}
+.ledger-legend .row{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;font-size:12px;cursor:pointer;color:var(--fg);transition:opacity 0.18s ease}
+.ledger-legend .row.dim{opacity:0.4}
+.ledger-legend .dot{width:9px;height:9px;border-radius:50%}
+.ledger-legend .name{letter-spacing:0;color:var(--fg)}
+.ledger-legend .pct{color:var(--dim);font-variant-numeric:tabular-nums;font-size:11px;letter-spacing:0.05em;font-family:'Space Mono',ui-monospace,monospace}
+.ledger-trend{margin-top:18px;border-top:1px solid var(--dim2);padding-top:14px}
+.ledger-trend-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);font-family:'Space Mono',ui-monospace,monospace}
+.ledger-trend-head .max{color:var(--fg);font-variant-numeric:tabular-nums}
+.ledger-trend svg{width:100%;height:84px;display:block;overflow:visible}
+.ledger-trend .grid{stroke:var(--dim2);stroke-width:0.5;stroke-dasharray:2 3}
+.ledger-trend .line{fill:none;stroke:var(--fg);stroke-width:1.2;stroke-linejoin:round;stroke-linecap:round}
+.ledger-trend .area{fill:var(--fg);opacity:0.08}
+.ledger-trend .dot{fill:var(--fg)}
+.ledger-trend .peak{fill:var(--red,#ff3d2e)}
+.ledger-trend-axis{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--dim);font-family:'Space Mono',ui-monospace,monospace;letter-spacing:0.1em}
+.ledger-chart-empty{padding:30px 10px;text-align:center;color:var(--dim);font-size:11px;letter-spacing:0.2em;text-transform:uppercase}
 .ledger-group-title{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px;font-family:-apple-system,system-ui,sans-serif}
 .ledger-group-title .name{font-size:14px;font-weight:700;color:var(--fg);letter-spacing:0}
 .ledger-group-title .sum{font-size:12px;color:var(--dim);letter-spacing:0}
@@ -830,20 +874,25 @@ async function doBulkDelete(){
   if(!selectedIds.size) return;
   if(!confirm('删除选中 '+selectedIds.size+' 条？不可恢复。')) return;
   const ids = [...selectedIds];
-  let ok=0, fail=0;
-  for(const id of ids){
-    try{ await api('/entries/'+id, {method:'DELETE'}); ok++; }catch(_){ fail++; }
-  }
-  toast('已删除 '+ok+(fail?(' · 失败 '+fail):''));
+  // UI 立即重置 + toast，后台并发删除
+  toast('已删除 '+ids.length);
   selectedIds.clear();
   selectMode = false;
   document.getElementById('selectBtn').textContent='选择';
   document.getElementById('selectBar').classList.remove('show');
-  loadList(); loadStats();
+  // 先从缓存/视图拌除，再后台删
+  if(__listCache && __listCache.entries){
+    __listCache.entries = __listCache.entries.filter(e=>!ids.includes(e.id));
+  }
+  loadList();
+  Promise.allSettled(ids.map(id=>api('/entries/'+id, {method:'DELETE'}))).then(()=>{
+    __listCache = null; loadTags(); loadStats();
+  });
 }
 
-async function dismissEvent(eid, idx, added){
-  try{ await api('/entries/'+eid+'/events/'+idx+'/dismiss', {method:'POST'}); }catch(_){ }
+function dismissEvent(eid, idx, added){
+  // 不阻塞 UI，后台异步删
+  api('/entries/'+eid+'/events/'+idx+'/dismiss', {method:'POST'}).catch(()=>{});
   toast(added ? '已加入日历' : '已忽略');
   setTimeout(()=>loadUpcomingEvents(), 200);
 }
@@ -933,8 +982,11 @@ async function loadList(forceFetch){
     const calBtn = hasEvent ? '<a class="btn-cal" href="'+apiBase+'/entries/'+e.id+'/ics" onclick="event.stopPropagation()">加日历 · '+calItems.length+'</a>' : '';
     const progress = state.kind==='running' ? '<div class="entry-progress">'+Array.from({length:18}).map(()=>'<b></b>').join('')+'</div>' : '';
     const bodyText = entryBodyText(e, state);
-    html += '<div class="entry'+(sel?' selected':'')+(state.kind==='running'?' processing':'')+(state.kind==='failed'?' failed':'')+(hasEvent?' has-calendar':'')+'" data-eid="'+e.id+'" onclick="'+clickFn+'">'+
-      (selectMode?'<span class="entry-select"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>':'<button class="btn-del absolute" onclick="event.stopPropagation();confirmDeleteEntry(this,\''+e.id+'\')" title="删除">×</button>')+
+    html += '<div class="swipe-wrap" data-swipe-target="entry" data-eid="'+e.id+'">'+
+      '<button class="swipe-action" onclick="event.stopPropagation();swipeDelete(this,\''+e.id+'\',\'entry\')">删除</button>'+
+      '<div class="swipe-content">'+
+      '<div class="entry'+(sel?' selected':'')+(state.kind==='running'?' processing':'')+(state.kind==='failed'?' failed':'')+(hasEvent?' has-calendar':'')+'" data-eid="'+e.id+'" onclick="'+clickFn+'">'+
+      (selectMode?'<span class="entry-select"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>':'')+
       '<div class="entry-meta"><span>'+hm+(e.source==='shortcut'?'<span class="src-badge shortcut">快捷</span>':'')+(e.audio_file?'<span class="src-badge audio">· 录音</span>':'')+(e.image_file?'<span class="src-badge image">· 截图</span>':'')+'</span><span>'+esc(state.meta)+'</span></div>'+
       (e.title?'<div class="entry-title">'+esc(e.title)+'</div>':'')+
       '<div class="entry-text">'+esc(bodyText)+'</div>'+
@@ -942,9 +994,8 @@ async function loadList(forceFetch){
       '<div class="entry-state '+state.kind+'"><span class="dot"></span><span>'+esc(state.label)+'</span></div>'+
       progress+
       calBtn +
-      // 主页不展示图，点详情才看原图
       ''+
-    '</div>';
+    '</div></div></div>';
   });
   box.innerHTML = html;
   // poll while any entry is transcribing
@@ -1161,7 +1212,13 @@ function closeModal(){document.getElementById('modal').classList.remove('show');
 async function deleteEntry(){
   if(!curEntry) return;
   if(!confirm('删除这条？')) return;
-  await api('/entries/'+curEntry.id, {method:'DELETE'});
+  const id = curEntry.id;
+  closeModal();
+  toast('已删除');
+  if(__listCache && __listCache.entries){ __listCache.entries = __listCache.entries.filter(e=>e.id!==id); }
+  loadList();
+  api('/entries/'+id, {method:'DELETE'}).then(()=>{ __listCache=null; loadStats(); }).catch(()=>{});
+  return;
   closeModal(); loadList(true); loadStats();
 }
 
@@ -1209,15 +1266,17 @@ async function loadUpcomingEvents(){
   finalItems.slice(0, shown).forEach(({ev, idx, t, eid, image}) => {
     const dStr = t.toLocaleDateString('zh-CN', {month:'2-digit', day:'2-digit', weekday:'short'});
     const hm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
-    html += '<div class="upcoming-item" data-eid="'+eid+'" data-idx="'+idx+'" onclick="openEntry(\''+eid+'\')">'+
+    html += '<div class="swipe-wrap" data-swipe-target="event" data-eid="'+eid+'" data-idx="'+idx+'">'+
+      '<button class="swipe-action" onclick="event.stopPropagation();swipeDelete(this,\''+eid+'\',\'event\','+idx+')">忽略</button>'+
+      '<div class="swipe-content">'+
+      '<div class="upcoming-item" data-eid="'+eid+'" data-idx="'+idx+'" onclick="openEntry(\''+eid+'\')">'+
       '<div class="up-when"><div class="up-date">'+dStr+'</div><div class="up-time">'+hm+'</div></div>'+
       '<div class="up-body">'+
         '<div class="up-title">'+esc(ev.title||'事件')+'</div>'+
         (ev.location?'<div class="up-loc">'+esc(ev.location)+'</div>':'')+
       '</div>'+
       '<a class="btn-cal compact" href="'+apiBase+'/entries/'+eid+'/ics" data-eid="'+eid+'" data-idx="'+idx+'" onclick="return dismissBeforeIcs(this);">加</a>'+
-      '<button class="btn-del" onclick="event.stopPropagation();dismissEvent(\''+eid+'\','+idx+',false)" title="忽略">×</button>'+
-    '</div>';
+    '</div></div></div>';
   });
   if(finalItems.length > 12){
     html += '<button class="upcoming-more-btn" onclick="toggleUpcomingExpand()">'+(upcomingExpanded?'收起 ∧':'另 '+(finalItems.length-12)+' 件 ∨')+'</button>';
@@ -1304,12 +1363,24 @@ async function doAsk(){
   const q = document.getElementById('askInput').value.trim();
   if(!q) return;
   const r = document.getElementById('askResult');
-  r.style.display='block'; r.textContent='思考中...';
+  const btn = document.getElementById('askGoBtn');
+  r.style.display='block';
+  r.classList.add('thinking');
+  let dots = 0;
+  r.textContent = '思考中';
+  const tick = setInterval(()=>{ dots=(dots+1)%4; r.textContent = '思考中' + '.'.repeat(dots); }, 350);
+  if(btn) btn.disabled = true;
   try{
     const j = await api('/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question:q})});
+    clearInterval(tick);
+    r.classList.remove('thinking');
     r.textContent = j.answer;
   }catch(e){
+    clearInterval(tick);
+    r.classList.remove('thinking');
     r.textContent='出错：'+e.message;
+  }finally{
+    if(btn) btn.disabled = false;
   }
 }
 async function doOrganize(){
@@ -1413,6 +1484,26 @@ const LEDGER_CATEGORIES = [
   ['other','其他']
 ];
 const LEDGER_CATEGORY_LABEL = Object.fromEntries(LEDGER_CATEGORIES);
+// Nothing-style category colors (mono + 1 accent)
+const LEDGER_CAT_COLORS = {
+  food:'#F2F2F2', transport:'#BFBFBF', shopping:'#888888', entertainment:'#FF3D2E',
+  housing:'#6E6E6E', health:'#9F9F9F', education:'#525252', travel:'#D9D9D9',
+  business:'#3D3D3D', subscription:'#AFAFAF', transfer:'#7A7A7A', other:'#5C5C5C'
+};
+let ledgerViewMode = (function(){
+  try{ return localStorage.getItem('ledgerViewMode')==='chart' ? 'chart':'list'; }catch(e){ return 'list'; }
+})();
+let ledgerChartHighlight = '';
+function toggleLedgerView(){
+  ledgerViewMode = (ledgerViewMode==='chart') ? 'list' : 'chart';
+  try{ localStorage.setItem('ledgerViewMode', ledgerViewMode); }catch(e){}
+  ledgerChartHighlight = '';
+  if(__ledgerData) renderLedger();
+}
+function highlightLedgerCat(cat){
+  ledgerChartHighlight = (ledgerChartHighlight===cat) ? '' : cat;
+  if(__ledgerData) renderLedger();
+}
 // Nothing-style dot-matrix monochrome icons (10x10 dot grid, 1px dots)
 function _dotIcon(cells){
   // cells: array of [x,y] 0-9 grid
@@ -1675,8 +1766,18 @@ function renderLedger(){
     dd('time', rangeMap[ledgerTimeRange]||'本月', timeOpts, ledgerTimeRange, 'pickLedgerTime')+
     dd('cat', catLabel, catOpts, ledgerCategoryFilter, 'pickLedgerCat')+
     dd('sort', sortMap[ledgerSortBy]||'按时间', sortOpts, ledgerSortBy, 'pickLedgerSort')+
+    '<button class="ledger-view-tog'+(ledgerViewMode==='chart'?' active':'')+'" onclick="toggleLedgerView()" aria-label="切换图表/列表" title="切换图表/列表">'+
+      (ledgerViewMode==='chart'
+        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>'
+        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>')+
+    '</button>'+
   '</div>';
   let html = ledgerHeroHtml(stats, filteredEntries) + filterBar;
+  if(ledgerViewMode==='chart'){
+    html += renderLedgerChart(stats, filteredEntries);
+    box.innerHTML = html;
+    return;
+  }
   if(pending.candidates && pending.candidates.length){
     html += '<div class="day-head"><span>待确认 · '+pending.candidates.length+'</span><div class="line"></div></div>';
     html += pending.candidates.map(ledgerCandidateHtml).join('');
@@ -1687,6 +1788,133 @@ function renderLedger(){
     html += '<div class="ledger-empty">没有匹配的记录</div>';
   }
   box.innerHTML = html;
+}
+function renderLedgerChart(stats, filteredEntries){
+  // 聚合 filteredEntries 按 category
+  const map = new Map();
+  let total = 0;
+  filteredEntries.forEach(e => {
+    const cat = String(e.category||'other').toLowerCase();
+    const amt = Number(e.amount||0);
+    if(amt<=0) return;
+    map.set(cat, (map.get(cat)||0) + amt);
+    total += amt;
+  });
+  if(total<=0){
+    return '<div class="ledger-chart"><div class="ledger-chart-empty">暂无数据</div></div>';
+  }
+  // 按金额降序，超过 5 个合并到 other
+  let arr = Array.from(map.entries()).map(([cat,amt]) => ({cat, amt}));
+  arr.sort((a,b) => b.amt - a.amt);
+  if(arr.length>6){
+    const top = arr.slice(0,5);
+    const rest = arr.slice(5).reduce((s,x)=>s+x.amt,0);
+    if(rest>0){
+      // 合并到 other（如果 top 有 other，并入）
+      const oi = top.findIndex(x=>x.cat==='other');
+      if(oi>=0) top[oi].amt += rest; else top.push({cat:'other', amt:rest});
+    }
+    arr = top;
+  }
+  // donut svg
+  const R = 42, CX = 50, CY = 50, STROKE = 12;
+  const C = 2 * Math.PI * R;
+  let offset = 0;
+  const arcs = arr.map(it => {
+    const frac = it.amt / total;
+    const color = LEDGER_CAT_COLORS[it.cat] || '#999';
+    const len = C * frac;
+    const dim = ledgerChartHighlight && ledgerChartHighlight!==it.cat ? ' dim' : '';
+    const dash = len + ' ' + (C - len);
+    const dashoff = -offset;
+    offset += len;
+    return '<circle class="ledger-donut-arc'+dim+'" cx="'+CX+'" cy="'+CY+'" r="'+R+'" fill="none" '+
+           'stroke="'+color+'" stroke-width="'+STROKE+'" '+
+           'stroke-dasharray="'+dash+'" stroke-dashoffset="'+dashoff+'" '+
+           'transform="rotate(-90 '+CX+' '+CY+')" '+
+           'onclick="highlightLedgerCat(\''+it.cat+'\')"></circle>';
+  }).join('');
+  // 中央文字：如果高亮 → 显示该类金额/占比，否则总额
+  let centerAmt = total, centerLab = '总支出';
+  if(ledgerChartHighlight){
+    const hit = arr.find(x=>x.cat===ledgerChartHighlight);
+    if(hit){
+      centerAmt = hit.amt;
+      centerLab = ledgerCatLabel(hit.cat)+' '+(hit.amt*100/total).toFixed(1)+'%';
+    }
+  }
+  const donut = '<div class="ledger-donut-wrap">'+
+    '<svg viewBox="0 0 100 100">'+
+      '<circle cx="'+CX+'" cy="'+CY+'" r="'+R+'" fill="none" stroke="#1a1a1a" stroke-width="'+STROKE+'"/>'+
+      arcs +
+    '</svg>'+
+    '<div class="ledger-donut-center">'+
+      '<div class="amt">'+fmtAmt(centerAmt)+'</div>'+
+      '<div class="lab">'+esc(centerLab)+'</div>'+
+    '</div>'+
+  '</div>';
+  const legend = '<div class="ledger-legend">'+
+    arr.map(it => {
+      const pct = (it.amt*100/total).toFixed(2);
+      const dim = ledgerChartHighlight && ledgerChartHighlight!==it.cat ? ' dim' : '';
+      const color = LEDGER_CAT_COLORS[it.cat] || '#999';
+      return '<div class="row'+dim+'" onclick="highlightLedgerCat(\''+it.cat+'\')">'+
+        '<span class="dot" style="background:'+color+'"></span>'+
+        '<span class="name">'+esc(ledgerCatLabel(it.cat))+'</span>'+
+        '<span class="pct">'+pct+'%</span>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+  // 趋势图：按天聚合，取近 30 天（或当前过滤范围）
+  const daily = new Map();
+  filteredEntries.forEach(e => {
+    const day = (e.paid_at||'').slice(0,10);
+    if(!day) return;
+    const amt = Number(e.amount||0);
+    if(amt<=0) return;
+    if(ledgerChartHighlight){
+      const c = String(e.category||'other').toLowerCase();
+      if(c !== ledgerChartHighlight) return;
+    }
+    daily.set(day, (daily.get(day)||0) + amt);
+  });
+  let trend = '';
+  if(daily.size >= 2){
+    const days = Array.from(daily.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+    const W = 320, H = 70, PAD = 4;
+    const vals = days.map(d=>d[1]);
+    const maxV = Math.max(...vals);
+    const minV = 0;
+    const range = maxV - minV || 1;
+    const stepX = days.length>1 ? (W - PAD*2) / (days.length-1) : 0;
+    const pts = days.map((d,i)=>{
+      const x = PAD + i*stepX;
+      const y = H - PAD - ((d[1]-minV)/range)*(H - PAD*2);
+      return [x,y,d[0],d[1]];
+    });
+    const polyline = pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    const areaPath = 'M '+pts[0][0].toFixed(1)+' '+(H-PAD)+' L '+polyline.split(' ').join(' L ')+' L '+pts[pts.length-1][0].toFixed(1)+' '+(H-PAD)+' Z';
+    const peakIdx = vals.indexOf(maxV);
+    const dots = pts.map((p,i)=>'<circle class="'+(i===peakIdx?'peak':'dot')+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(i===peakIdx?2.4:1.4)+'"/>').join('');
+    const firstDay = days[0][0];
+    const lastDay = days[days.length-1][0];
+    const trendLabel = ledgerChartHighlight ? ledgerCatLabel(ledgerChartHighlight)+' 趋势' : '日均趋势';
+    trend = '<div class="ledger-trend">'+
+      '<div class="ledger-trend-head"><span>'+esc(trendLabel)+'</span><span class="max">peak ¥'+fmtAmt(maxV)+'</span></div>'+
+      '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+        '<line class="grid" x1="0" y1="'+(H/2).toFixed(1)+'" x2="'+W+'" y2="'+(H/2).toFixed(1)+'"/>'+
+        '<path class="area" d="'+areaPath+'"/>'+
+        '<polyline class="line" points="'+polyline+'"/>'+
+        dots +
+      '</svg>'+
+      '<div class="ledger-trend-axis"><span>'+esc(firstDay)+'</span><span>'+esc(lastDay)+'</span></div>'+
+    '</div>';
+  }
+  return '<div class="ledger-chart">'+
+    '<div class="ledger-chart-head"><span>分类占比</span><span>'+arr.length+' cats / ¥'+fmtAmt(total)+'</span></div>'+
+    '<div class="ledger-chart-grid">'+donut+legend+'</div>'+
+    trend +
+  '</div>';
 }
 function ledgerCandidateHtml(c){
   const id = c.id;
@@ -1730,15 +1958,17 @@ function ledgerEntryHtml(e){
     if(m) timeStr = m[1] + (m[2] ? ' '+m[2]+':'+m[3] : '');
   }
   const clickFn = e.source_entry_id ? 'openEntry(\''+e.source_entry_id+'\')' : '';
-  return '<div class="ledger-row" data-cat="'+cat+'"'+(clickFn?' onclick="'+clickFn+'" style="cursor:pointer"':'')+'>'+
+  return '<div class="swipe-wrap" data-swipe-target="ledger" data-lid="'+e.id+'">'+
+    '<button class="swipe-action" onclick="event.stopPropagation();swipeDelete(this,\''+e.id+'\',\'ledger\')">删除</button>'+
+    '<div class="swipe-content">'+
+    '<div class="ledger-row" data-cat="'+cat+'"'+(clickFn?' onclick="'+clickFn+'" style="cursor:pointer"':'')+'>'+
     '<div class="ledger-row-ico">'+catIconHtml(cat)+'</div>'+
     '<div class="ledger-row-body">'+
       '<div class="ledger-row-merchant">'+esc((function(s){s=s||'账单';return s.length>12?s.slice(0,12)+'…':s;})(e.merchant))+'</div>'+
       '<div class="ledger-row-meta">'+esc(timeStr)+'</div>'+
     '</div>'+
     '<div class="ledger-row-amt">¥ '+amount+'</div>'+
-    '<button class="btn-del" onclick="event.stopPropagation();confirmDeleteLedger(this,\''+e.id+'\')" title="删除">×</button>'+
-  '</div>';
+  '</div></div></div>';
 }
 function toggleLedgerForm(id){
   const el = document.getElementById('ledger-form-'+id);
@@ -1766,11 +1996,21 @@ async function saveLedgerCandidate(id){
 async function confirmLedger(id){
   const form = document.getElementById('ledger-form-'+id);
   if(form && form.classList.contains('show')) await saveLedgerCandidate(id);
+  const btn = document.querySelector('button[onclick="confirmLedger(\''+id+'\')"]');
+  const orig = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.classList.add('busy'); btn.textContent = '入账中'; }
+  let dots = 0;
+  const tick = btn ? setInterval(()=>{ dots=(dots+1)%4; btn.textContent='入账中'+'.'.repeat(dots); }, 350) : null;
   try{
     await api('/ledger/candidates/'+id+'/confirm', {method:'POST'});
+    if(tick) clearInterval(tick);
     toast('已入账');
     loadLedger(); loadStats();
-  }catch(e){ toast('确认失败 · '+(e.message||e)); }
+  }catch(e){
+    if(tick) clearInterval(tick);
+    if(btn){ btn.classList.remove('busy'); btn.textContent = orig; btn.disabled = false; }
+    toast('确认失败 · '+(e.message||e));
+  }
 }
 async function rejectLedger(id){
   if(!confirm('删除这条待确认账单？')) return;
@@ -1805,6 +2045,106 @@ function toast(msg){
 // ===== boot: single-shot prefetch =====
 let __bootCache = null;
 let __listCache = null;
+
+/* ──── swipe-to-delete ──── */
+let __swipeOpen = null;
+function closeAllSwipes(except){
+  document.querySelectorAll('.swipe-wrap.open').forEach(w => {
+    if(w === except) return;
+    w.classList.remove('open');
+    const btn = w.querySelector('.swipe-action');
+    if(btn){ btn.classList.remove('confirm'); btn.textContent = (w.dataset.swipeTarget==='event'?'忽略':'删除'); }
+  });
+  if(except !== __swipeOpen) __swipeOpen = except || null;
+}
+function swipeDelete(btn, id, kind, idx){
+  // 二次确认：首次点变「确认」变深红，2.5s 后未点自动取消
+  if(btn.classList.contains('confirm')){
+    clearTimeout(btn._t);
+    // 立即动画折起 + toast + 后台删除
+    const wrap = btn.closest('.swipe-wrap');
+    if(wrap){
+      wrap.style.transition = 'max-height 0.22s ease, opacity 0.18s ease, margin 0.22s ease';
+      wrap.style.maxHeight = wrap.offsetHeight + 'px';
+      requestAnimationFrame(()=>{
+        wrap.style.maxHeight = '0';
+        wrap.style.opacity = '0';
+        wrap.style.marginBottom = '0';
+        wrap.style.overflow = 'hidden';
+      });
+      setTimeout(()=>{ if(wrap.parentNode) wrap.parentNode.removeChild(wrap); }, 230);
+    }
+    toast(kind==='event' ? '已忽略' : '已删除');
+    // 后台异步删，不阻塞 UI
+    if(kind==='entry') api('/entries/'+id, {method:'DELETE'}).then(()=>{ __listCache=null; loadTags(); loadStats(); }).catch(()=>{});
+    else if(kind==='ledger') api('/ledger/entries/'+id, {method:'DELETE'}).then(()=>{ loadStats(); }).catch(()=>{});
+    else if(kind==='event') api('/entries/'+id+'/events/'+idx+'/dismiss', {method:'POST'}).catch(()=>{});
+    return;
+  }
+  btn.classList.add('confirm');
+  btn.textContent = '确认?';
+  btn._t = setTimeout(()=>{
+    btn.classList.remove('confirm');
+    btn.textContent = (kind==='event'?'忽略':'删除');
+  }, 2500);
+}
+(function setupSwipe(){
+  let startX=0, startY=0, dragging=false, currentWrap=null, currentContent=null, dirLocked=null;
+  const THRESH = 40;  // 准则：< 30% 宽回弹
+  document.addEventListener('touchstart', (e)=>{
+    const wrap = e.target.closest && e.target.closest('.swipe-wrap');
+    if(!wrap) return;
+    if(e.target.closest('.swipe-action')) return; // 点删除按钮不启动拖拽
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dragging = false;
+    dirLocked = null;
+    currentWrap = wrap;
+    currentContent = wrap.querySelector('.swipe-content');
+  }, {passive:true});
+  document.addEventListener('touchmove', (e)=>{
+    if(!currentWrap) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if(dirLocked === null){
+      if(Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      dirLocked = (Math.abs(dx) > Math.abs(dy)) ? 'x' : 'y';
+    }
+    if(dirLocked === 'y'){ currentWrap = null; return; }
+    if(dx > 0 && !currentWrap.classList.contains('open')) return; // 只允许左滑
+    if(!dragging){ dragging = true; currentWrap.classList.add('swiping'); closeAllSwipes(currentWrap); }
+    const base = currentWrap.classList.contains('open') ? -80 : 0;
+    let nx = Math.min(0, base + dx);
+    if(nx < -120) nx = -120;
+    currentContent.style.transform = 'translateX('+nx+'px)';
+  }, {passive:true});
+  document.addEventListener('touchend', (e)=>{
+    if(!currentWrap){ return; }
+    currentWrap.classList.remove('swiping');
+    if(dragging){
+      const dx = (e.changedTouches[0].clientX) - startX;
+      const wasOpen = currentWrap.classList.contains('open');
+      const moved = wasOpen ? (dx + (-80)) : dx;  // current visual offset
+      // 继续左滑超 70% → 直接调出删除按钮状态 (不执行删除，仅展示)
+      if(moved < -THRESH){
+        currentWrap.classList.add('open');
+        currentContent.style.transform = '';
+        __swipeOpen = currentWrap;
+      } else {
+        currentWrap.classList.remove('open');
+        currentContent.style.transform = '';
+        if(__swipeOpen === currentWrap) __swipeOpen = null;
+      }
+    }
+    currentWrap = null; currentContent = null; dragging = false;
+  }, {passive:true});
+  // 点其他区域 → 关闭打开的 swipe
+  document.addEventListener('click', (e)=>{
+    if(!__swipeOpen) return;
+    if(e.target.closest('.swipe-wrap.open')) return;
+    closeAllSwipes(null);
+  });
+})();
 async function bootPrefetch(initialTab){
   try{
     __bootCache = await api('/boot?tab='+encodeURIComponent(initialTab||'rec'));
