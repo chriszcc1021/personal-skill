@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冰岛环岛 11 天自驾路书</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg: #08090a;
+  --bg-surface: #111214;
+  --bg-surface-hover: #181a1e;
+  --text-primary: #E8EDF2;
+  --text-secondary: #6B7B8F;
+  --text-dim: #4A5568;
+  --accent: #4ECDC4;
+  --accent-dim: rgba(78,205,196,0.15);
+  --accent-glow: rgba(78,205,196,0.3);
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.15);
+  --ghost-bg: rgba(255,255,255,0.04);
+  --ghost-border: rgba(255,255,255,0.12);
+  --risk-low: #4ECDC4;
+  --risk-mid: #F5C542;
+  --risk-high: #FF6B6B;
+  --xiaohongshu: #ff2442;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --tl-drive: #6B7B8F;
+  --tl-spot: #4ECDC4;
+  --tl-activity: #F5C542;
+  --tl-meal: #6B7B8F;
+  --tl-stay: #4A5568;
+  --tl-aurora: #B388FF;
+  --tl-hike: #FF9E44;
+  --tl-free: #6B7B8F;
+  --tl-rest: #6B7B8F;
+  --tl-flight: #6B7B8F;
+  --tl-walk: #4ECDC4;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100vh;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ====== LAYOUT ====== */
+.app {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  padding-bottom: 56px;
+}
+
+.map-pane {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: calc(100vh - 56px);
+  z-index: 1;
+}
+#map { width: 100%; height: 100%; }
+
+.content-pane {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 40%;
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  z-index: 2;
+  border-left: 1px solid var(--border);
+}
+
+/* ====== BOTTOM NAV ====== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 56px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 12px;
+  background: rgba(8,9,10,0.9);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bottom-nav::-webkit-scrollbar { display: none; }
+
+.nav-btn {
+  flex-shrink: 0;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--ghost-border);
+  border-radius: 6px;
+  background: var(--ghost-bg);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  white-space: nowrap;
+}
+.nav-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+.nav-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 12px rgba(78,205,196,0.2);
+}
+.nav-btn .risk-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--risk-high);
+}
+
+/* ====== PAGE CONTENT (shared) ====== */
+.page {
+  display: none;
+  opacity: 0;
+  transform: translateY(20px);
+  padding: 32px 28px 40px;
+  min-height: 100%;
+}
+.page.active {
+  display: block;
+  animation: fadeSlideIn 0.25s ease-out forwards;
+}
+@keyframes fadeSlideIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ====== OVERVIEW PAGE ====== */
+.overview-hero {
+  position: relative;
+  margin: -32px -28px 28px;
+  height: 280px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 32px 28px;
+}
+.overview-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: url('https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1920&q=80') center/cover no-repeat;
+}
+.overview-hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(8,9,10,0.2) 0%,
+    rgba(8,9,10,0.1) 30%,
+    rgba(8,9,10,0.5) 60%,
+    rgba(8,9,10,0.95) 100%
+  );
+}
+.overview-hero-content {
+  position: relative;
+  z-index: 1;
+}
+.overview-title {
+  font-family: var(--font-display);
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  line-height: 0.92;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.overview-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 16px;
+  text-align: center;
+}
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.kpi-unit {
+  font-size: 0.4em;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+  margin-left: 2px;
+}
+.kpi-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+/* Bar chart */
+.chart-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 16px 12px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.chart-container svg { width: 100%; display: block; }
+.chart-bar { cursor: pointer; transition: opacity 0.15s; }
+.chart-bar:hover { opacity: 1 !important; }
+.chart-tooltip {
+  position: absolute;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hover);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip-title { font-weight: 600; margin-bottom: 2px; }
+.chart-tooltip-km { color: var(--accent); font-family: var(--font-display); font-weight: 700; }
+
+/* Risk strip */
+.risk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.risk-row span { font-size: 11px; color: var(--text-dim); }
+.risk-strip {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 3px;
+  margin-bottom: 20px;
+}
+.risk-strip-cell {
+  height: 6px;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+.aurora-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.aurora-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  min-width: 70px;
+}
+.aurora-dots {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 3px;
+  flex: 1;
+}
+.aurora-dot {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 14px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+.aurora-dot.dim { border: 1.5px solid var(--text-dim); background: transparent; }
+.aurora-dot.bright { background: #B388FF; box-shadow: 0 0 8px rgba(179,136,255,0.5); }
+
+/* Overview accommodation strip */
+.ov-accom-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+.ov-accom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.ov-accom-day {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-dim);
+  min-width: 32px;
+  letter-spacing: 0.5px;
+}
+.ov-accom-bar {
+  flex: 1;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ov-accom-bar .accom-icon {
+  margin-right: 6px;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Overview booking reminders */
+.booking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.booking-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.booking-info {
+  flex: 1;
+  min-width: 0;
+}
+.booking-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.booking-detail {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.booking-price {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.booking-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--ghost-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.booking-link:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+/* ====== DAY PAGE ====== */
+.day-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.day-num {
+  font-family: var(--font-display);
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 0.85;
+  letter-spacing: -2px;
+}
+.day-num.risk-high-color { color: var(--risk-high); }
+.day-num.risk-mid-color { color: var(--risk-mid); }
+.day-date {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.day-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.day-km {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+.risk-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.risk-tag-low { background: rgba(78,205,196,0.12); color: var(--risk-low); border: 1px solid rgba(78,205,196,0.2); }
+.risk-tag-mid { background: rgba(245,197,66,0.12); color: var(--risk-mid); border: 1px solid rgba(245,197,66,0.2); }
+.risk-tag-high { background: rgba(255,107,107,0.12); color: var(--risk-high); border: 1px solid rgba(255,107,107,0.2); }
+
+.day-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+/* Accommodation badge */
+.accom-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(78,205,196,0.08);
+  border: 1px solid rgba(78,205,196,0.15);
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.accom-badge .accom-icon {
+  font-size: 12px;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+/* Drive segments */
+.drive-segments {
+  margin-bottom: 16px;
+}
+.drive-seg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 4px 0;
+}
+.drive-seg .seg-arrow {
+  color: var(--text-dim);
+  opacity: 0.5;
+  font-size: 10px;
+}
+.drive-seg .seg-dur {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+/* Activities / bookings */
+.act-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.act-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.act-price {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.act-note {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.act-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border: 1px solid var(--ghost-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.act-link:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 20px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--border);
+  border-radius: 1px;
+}
+.tl-item {
+  position: relative;
+  padding: 6px 0 6px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.tl-dot {
+  position: absolute;
+  left: -16px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: var(--bg);
+  z-index: 1;
+}
+.tl-time {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 52px;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+  padding-top: 1px;
+}
+.tl-event {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Timeline type colors */
+.tl-item[data-type="drive"] .tl-dot { border-color: var(--tl-drive); }
+.tl-item[data-type="drive"] .tl-time { color: var(--tl-drive); }
+.tl-item[data-type="spot"] .tl-dot { border-color: var(--tl-spot); background: rgba(78,205,196,0.2); }
+.tl-item[data-type="spot"] .tl-time { color: var(--tl-spot); }
+.tl-item[data-type="activity"] .tl-dot { border-color: var(--tl-activity); background: rgba(245,197,66,0.2); }
+.tl-item[data-type="activity"] .tl-time { color: var(--tl-activity); }
+.tl-item[data-type="meal"] .tl-dot { border-color: var(--tl-meal); }
+.tl-item[data-type="meal"] .tl-time { color: var(--tl-meal); }
+.tl-item[data-type="stay"] .tl-dot { border-color: var(--tl-stay); }
+.tl-item[data-type="stay"] .tl-time { color: var(--tl-stay); }
+.tl-item[data-type="aurora"] .tl-dot { border-color: var(--tl-aurora); background: rgba(179,136,255,0.2); }
+.tl-item[data-type="aurora"] .tl-time { color: var(--tl-aurora); }
+.tl-item[data-type="hike"] .tl-dot { border-color: var(--tl-hike); background: rgba(255,158,68,0.2); }
+.tl-item[data-type="hike"] .tl-time { color: var(--tl-hike); }
+.tl-item[data-type="free"] .tl-dot { border-color: var(--tl-free); }
+.tl-item[data-type="free"] .tl-time { color: var(--tl-free); }
+.tl-item[data-type="rest"] .tl-dot { border-color: var(--tl-rest); }
+.tl-item[data-type="rest"] .tl-time { color: var(--tl-rest); }
+.tl-item[data-type="flight"] .tl-dot { border-color: var(--tl-flight); }
+.tl-item[data-type="flight"] .tl-time { color: var(--tl-flight); }
+.tl-item[data-type="walk"] .tl-dot { border-color: var(--tl-walk); background: rgba(78,205,196,0.2); }
+.tl-item[data-type="walk"] .tl-time { color: var(--tl-walk); }
+
+.day-desc {
+  list-style: none;
+  margin-bottom: 24px;
+}
+.day-desc li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+  line-height: 1.6;
+}
+.day-desc li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.6;
+}
+
+.spots-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.spot-list { display: flex; flex-direction: column; gap: 0; }
+.spot-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: default;
+  transition: background 0.15s;
+  border-radius: 4px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.spot-item:last-child { border-bottom: none; }
+.spot-item:hover { background: rgba(255,255,255,0.03); }
+.spot-item[data-spot-idx] { cursor: pointer; }
+.spot-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.spot-zh { font-weight: 500; color: var(--text-primary); font-size: 13px; }
+.spot-en { font-size: 11px; color: var(--text-dim); font-style: italic; }
+.xhs-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: rgba(255,36,66,0.15);
+  color: var(--xiaohongshu);
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: all 0.2s;
+  border: 1px solid rgba(255,36,66,0.2);
+}
+.xhs-link:hover { background: rgba(255,36,66,0.3); border-color: rgba(255,36,66,0.4); }
+
+.warn-block {
+  margin-top: 20px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.warn-block.danger { background: rgba(255,107,107,0.08); border-left: 3px solid var(--risk-high); color: #FF8A8A; }
+.warn-block.caution { background: rgba(245,197,66,0.08); border-left: 3px solid var(--risk-mid); color: #F5D572; }
+
+/* ====== INFO PAGE ====== */
+.info-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.info-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+}
+.collapse-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.collapse-item:hover { border-color: var(--border-hover); }
+.collapse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  transition: background 0.15s;
+}
+.collapse-header:hover { background: rgba(255,255,255,0.02); }
+.collapse-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.collapse-toggle {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--ghost-border);
+  background: var(--ghost-bg);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.collapse-toggle.open {
+  transform: rotate(45deg);
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+.collapse-body-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+.collapse-body-wrap.open { grid-template-rows: 1fr; }
+.collapse-body-inner { overflow: hidden; }
+.collapse-body {
+  padding: 0 18px 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+.collapse-body li {
+  margin-bottom: 4px;
+  list-style: none;
+  padding-left: 16px;
+  position: relative;
+}
+.collapse-body li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+/* ====== MAP STYLES ====== */
+.leaflet-popup-content-wrapper {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+  font-family: var(--font-body) !important;
+}
+.leaflet-popup-tip { background: var(--bg-surface) !important; }
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+.popup-day {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.popup-name-zh {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+.popup-name-en {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.popup-xhs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: rgba(255,36,66,0.15);
+  border: 1px solid rgba(255,36,66,0.3);
+  color: var(--xiaohongshu);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.popup-xhs-btn:hover { background: rgba(255,36,66,0.3); }
+
+.leaflet-control-zoom a {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+.leaflet-control-zoom a:hover { background: var(--bg-surface-hover) !important; }
+.leaflet-control-attribution {
+  background: rgba(8,9,10,0.7) !important;
+  color: var(--text-dim) !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a { color: var(--text-secondary) !important; }
+
+/* Marker pulse */
+@keyframes markerPulse {
+  0% { box-shadow: 0 0 0 0 rgba(78,205,196,0.5); }
+  70% { box-shadow: 0 0 0 14px rgba(78,205,196,0); }
+  100% { box-shadow: 0 0 0 0 rgba(78,205,196,0); }
+}
+.marker-pulse {
+  animation: markerPulse 1.2s ease-out 2;
+}
+
+/* Route draw animation */
+.route-animate {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.5s ease-in-out;
+}
+
+/* ====== MOBILE ====== */
+@media (max-width: 768px) {
+  .app { flex-direction: column; }
+  .map-pane {
+    position: fixed;
+    width: 100%;
+    height: 40vh;
+    top: 0;
+    left: 0;
+  }
+  .content-pane {
+    position: fixed;
+    width: 100%;
+    height: calc(60vh - 56px);
+    top: 40vh;
+    left: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .bottom-nav { gap: 3px; padding: 0 8px; }
+  .nav-btn { min-width: 38px; height: 32px; font-size: 12px; padding: 0 8px; }
+  .overview-hero { height: 200px; }
+  .overview-title { font-size: 48px; letter-spacing: 3px; }
+  .day-num { font-size: 56px; }
+  .kpi-value { font-size: 32px; }
+  .page { padding: 24px 20px 32px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="map-pane"><div id="map"></div></div>
+  <div class="content-pane" id="content-pane">
+    <!-- Pages injected by JS -->
+  </div>
+</div>
+
+<nav class="bottom-nav" id="bottom-nav"></nav>
+<script>
+/* ═══════════════════════════════════════
+   DATA
+   ═══════════════════════════════════════ */
+var KM = [50, 19, 240, 230, 230, 211, 275, 248, 450, 108, 66];
+var RISKS = ['low','low','mid','low','low','high','mid','high','mid','low','low'];
+var AURORA = [false,false,true,true,false,false,true,true,true,false,false];
+var DAY_TITLES = [
+  '到达雷克雅未克','雷克雅未克 Citywalk','斯奈山半岛 Day 1','斯奈山半岛 Day 2',
+  '黄金圈','南岸上半段 -> 维克镇','南岸下半段 -> 霍芬','冰川徒步+蝙蝠山',
+  '霍芬 -> 回程南岸','观鲸+休整','蓝湖+离开'
+];
+
+var DAYS = [
+  {
+    day: 1, date: '9/21 周日', title: '到达雷克雅未克', risk: 'low', km: 50,
+    desc: ['凯夫拉维克机场 -> 雷克雅未克 (45min)','入住酒店调整时差'],
+    accommodation: '雷克雅未克 · Laugavegur 步行街附近',
+    driveSegments: [{from:'凯夫拉维克机场', to:'雷克雅未克', duration:'45min'}],
+    activities: [],
+    timeline: [{time:'抵达', event:'机场取车', type:'drive'}, {time:'~1h后', event:'入住酒店，调整时差', type:'stay'}],
+    spots: [
+      { zh: '哈尔格林姆斯大教堂', en: 'Hallgrimskirkja', lat: 64.1417, lng: -21.9267 },
+      { zh: '太阳航海者', en: 'Sun Voyager', lat: 64.1478, lng: -21.9223 }
+    ]
+  },
+  {
+    day: 2, date: '9/22 周一', title: '雷克雅未克 Citywalk', risk: 'low', km: 19,
+    desc: ['城市漫步一日游','Sky Lagoon 备选体验'],
+    accommodation: '雷克雅未克',
+    driveSegments: [],
+    activities: [{name:'Sky Lagoon（备选）', provider:'skylagoon.com', price:'~7,990 ISK/人（约¥400）', url:'https://www.skylagoon.com', note:'Pure Pass 含7步冰岛浴仪式'}],
+    timeline: [{time:'上午', event:'Citywalk：Harpa → 彩虹街 → 旧港 → Laugavegur', type:'walk'}, {time:'下午', event:'Sky Lagoon 备选', type:'activity'}, {time:'傍晚', event:'市区闲逛', type:'free'}],
+    spots: [
+      { zh: 'Harpa音乐厅', en: 'Harpa Concert Hall', lat: 64.1505, lng: -21.9326 },
+      { zh: '彩虹街', en: 'Skolavordustigur', lat: 64.1430, lng: -21.9275 },
+      { zh: '旧港口', en: 'Old Harbor', lat: 64.1515, lng: -21.9393 },
+      { zh: 'Laugavegur购物街', en: 'Laugavegur', lat: 64.1447, lng: -21.9264 },
+      { zh: 'Sky Lagoon (备选)', en: 'Sky Lagoon', lat: 64.1063, lng: -22.0239 }
+    ]
+  },
+  {
+    day: 3, date: '9/23 周二', title: '斯奈山半岛 Day 1', risk: 'mid', km: 240,
+    desc: ['雷克雅未克 -> 斯奈山 (2.5h)','草帽山 -- 冰岛最标志性拍照点','秋分日极光翻倍'],
+    warn: { type: 'caution', text: '车程较长，建议 8:00 前出发' },
+    accommodation: '斯奈山 · Grundarfjörður 镇（草帽山旁，夜拍极光不用开车）',
+    driveSegments: [{from:'雷克雅未克', to:'Búðir黑教堂', duration:'2h'}, {from:'Búðir', to:'Djúpalónssandur', duration:'30min'}, {from:'Djúpalónssandur', to:'草帽山', duration:'1h'}],
+    activities: [],
+    timeline: [{time:'08:00', event:'出发，备干粮', type:'drive'}, {time:'10:00', event:'Búðir黑教堂', type:'spot'}, {time:'11:00', event:'Djúpalónssandur黑卵石沙滩', type:'spot'}, {time:'13:00', event:'午餐（沿途小镇）', type:'meal'}, {time:'15:00', event:'草帽山+Kirkjufellsfoss', type:'spot'}, {time:'17:00', event:'入住 Grundarfjörður', type:'stay'}, {time:'夜间', event:'极光观测（秋分日概率高）', type:'aurora'}],
+    spots: [
+      { zh: '草帽山', en: 'Kirkjufell', lat: 64.9426, lng: -23.3072 },
+      { zh: 'Kirkjufellsfoss瀑布', en: 'Kirkjufellsfoss', lat: 64.9394, lng: -23.3139 },
+      { zh: 'Budir黑教堂', en: 'Budakirkja', lat: 64.8210, lng: -23.3870 },
+      { zh: 'Djupalonssandur黑卵石沙滩', en: 'Djupalonssandur', lat: 64.7539, lng: -23.9091 }
+    ]
+  },
+  {
+    day: 4, date: '9/24 周三', title: '斯奈山半岛 Day 2', risk: 'low', km: 230,
+    desc: ['海岸线徒步 Arnarstapi -> Hellnar (2.5km单程)','下午返回雷克雅未克 (2.5h)'],
+    accommodation: '雷克雅未克',
+    driveSegments: [{from:'Grundarfjörður', to:'Arnarstapi', duration:'1h'}, {from:'Arnarstapi', to:'Hellnar', duration:'步行2.5km'}, {from:'Hellnar', to:'雷克雅未克', duration:'2.5h'}],
+    activities: [],
+    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'10:00', event:'Arnarstapi → Hellnar 海岸徒步（单程40min）', type:'hike'}, {time:'12:00', event:'Snæfellsjökull 国家公园', type:'spot'}, {time:'13:00', event:'午餐', type:'meal'}, {time:'14:00', event:'返回雷克雅未克', type:'drive'}, {time:'16:30', event:'抵达，休整', type:'free'}],
+    spots: [
+      { zh: 'Arnarstapi渔村', en: 'Arnarstapi', lat: 64.7668, lng: -23.6258 },
+      { zh: 'Hellnar海蚀洞', en: 'Hellnar', lat: 64.7565, lng: -23.6468 },
+      { zh: 'Snaefellsjokull国家公园', en: 'Snaefellsjokull NP', lat: 64.8000, lng: -23.7800 }
+    ]
+  },
+  {
+    day: 5, date: '9/25 周四', title: '黄金圈', risk: 'low', km: 230,
+    desc: ['经典黄金圈一日游','Strokkur每5-10分钟喷发'],
+    accommodation: '雷克雅未克',
+    driveSegments: [{from:'雷克雅未克', to:'辛格维利尔', duration:'47min'}, {from:'辛格维利尔', to:'间歇泉', duration:'50min'}, {from:'间歇泉', to:'黄金瀑布', duration:'10min'}, {from:'黄金瀑布', to:'Kerið', duration:'1h'}, {from:'Kerið', to:'雷克雅未克', duration:'1h'}],
+    activities: [{name:'Kerið 火山口湖门票', provider:'kerid.is', price:'700 ISK/人（约¥35）', url:'https://kerid.is', note:'自助购票，不用预约'}],
+    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'10:00', event:'辛格维利尔国家公园（1.5h）', type:'spot'}, {time:'12:00', event:'盖歇尔间歇泉（每5-10min喷发，1h）', type:'spot'}, {time:'13:30', event:'黄金瀑布（1h）', type:'spot'}, {time:'15:00', event:'午餐（间歇泉游客中心）', type:'meal'}, {time:'16:00', event:'Kerið火山口湖', type:'spot'}, {time:'17:30', event:'返回雷克雅未克', type:'drive'}],
+    spots: [
+      { zh: '辛格维利尔国家公园', en: 'Thingvellir', lat: 64.2559, lng: -21.1290 },
+      { zh: '盖歇尔间歇泉', en: 'Geysir/Strokkur', lat: 64.3104, lng: -20.3024 },
+      { zh: '黄金瀑布', en: 'Gullfoss', lat: 64.3271, lng: -20.1199 },
+      { zh: 'Kerid火山口湖', en: 'Kerid Crater', lat: 64.0412, lng: -20.8853 }
+    ]
+  },
+  {
+    day: 6, date: '9/26 周五', title: '南岸上半段 -> 维克镇', risk: 'high', km: 211,
+    desc: ['景点多+3h车程节奏紧','塞里雅兰瀑布可走到后面 (备雨衣)','斯科加瀑布60m可爬顶'],
+    warn: { type: 'danger', text: '黑沙滩 sneaker waves 极危险，永远不要背对大海! 建议 8:00 出发' },
+    accommodation: '维克镇 Vík',
+    driveSegments: [{from:'雷克雅未克', to:'塞里雅兰瀑布', duration:'2h'}, {from:'塞里雅兰瀑布', to:'斯科加瀑布', duration:'30min'}, {from:'斯科加瀑布', to:'黑沙滩', duration:'30min'}, {from:'黑沙滩', to:'维克镇', duration:'15min'}],
+    activities: [],
+    timeline: [{time:'08:00', event:'出发（今日景点密集）', type:'drive'}, {time:'10:00', event:'塞里雅兰瀑布（可走到瀑布后方，备雨衣）', type:'spot'}, {time:'11:30', event:'斯科加瀑布（60m，可爬顶）', type:'spot'}, {time:'13:00', event:'午餐（维克镇附近）', type:'meal'}, {time:'14:30', event:'Dyrhólaey海岬', type:'spot'}, {time:'15:30', event:'Reynisfjara黑沙滩', type:'spot'}, {time:'17:00', event:'维克镇教堂', type:'spot'}, {time:'18:00', event:'入住维克镇', type:'stay'}],
+    spots: [
+      { zh: '塞里雅兰瀑布', en: 'Seljalandsfoss', lat: 63.6156, lng: -19.9886 },
+      { zh: '斯科加瀑布', en: 'Skogafoss', lat: 63.5321, lng: -19.5113 },
+      { zh: 'Reynisfjara黑沙滩', en: 'Reynisfjara', lat: 63.4048, lng: -19.0443 },
+      { zh: 'Dyrholaey海岬', en: 'Dyrholaey', lat: 63.3988, lng: -19.1266 },
+      { zh: '维克镇教堂', en: 'Vik Church', lat: 63.4187, lng: -19.0060 }
+    ]
+  },
+  {
+    day: 7, date: '9/27 周六', title: '南岸下半段 -> 霍芬', risk: 'mid', km: 275,
+    desc: ['维克 -> 霍芬 (3.5h)','冰河湖快艇游 (提前订)','极光观测开始 (霍芬3晚)'],
+    accommodation: '霍芬 Höfn',
+    driveSegments: [{from:'维克镇', to:'苔藓熔岩地', duration:'1h'}, {from:'苔藓熔岩地', to:'冰河湖', duration:'1.5h'}, {from:'冰河湖', to:'霍芬', duration:'1h'}],
+    activities: [{name:'冰河湖 Zodiac 快艇游', provider:'icelagoon.is', price:'~12,000 ISK/人（约¥600）Zodiac / 7,100 ISK 水陆两栖', url:'https://icelagoon.is', note:'Zodiac 更近距离看冰山，推荐；提前预约'}],
+    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'10:00', event:'Eldhraun苔藓熔岩地（路边停车拍照）', type:'spot'}, {time:'11:30', event:'Fjallsárlón冰湖', type:'spot'}, {time:'12:30', event:'杰古沙龙冰河湖 + Zodiac快艇（1h15min）', type:'activity'}, {time:'14:30', event:'钻石沙滩', type:'spot'}, {time:'15:30', event:'午餐', type:'meal'}, {time:'16:30', event:'前往霍芬', type:'drive'}, {time:'17:30', event:'入住霍芬', type:'stay'}, {time:'夜间', event:'极光观测', type:'aurora'}],
+    spots: [
+      { zh: '苔藓熔岩地', en: 'Eldhraun Lava Field', lat: 63.6500, lng: -18.3500 },
+      { zh: 'Fjallsarlon冰湖', en: 'Fjallsarlon', lat: 64.0170, lng: -16.3750 },
+      { zh: '杰古沙龙冰河湖', en: 'Jokulsarlon', lat: 64.0482, lng: -16.1794 },
+      { zh: '钻石沙滩', en: 'Diamond Beach', lat: 64.0440, lng: -16.1780 }
+    ]
+  },
+  {
+    day: 8, date: '9/28 周日', title: '冰川徒步+蝙蝠山', risk: 'high', km: 248,
+    desc: ['冰川徒步4h (需跟团含装备)','替代蓝冰洞的最佳冰川体验','蝙蝠山日落拍摄绝佳'],
+    warn: { type: 'danger', text: '体力消耗最大! 冰川上午出发，下午蝙蝠山看日落。带足水和能量棒，穿硬底登山鞋' },
+    accommodation: '霍芬 Höfn',
+    driveSegments: [{from:'霍芬', to:'Skaftafell', duration:'1h40min'}, {from:'Skaftafell', to:'霍芬', duration:'1h40min'}, {from:'霍芬', to:'蝙蝠山', duration:'15min'}],
+    activities: [{name:'Skaftafell 冰川徒步 3h', provider:'skaftafell.com (Troll Expeditions)', price:'9,900 ISK/人（约¥500）', url:'https://skaftafell.com/tour/skaftafell-glacier-hike-3-hour-expedition/', note:'含全套装备（冰爪+冰镐+头盔+安全带）+ 向导，提前2周订'}],
+    timeline: [{time:'08:00', event:'出发（体力日，带够水和能量棒）', type:'drive'}, {time:'09:40', event:'Skaftafell 集合点', type:'activity'}, {time:'10:00', event:'冰川徒步出发（3h）', type:'activity'}, {time:'13:00', event:'结束，午餐', type:'meal'}, {time:'14:30', event:'返回霍芬', type:'drive'}, {time:'16:10', event:'蝙蝠山 Vestrahorn（1h，看日落绝佳）', type:'spot'}, {time:'18:00', event:'返回霍芬', type:'stay'}, {time:'夜间', event:'极光观测', type:'aurora'}],
+    spots: [
+      { zh: 'Skaftafell冰川徒步', en: 'Skaftafell Glacier Hike', lat: 64.0150, lng: -16.9710 },
+      { zh: 'Vestrahorn蝙蝠山', en: 'Vestrahorn (Batman Mt.)', lat: 64.2556, lng: -15.0081 }
+    ]
+  },
+  {
+    day: 9, date: '9/29 周一', title: '霍芬 -> 回程南岸', risk: 'mid', km: 450,
+    desc: ['霍芬 -> 南岸 (1号公路)','羽毛峡谷徒步30min','6h总车程 / 住Hella/Selfoss'],
+    warn: { type: 'caution', text: '赶路日，多休息，沿途加油' },
+    accommodation: 'Hella 或 Selfoss（南岸中间点，离 RVK 约 1h）',
+    driveSegments: [{from:'霍芬', to:'羽毛峡谷', duration:'2h30min'}, {from:'羽毛峡谷', to:'Hella', duration:'3h30min'}],
+    activities: [],
+    timeline: [{time:'08:00', event:'出发（赶路日，备好干粮）', type:'drive'}, {time:'10:30', event:'羽毛峡谷 Fjaðrárgljúfur（徒步30min）', type:'spot'}, {time:'11:30', event:'继续赶路', type:'drive'}, {time:'13:00', event:'Kirkjubæjarklaustur 休息/加油', type:'rest'}, {time:'15:00', event:'继续赶路', type:'drive'}, {time:'17:00', event:'抵达 Hella/Selfoss', type:'stay'}],
+    spots: [
+      { zh: '羽毛峡谷', en: 'Fjadrargljufur', lat: 63.7711, lng: -18.1725 }
+    ]
+  },
+  {
+    day: 10, date: '9/30 周二', title: '观鲸+休整', risk: 'low', km: 108,
+    desc: ['观鲸3h出海 (提前订)','Perlan顶楼360度观景','轻松休整日'],
+    accommodation: '雷克雅未克',
+    driveSegments: [{from:'Hella', to:'雷克雅未克', duration:'1.5h'}],
+    activities: [{name:'观鲸出海 3h', provider:'Special Tours (specialtours.is)', price:'13,990 ISK/人（约¥700）Classic 3h / 12,490 ISK Express 2h', url:'https://specialtours.is', note:'Classic 推荐，船大稳；10:30 码头集合'}],
+    timeline: [{time:'08:00', event:'出发前往雷克雅未克', type:'drive'}, {time:'09:30', event:'抵达市区', type:'free'}, {time:'10:30', event:'旧港码头集合', type:'activity'}, {time:'11:00', event:'观鲸出海（3h）', type:'activity'}, {time:'14:00', event:'午餐（Grandi 美食街区）', type:'meal'}, {time:'15:30', event:'Perlan 博物馆（360°观景）', type:'spot'}, {time:'17:00', event:'休整', type:'free'}],
+    spots: [
+      { zh: '雷克雅未克观鲸', en: 'Whale Watching', lat: 64.1515, lng: -21.9393 },
+      { zh: 'Perlan博物馆', en: 'Perlan Museum', lat: 64.1283, lng: -21.9175 },
+      { zh: 'Grandi美食街区', en: 'Grandi Matholl', lat: 64.1535, lng: -21.9440 }
+    ]
+  },
+  {
+    day: 11, date: '10/1 周三', title: '蓝湖+离开', risk: 'low', km: 66,
+    desc: ['蓝湖温泉泡汤','蓝湖 -> 机场 (20min)','完美收官'],
+    warn: { type: 'caution', text: '蓝湖必须提前2-3周预约!' },
+    accommodation: '无（离开）',
+    driveSegments: [{from:'雷克雅未克', to:'蓝湖', duration:'45min'}, {from:'蓝湖', to:'凯夫拉维克机场', duration:'20min'}],
+    activities: [{name:'蓝湖温泉', provider:'bluelagoon.com', price:'9,990 ISK 起/人（约¥500）Comfort 套餐', url:'https://www.bluelagoon.com', note:'必须提前2-3周预约！动态定价'}],
+    timeline: [{time:'08:00', event:'退房，出发', type:'drive'}, {time:'08:45', event:'蓝湖温泉（2-3h）', type:'activity'}, {time:'11:30', event:'前往机场', type:'drive'}, {time:'12:00', event:'机场还车+值机', type:'flight'}],
+    spots: [
+      { zh: '蓝湖温泉', en: 'Blue Lagoon', lat: 63.8803, lng: -22.4495 }
+    ]
+  }
+];
+
+var COLLAPSE_DATA = [
+  {
+    title: '极光观测指南',
+    items: ['9/23 秋分极光翻倍','最佳观测: 霍芬 3 晚 (D7-D9)','斯奈山 (D3-D4) 也有机会','推荐 App: Aurora Forecast, Vedur.is','KP>=3 出门看']
+  },
+  {
+    title: '9 月冰岛注意事项',
+    items: ['日照 12h，气温 5-12 C','蓝冰洞 9 月不可行 (需 11-3 月)，替代: 冰川徒步 D8','4 人一台中型 SUV 足够','加油站间距长 (东部 100km+)','蓝湖提前 2-3 周预约','黑沙滩 sneaker waves 致命']
+  },
+  {
+    title: '蓝冰洞替代方案',
+    items: ['冰川徒步 (D8 已安排) -- 最佳替代','Katla 冰洞 (火山灰冰洞) 全年可去','Langjokull 人工冰隧道全年开放']
+  },
+  {
+    title: '4 人预算参考',
+    items: ['机票 6,000-9,000 CNY','租车+油+保险 3,000-4,000 CNY','住宿 5,000-7,000 CNY','门票/活动 2,000-3,000 CNY','餐饮 3,000-5,000 CNY','合计 20,000-28,000 CNY/人']
+  }
+];
+
+/* All activities needing advance booking (for overview) */
+var BOOKING_ITEMS = [];
+DAYS.forEach(function(d) {
+  if (d.activities && d.activities.length > 0) {
+    d.activities.forEach(function(a) {
+      BOOKING_ITEMS.push({day: d.day, name: a.name, price: a.price, url: a.url, note: a.note});
+    });
+  }
+});
+
+/* ═══════ HELPERS ═══════ */
+function xhsUrl(name) {
+  return 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent('冰岛 ' + name);
+}
+function esc(s) {
+  var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+function markerSvg(color) {
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 28 38">' +
+    '<path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="' + color + '" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>' +
+    '<circle cx="14" cy="13" r="4" fill="rgba(255,255,255,0.9)"/></svg>';
+}
+function riskColor(r) {
+  return r === 'high' ? '#FF6B6B' : r === 'mid' ? '#F5C542' : '#4ECDC4';
+}
+function dayColor(i) {
+  return riskColor(RISKS[i]);
+}
+function tlColor(type) {
+  var map = {drive:'#6B7B8F',spot:'#4ECDC4',activity:'#F5C542',meal:'#6B7B8F',stay:'#4A5568',aurora:'#B388FF',hike:'#FF9E44',free:'#6B7B8F',rest:'#6B7B8F',flight:'#6B7B8F',walk:'#4ECDC4'};
+  return map[type] || '#6B7B8F';
+}
+/* ═══════ BUILD PAGES ═══════ */
+var contentPane = document.getElementById('content-pane');
+var currentPage = 0;
+var totalPages = 13; // 0=overview, 1-11=days, 12=info
+
+// --- P0: Overview ---
+(function buildOverview() {
+  var page = document.createElement('div');
+  page.className = 'page';
+  page.id = 'page-0';
+
+  var maxKm = Math.max.apply(null, KM);
+  var chartH = 180;
+  var padT = 30, padB = 24;
+  var usable = chartH - padT - padB;
+  var barW = 100 / 11;
+  var bars = '';
+  for (var i = 0; i < 11; i++) {
+    var h = (KM[i] / maxKm) * usable;
+    var x = i * barW + barW * 0.12;
+    var w = barW * 0.76;
+    var y = padT + (usable - h);
+    var c = i === 8 ? '#FF6B6B' : (i === 5 || i === 7) ? '#F5C542' : '#4ECDC4';
+    bars += '<g class="chart-bar" data-day="' + i + '">';
+    bars += '<rect x="' + x + '%" y="' + y + '" width="' + w + '%" height="' + h + '" rx="3" fill="' + c + '" opacity="0.85" class="bar-rect" data-target-h="' + h + '" data-target-y="' + y + '"/>';
+    bars += '<text x="' + (x + w/2) + '%" y="' + (y - 6) + '" text-anchor="middle" fill="#E8EDF2" font-family="Barlow Condensed,sans-serif" font-size="11" font-weight="600" class="bar-label" data-target-y="' + (y - 6) + '">' + KM[i] + '</text>';
+    bars += '<text x="' + (x + w/2) + '%" y="' + (chartH - 4) + '" text-anchor="middle" fill="#4A5568" font-family="Barlow Condensed,sans-serif" font-size="11" font-weight="500">D' + (i+1) + '</text>';
+    bars += '<rect x="' + (i * barW) + '%" y="0" width="' + barW + '%" height="' + chartH + '" fill="transparent"/>';
+    bars += '</g>';
+  }
+
+  var riskCells = '';
+  RISKS.forEach(function(r) { riskCells += '<div class="risk-strip-cell" style="background:' + riskColor(r) + '"></div>'; });
+
+  var auroraDots = '';
+  AURORA.forEach(function(bright, i) {
+    auroraDots += '<div class="aurora-dot ' + (bright ? 'bright' : 'dim') + '" title="D' + (i+1) + (bright ? ' -- 极光窗口' : '') + '"></div>';
+  });
+
+  // Accommodation strip
+  var accomHtml = '';
+  DAYS.forEach(function(d) {
+    accomHtml += '<div class="ov-accom-row"><span class="ov-accom-day">D' + d.day + '</span><div class="ov-accom-bar"><span class="accom-icon">🏠</span>' + esc(d.accommodation) + '</div></div>';
+  });
+
+  // Booking reminders
+  var bookingHtml = '';
+  BOOKING_ITEMS.forEach(function(b) {
+    bookingHtml += '<div class="booking-card">' +
+      '<div class="booking-info"><div class="booking-name">D' + b.day + ' ' + esc(b.name) + '</div><div class="booking-detail">' + esc(b.note || '') + '</div></div>' +
+      '<div class="booking-price">' + esc(b.price) + '</div>' +
+      '<a class="booking-link" href="' + b.url + '" target="_blank" rel="noopener">预约 →</a>' +
+    '</div>';
+  });
+
+  page.innerHTML =
+    '<div class="overview-hero">' +
+      '<div class="overview-hero-bg"></div>' +
+      '<div class="overview-hero-content">' +
+        '<div class="overview-title">ICELAND</div>' +
+        '<div class="overview-sub">2026.9.21 -- 10.1 / 4人 / 环岛自驾</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="section-label">行程数据</div>' +
+    '<div class="kpi-grid">' +
+      '<div class="kpi-card"><div class="kpi-value" data-count="2127" data-prefix="" data-suffix="">0<span class="kpi-unit">KM</span></div><div class="kpi-label">总里程</div></div>' +
+      '<div class="kpi-card"><div class="kpi-value" data-count="28" data-prefix="~" data-suffix="">0<span class="kpi-unit">H</span></div><div class="kpi-label">总驾驶</div></div>' +
+      '<div class="kpi-card"><div class="kpi-value" data-count="11" data-prefix="" data-suffix="">0<span class="kpi-unit">天10晚</span></div><div class="kpi-label">行程</div></div>' +
+      '<div class="kpi-card"><div class="kpi-value" data-count="40" data-prefix="" data-suffix="+">0<span class="kpi-unit"></span></div><div class="kpi-label">景点</div></div>' +
+    '</div>' +
+    '<div class="section-label">每日里程</div>' +
+    '<div class="chart-container" id="chart-container">' +
+      '<svg viewBox="0 0 100 ' + chartH + '" preserveAspectRatio="none" style="width:100%;height:' + chartH + 'px;" id="chart-svg">' + bars + '</svg>' +
+      '<div class="chart-tooltip" id="chart-tooltip"><div class="chart-tooltip-title"></div><div class="chart-tooltip-km"></div></div>' +
+    '</div>' +
+    '<div class="risk-row"><span>每日风险</span><span><span style="color:var(--risk-low);">&#9632;</span> 低 <span style="color:var(--risk-mid);margin-left:4px;">&#9632;</span> 中 <span style="color:var(--risk-high);margin-left:4px;">&#9632;</span> 高</span></div>' +
+    '<div class="risk-strip">' + riskCells + '</div>' +
+    '<div class="aurora-row"><span class="aurora-label">极光窗口</span><div class="aurora-dots">' + auroraDots + '</div></div>' +
+    '<div class="section-label" style="margin-top:12px;">住宿概览</div>' +
+    '<div class="ov-accom-strip">' + accomHtml + '</div>' +
+    '<div class="section-label">预约提醒</div>' +
+    '<div class="booking-list">' + bookingHtml + '</div>';
+
+  contentPane.appendChild(page);
+})();
+
+// --- P1-P11: Day pages ---
+DAYS.forEach(function(d, i) {
+  var page = document.createElement('div');
+  page.className = 'page';
+  page.id = 'page-' + (i + 1);
+
+  var riskLabel = d.risk === 'high' ? 'HIGH RISK' : d.risk === 'mid' ? 'MODERATE' : 'LOW RISK';
+  var numColorClass = d.risk === 'high' ? ' risk-high-color' : d.risk === 'mid' ? ' risk-mid-color' : '';
+
+  // Accommodation badge
+  var accomHtml = '';
+  if (d.accommodation) {
+    accomHtml = '<div class="accom-badge"><span class="accom-icon">🏠</span>' + esc(d.accommodation) + '</div>';
+  }
+
+  // Drive segments
+  var driveHtml = '';
+  if (d.driveSegments && d.driveSegments.length > 0) {
+    var segs = d.driveSegments.map(function(seg) {
+      return '<div class="drive-seg"><span>' + esc(seg.from) + '</span><span class="seg-arrow">→</span><span>' + esc(seg.to) + '</span><span class="seg-dur">' + esc(seg.duration) + '</span></div>';
+    }).join('');
+    driveHtml = '<div class="drive-segments">' + segs + '</div>';
+  }
+
+  // Activities
+  var actHtml = '';
+  if (d.activities && d.activities.length > 0) {
+    actHtml = '<div class="spots-label" style="margin-top:4px;">BOOKINGS</div>';
+    d.activities.forEach(function(a) {
+      actHtml += '<div class="act-card">' +
+        '<div class="act-name">' + esc(a.name) + '</div>' +
+        '<div class="act-price">' + esc(a.price) + '</div>' +
+        '<div class="act-note">' + esc(a.note || '') + '</div>' +
+        '<a class="act-link" href="' + a.url + '" target="_blank" rel="noopener">预约 →</a>' +
+      '</div>';
+    });
+  }
+
+  // Timeline
+  var tlHtml = '';
+  if (d.timeline && d.timeline.length > 0) {
+    var items = d.timeline.map(function(t) {
+      return '<div class="tl-item" data-type="' + t.type + '">' +
+        '<div class="tl-dot"></div>' +
+        '<div class="tl-time">' + esc(t.time) + '</div>' +
+        '<div class="tl-event">' + esc(t.event) + '</div>' +
+      '</div>';
+    }).join('');
+    tlHtml = '<div class="spots-label" style="margin-top:4px;">TIMELINE</div><div class="timeline">' + items + '</div>';
+  }
+
+  // Spots (compact, with XHS links preserved)
+  var spotsHtml = d.spots.map(function(s, si) {
+    return '<div class="spot-item" data-spot-idx="' + si + '" data-day="' + i + '">' +
+      '<span class="spot-dot"></span>' +
+      '<span class="spot-zh">' + esc(s.zh) + '</span>' +
+      '<span class="spot-en">' + esc(s.en) + '</span>' +
+      '<a class="xhs-link" href="' + xhsUrl(s.zh) + '" target="_blank" rel="noopener">XHS</a>' +
+    '</div>';
+  }).join('');
+
+  var warnHtml = '';
+  if (d.warn) {
+    warnHtml = '<div class="warn-block ' + d.warn.type + '">' + esc(d.warn.text) + '</div>';
+  }
+
+  page.innerHTML =
+    '<div class="day-header">' +
+      '<div><div class="day-num' + numColorClass + '">' + String(d.day).padStart(2, '0') + '</div><div class="day-date">' + esc(d.date) + '</div></div>' +
+      '<div class="day-meta"><div class="day-km">' + d.km + ' km</div><span class="risk-tag risk-tag-' + d.risk + '">' + riskLabel + '</span></div>' +
+    '</div>' +
+    '<h2 class="day-title">' + esc(d.title) + '</h2>' +
+    accomHtml +
+    driveHtml +
+    tlHtml +
+    actHtml +
+    '<div class="spots-label" style="margin-top:16px;">WAYPOINTS</div>' +
+    '<div class="spot-list">' + spotsHtml + '</div>' +
+    warnHtml;
+
+  contentPane.appendChild(page);
+});
+
+// --- P12: Info page ---
+(function buildInfoPage() {
+  var page = document.createElement('div');
+  page.className = 'page';
+  page.id = 'page-12';
+
+  var collapseHtml = '';
+  COLLAPSE_DATA.forEach(function(c, ci) {
+    var items = c.items.map(function(item) { return '<li>' + esc(item) + '</li>'; }).join('');
+    collapseHtml +=
+      '<div class="collapse-item">' +
+        '<button class="collapse-header" data-collapse="' + ci + '">' +
+          '<span class="collapse-title">' + esc(c.title) + '</span>' +
+          '<span class="collapse-toggle" id="ctoggle-' + ci + '">+</span>' +
+        '</button>' +
+        '<div class="collapse-body-wrap" id="cbody-' + ci + '">' +
+          '<div class="collapse-body-inner"><div class="collapse-body"><ul>' + items + '</ul></div></div>' +
+        '</div>' +
+      '</div>';
+  });
+
+  page.innerHTML =
+    '<div class="info-title">实用信息</div>' +
+    '<div class="info-sub">出发前必读</div>' +
+    collapseHtml;
+
+  contentPane.appendChild(page);
+})();
+/* ═══════ BOTTOM NAV ═══════ */
+var bottomNav = document.getElementById('bottom-nav');
+var NAV_LABELS = ['总览'];
+for (var n = 1; n <= 11; n++) NAV_LABELS.push(String(n).padStart(2, '0'));
+NAV_LABELS.push('信息');
+
+var HIGH_RISK_DAYS = [6, 8]; // day numbers with red dot
+
+NAV_LABELS.forEach(function(label, idx) {
+  var btn = document.createElement('button');
+  btn.className = 'nav-btn';
+  btn.textContent = label;
+  btn.dataset.page = idx;
+  if (HIGH_RISK_DAYS.indexOf(idx) !== -1) {
+    var dot = document.createElement('span');
+    dot.className = 'risk-dot';
+    btn.appendChild(dot);
+  }
+  btn.addEventListener('click', function() { goToPage(idx); });
+  bottomNav.appendChild(btn);
+});
+
+/* ═══════ LEAFLET MAP ═══════ */
+var map = L.map('map', { center: [64.5, -19.0], zoom: 6, zoomControl: true, scrollWheelZoom: true });
+
+var darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd', maxZoom: 19
+});
+darkTiles.addTo(map);
+
+var osmFallback = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM', maxZoom: 19 });
+darkTiles.on('tileerror', function() { osmFallback.addTo(map); darkTiles.remove(); });
+
+/* Build route polylines + markers per day */
+var dayPolylines = [];
+var dayConnectors = [];
+var dayMarkers = [];
+var allBounds = [];
+
+DAYS.forEach(function(d, di) {
+  var coords = d.spots.map(function(s) { return [s.lat, s.lng]; });
+  coords.forEach(function(c) { allBounds.push(c); });
+
+  var poly = null;
+  if (coords.length > 1) {
+    poly = L.polyline(coords, { color: dayColor(di), weight: 3, opacity: 0.7, dashArray: '6,8' }).addTo(map);
+  }
+  dayPolylines.push(poly);
+
+  var conn = null;
+  if (di < DAYS.length - 1) {
+    var last = d.spots[d.spots.length - 1];
+    var nextFirst = DAYS[di + 1].spots[0];
+    conn = L.polyline([[last.lat, last.lng], [nextFirst.lat, nextFirst.lng]], {
+      color: dayColor(di), weight: 1.5, opacity: 0.2, dashArray: '4,6'
+    }).addTo(map);
+  }
+  dayConnectors.push(conn);
+
+  var markers = [];
+  d.spots.forEach(function(s) {
+    var icon = L.divIcon({
+      html: markerSvg(dayColor(di)),
+      className: '', iconSize: [28, 38], iconAnchor: [14, 38], popupAnchor: [0, -38]
+    });
+    var marker = L.marker([s.lat, s.lng], { icon: icon }).addTo(map);
+    var popupHtml =
+      '<div class="popup-day">Day ' + d.day + ' / ' + esc(d.date) + '</div>' +
+      '<div class="popup-name-zh">' + esc(s.zh) + '</div>' +
+      '<div class="popup-name-en">' + esc(s.en) + '</div>' +
+      '<a class="popup-xhs-btn" href="' + xhsUrl(s.zh) + '" target="_blank" rel="noopener">XHS 小红书搜索</a>';
+    marker.bindPopup(popupHtml, { maxWidth: 240 });
+    markers.push(marker);
+  });
+  dayMarkers.push(markers);
+});
+
+/* ═══════ MAP CONTROL FUNCTIONS ═══════ */
+function showOverviewMap() {
+  DAYS.forEach(function(d, di) {
+    if (dayPolylines[di]) {
+      dayPolylines[di].setStyle({ opacity: 0.7, weight: 3, color: dayColor(di) });
+    }
+    if (dayConnectors[di]) {
+      dayConnectors[di].setStyle({ opacity: 0.2 });
+    }
+    dayMarkers[di].forEach(function(m) { m.setOpacity(1); });
+  });
+  if (allBounds.length > 0) {
+    map.flyToBounds(L.latLngBounds(allBounds).pad(0.1), { duration: 1.2 });
+  }
+  map.closePopup();
+}
+
+function showDayMap(dayIdx) {
+  var d = DAYS[dayIdx];
+  DAYS.forEach(function(_, di) {
+    var isActive = di === dayIdx;
+    if (dayPolylines[di]) {
+      dayPolylines[di].setStyle({
+        opacity: isActive ? 0.9 : 0.12,
+        weight: isActive ? 4 : 1.5,
+        color: isActive ? dayColor(di) : '#333'
+      });
+    }
+    if (dayConnectors[di]) {
+      dayConnectors[di].setStyle({ opacity: isActive ? 0.3 : 0.05 });
+    }
+    dayMarkers[di].forEach(function(m) { m.setOpacity(isActive ? 1 : 0.15); });
+  });
+
+  var coords = d.spots.map(function(s) { return [s.lat, s.lng]; });
+  if (coords.length === 1) {
+    map.flyTo(coords[0], 11, { duration: 1.2 });
+  } else {
+    map.flyToBounds(L.latLngBounds(coords).pad(0.4), { duration: 1.2 });
+  }
+
+  if (dayMarkers[dayIdx] && dayMarkers[dayIdx][0]) {
+    setTimeout(function() { dayMarkers[dayIdx][0].openPopup(); }, 700);
+  }
+
+  if (dayPolylines[dayIdx]) {
+    var el = dayPolylines[dayIdx].getElement();
+    if (el) {
+      var len = el.getTotalLength ? el.getTotalLength() : 1000;
+      el.style.strokeDasharray = len;
+      el.style.strokeDashoffset = len;
+      el.getBoundingClientRect();
+      el.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
+      el.style.strokeDashoffset = '0';
+      setTimeout(function() {
+        el.style.strokeDasharray = '6,8';
+        el.style.strokeDashoffset = '';
+        el.style.transition = '';
+      }, 1600);
+    }
+  }
+}
+
+/* ═══════ PAGE SWITCHING ═══════ */
+function goToPage(idx) {
+  if (idx < 0 || idx >= totalPages) return;
+  currentPage = idx;
+
+  document.querySelectorAll('.nav-btn').forEach(function(btn, i) {
+    btn.classList.toggle('active', i === idx);
+  });
+
+  document.querySelectorAll('.page').forEach(function(p) {
+    p.classList.remove('active');
+  });
+  var target = document.getElementById('page-' + idx);
+  if (target) {
+    target.classList.add('active');
+  }
+
+  contentPane.scrollTop = 0;
+
+  if (idx === 0) {
+    showOverviewMap();
+    runOverviewAnimations();
+  } else if (idx >= 1 && idx <= 11) {
+    showDayMap(idx - 1);
+  } else if (idx === 12) {
+    showOverviewMap();
+  }
+}
+
+/* ═══════ OVERVIEW ANIMATIONS ═══════ */
+var overviewAnimated = false;
+
+function runOverviewAnimations() {
+  if (overviewAnimated) return;
+  overviewAnimated = true;
+
+  document.querySelectorAll('.kpi-value[data-count]').forEach(function(el) {
+    var target = parseInt(el.dataset.count);
+    var prefix = el.dataset.prefix || '';
+    var suffix = el.dataset.suffix || '';
+    var unitSpan = el.querySelector('.kpi-unit');
+    var unitHtml = unitSpan ? unitSpan.outerHTML : '';
+    var duration = 1200;
+    var start = performance.now();
+
+    function tick(now) {
+      var elapsed = now - start;
+      var progress = Math.min(elapsed / duration, 1);
+      var ease = 1 - Math.pow(1 - progress, 3);
+      var current = Math.round(target * ease);
+      var display = target > 999 ? current.toLocaleString() : current;
+      el.innerHTML = prefix + display + suffix + unitHtml;
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+
+  var bars = document.querySelectorAll('.bar-rect');
+  var labels = document.querySelectorAll('.bar-label');
+  var maxKm = Math.max.apply(null, KM);
+  var chartH = 180;
+  var padT = 30, padB = 24;
+  var usableH = chartH - padT - padB;
+  var baseY = padT + usableH;
+
+  bars.forEach(function(bar, i) {
+    var targetH = parseFloat(bar.dataset.targetH);
+    var targetY = parseFloat(bar.dataset.targetY);
+    bar.setAttribute('height', '0');
+    bar.setAttribute('y', baseY);
+    if (labels[i]) {
+      labels[i].setAttribute('y', baseY - 6);
+      labels[i].style.opacity = '0';
+    }
+
+    setTimeout(function() {
+      bar.style.transition = 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+      bar.setAttribute('height', targetH);
+      bar.setAttribute('y', targetY);
+      if (labels[i]) {
+        labels[i].style.transition = 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+        labels[i].setAttribute('y', targetY - 6);
+        labels[i].style.opacity = '1';
+      }
+    }, 80 + i * 60);
+  });
+}
+
+/* ═══════ CHART INTERACTIVITY ═══════ */
+(function() {
+  var container = document.getElementById('chart-container');
+  var tooltip = document.getElementById('chart-tooltip');
+  if (!container || !tooltip) return;
+
+  container.addEventListener('mousemove', function(e) {
+    var bar = e.target.closest('.chart-bar');
+    if (!bar) { tooltip.classList.remove('visible'); return; }
+    var dayIdx = parseInt(bar.dataset.day);
+    tooltip.querySelector('.chart-tooltip-title').textContent = 'D' + (dayIdx + 1) + ' ' + DAY_TITLES[dayIdx];
+    tooltip.querySelector('.chart-tooltip-km').textContent = KM[dayIdx] + ' km';
+    tooltip.classList.add('visible');
+    var rect = container.getBoundingClientRect();
+    tooltip.style.left = (e.clientX - rect.left + 12) + 'px';
+    tooltip.style.top = (e.clientY - rect.top - 40) + 'px';
+  });
+
+  container.addEventListener('mouseleave', function() {
+    tooltip.classList.remove('visible');
+  });
+
+  container.addEventListener('click', function(e) {
+    var bar = e.target.closest('.chart-bar');
+    if (!bar) return;
+    var dayIdx = parseInt(bar.dataset.day);
+    goToPage(dayIdx + 1);
+  });
+})();
+
+/* ═══════ SPOT HOVER -> MARKER PULSE ═══════ */
+contentPane.addEventListener('mouseenter', function(e) {
+  var item = e.target.closest('.spot-item[data-spot-idx]');
+  if (!item) return;
+  var di = parseInt(item.dataset.day);
+  var si = parseInt(item.dataset.spotIdx);
+  var marker = dayMarkers[di] && dayMarkers[di][si];
+  if (marker) {
+    marker.openPopup();
+    var el = marker.getElement();
+    if (el) { el.classList.add('marker-pulse'); }
+  }
+}, true);
+
+contentPane.addEventListener('mouseleave', function(e) {
+  var item = e.target.closest('.spot-item[data-spot-idx]');
+  if (!item) return;
+  var di = parseInt(item.dataset.day);
+  var si = parseInt(item.dataset.spotIdx);
+  var marker = dayMarkers[di] && dayMarkers[di][si];
+  if (marker) {
+    var el = marker.getElement();
+    if (el) { el.classList.remove('marker-pulse'); }
+  }
+}, true);
+
+/* ═══════ COLLAPSE (INFO PAGE) ═══════ */
+document.addEventListener('click', function(e) {
+  var header = e.target.closest('.collapse-header');
+  if (!header) return;
+  var ci = header.dataset.collapse;
+  var body = document.getElementById('cbody-' + ci);
+  var toggle = document.getElementById('ctoggle-' + ci);
+  if (body) body.classList.toggle('open');
+  if (toggle) toggle.classList.toggle('open');
+});
+
+/* ═══════ KEYBOARD NAV ═══════ */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    goToPage(Math.min(currentPage + 1, totalPages - 1));
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    goToPage(Math.max(currentPage - 1, 0));
+  }
+});
+
+/* ═══════ TOUCH SWIPE ═══════ */
+(function() {
+  var startX = 0, startY = 0, tracking = false;
+  contentPane.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = true;
+    }
+  }, { passive: true });
+
+  contentPane.addEventListener('touchend', function(e) {
+    if (!tracking) return;
+    tracking = false;
+    var endX = e.changedTouches[0].clientX;
+    var endY = e.changedTouches[0].clientY;
+    var dx = endX - startX;
+    var dy = endY - startY;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) goToPage(Math.min(currentPage + 1, totalPages - 1));
+      else goToPage(Math.max(currentPage - 1, 0));
+    }
+  }, { passive: true });
+})();
+
+/* ═══════ INIT ═══════ */
+goToPage(0);
+
+</script>
+</body>
+</html>
