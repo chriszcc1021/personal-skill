@@ -4,11 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>冰岛环岛 11 天自驾路书</title>
+<meta name="description" content="2026年9月冰岛环岛11天自驾路书，含黄金圈、南岸、斯奈山、冰川徒步全攻略">
+<meta property="og:title" content="冰岛环岛 11 天自驾路书">
+<meta property="og:description" content="2026.9.21-10.1 / 4人环岛自驾 / 极光+冰川+瀑布">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇸</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 :root {
   --bg: #08090a;
@@ -16,7 +23,7 @@
   --bg-surface-hover: #181a1e;
   --text-primary: #E8EDF2;
   --text-secondary: #6B7B8F;
-  --text-dim: #4A5568;
+  --text-dim: #5A6A7E;
   --accent: #4ECDC4;
   --accent-dim: rgba(78,205,196,0.15);
   --accent-glow: rgba(78,205,196,0.3);
@@ -53,6 +60,7 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
   height: 100vh;
+  height: 100dvh;
 }
 
 ::-webkit-scrollbar { width: 5px; }
@@ -65,6 +73,7 @@ body {
   display: flex;
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   padding-bottom: 56px;
 }
 
@@ -74,6 +83,7 @@ body {
   left: 0;
   width: 60%;
   height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
   z-index: 1;
 }
 #map { width: 100%; height: 100%; }
@@ -84,6 +94,7 @@ body {
   right: 0;
   width: 40%;
   height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg);
@@ -112,10 +123,29 @@ body {
   scrollbar-width: none;
 }
 .bottom-nav::-webkit-scrollbar { display: none; }
+.bottom-nav::before,
+.bottom-nav::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+  z-index: 101;
+}
+.bottom-nav::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(8,9,10,0.95), transparent);
+}
+.bottom-nav::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(8,9,10,0.95), transparent);
+}
 
 .nav-btn {
   flex-shrink: 0;
   min-width: 44px;
+  scroll-margin-inline: 32px;
   height: 36px;
   padding: 0 10px;
   border: 1px solid var(--ghost-border);
@@ -185,7 +215,7 @@ body {
 .overview-hero-bg {
   position: absolute;
   inset: 0;
-  background: url('https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1920&q=80') center/cover no-repeat;
+  background: url('hero-bg.webp') center/cover no-repeat;
 }
 .overview-hero-bg::after {
   content: '';
@@ -917,6 +947,15 @@ body {
 }
 .leaflet-control-attribution a { color: var(--text-secondary) !important; }
 
+/* MarkerCluster dark override */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+  background: rgba(78,205,196,0.3) !important;
+}
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+  background: rgba(78,205,196,0.7) !important;
+  color: #fff !important;
+}
+
 /* Marker pulse */
 @keyframes markerPulse {
   0% { box-shadow: 0 0 0 0 rgba(78,205,196,0.5); }
@@ -940,6 +979,7 @@ body {
     position: fixed;
     width: 100%;
     height: 40vh;
+    height: 40dvh;
     top: 0;
     left: 0;
   }
@@ -947,18 +987,23 @@ body {
     position: fixed;
     width: 100%;
     height: calc(60vh - 56px);
+    height: calc(60dvh - 56px);
     top: 40vh;
+    top: 40dvh;
     left: 0;
     border-left: none;
     border-top: 1px solid var(--border);
   }
   .bottom-nav { gap: 3px; padding: 0 8px; }
   .nav-btn { min-width: 38px; height: 32px; font-size: 12px; padding: 0 8px; }
-  .overview-hero { height: 200px; }
+  .overview-hero { height: 200px; margin: -24px -20px 20px; padding: 24px 20px; }
   .overview-title { font-size: 48px; letter-spacing: 3px; }
   .day-num { font-size: 56px; }
   .kpi-value { font-size: 32px; }
   .page { padding: 24px 20px 32px; }
+  .booking-card { flex-wrap: wrap; }
+  .booking-price { font-size: 12px; }
+  .chart-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 </style>
 </head>
@@ -1213,7 +1258,7 @@ var totalPages = 13; // 0=overview, 1-11=days, 12=info
     var c = i === 8 ? '#FF6B6B' : (i === 5 || i === 7) ? '#F5C542' : '#4ECDC4';
     bars += '<g class="chart-bar" data-day="' + i + '">';
     bars += '<rect x="' + x + '%" y="' + y + '" width="' + w + '%" height="' + h + '" rx="3" fill="' + c + '" opacity="0.85" class="bar-rect" data-target-h="' + h + '" data-target-y="' + y + '"/>';
-    bars += '<text x="' + (x + w/2) + '%" y="' + (y - 6) + '" text-anchor="middle" fill="#E8EDF2" font-family="Barlow Condensed,sans-serif" font-size="11" font-weight="600" class="bar-label" data-target-y="' + (y - 6) + '">' + KM[i] + '</text>';
+    /* bar-label removed: km shown in tooltip on hover/touch */
     bars += '<text x="' + (x + w/2) + '%" y="' + (chartH - 4) + '" text-anchor="middle" fill="#4A5568" font-family="Barlow Condensed,sans-serif" font-size="11" font-weight="500">D' + (i+1) + '</text>';
     bars += '<rect x="' + (i * barW) + '%" y="0" width="' + barW + '%" height="' + chartH + '" fill="transparent"/>';
     bars += '</g>';
@@ -1396,6 +1441,8 @@ var HIGH_RISK_DAYS = [6, 8]; // day numbers with red dot
 NAV_LABELS.forEach(function(label, idx) {
   var btn = document.createElement('button');
   btn.className = 'nav-btn';
+  btn.setAttribute('role', 'tab');
+  btn.setAttribute('aria-label', idx === 0 ? '总览' : idx === 12 ? '实用信息' : 'Day ' + idx);
   btn.textContent = label;
   btn.dataset.page = idx;
   if (HIGH_RISK_DAYS.indexOf(idx) !== -1) {
@@ -1416,7 +1463,10 @@ var darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/
 });
 darkTiles.addTo(map);
 
-var osmFallback = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM', maxZoom: 19 });
+var osmFallback = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://stadiamaps.com/">Stadia</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+  maxZoom: 20
+});
 darkTiles.on('tileerror', function() { osmFallback.addTo(map); darkTiles.remove(); });
 
 /* Build route polylines + markers per day */
@@ -1424,6 +1474,19 @@ var dayPolylines = [];
 var dayConnectors = [];
 var dayMarkers = [];
 var allBounds = [];
+var clusterGroup = L.markerClusterGroup({
+  maxClusterRadius: 35,
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: false,
+  iconCreateFunction: function(cluster) {
+    var count = cluster.getChildCount();
+    return L.divIcon({
+      html: '<div style="background:var(--accent);color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:14px;border:2px solid rgba(255,255,255,0.3);">' + count + '</div>',
+      className: '', iconSize: [32, 32], iconAnchor: [16, 16]
+    });
+  }
+});
+map.addLayer(clusterGroup);
 
 DAYS.forEach(function(d, di) {
   var coords = d.spots.map(function(s) { return [s.lat, s.lng]; });
@@ -1451,13 +1514,14 @@ DAYS.forEach(function(d, di) {
       html: markerSvg(dayColor(di)),
       className: '', iconSize: [28, 38], iconAnchor: [14, 38], popupAnchor: [0, -38]
     });
-    var marker = L.marker([s.lat, s.lng], { icon: icon }).addTo(map);
+    var marker = L.marker([s.lat, s.lng], { icon: icon });
+    clusterGroup.addLayer(marker);
     var popupHtml =
       '<div class="popup-day">Day ' + d.day + ' / ' + esc(d.date) + '</div>' +
       '<div class="popup-name-zh">' + esc(s.zh) + '</div>' +
       '<div class="popup-name-en">' + esc(s.en) + '</div>' +
       '<a class="popup-xhs-btn" href="' + xhsUrl(s.zh) + '" target="_blank" rel="noopener">XHS 小红书搜索</a>';
-    marker.bindPopup(popupHtml, { maxWidth: 240 });
+    marker.bindPopup(popupHtml, { maxWidth: 240, autoPanPadding: L.point(20, 60) });
     markers.push(marker);
   });
   dayMarkers.push(markers);
@@ -1465,6 +1529,8 @@ DAYS.forEach(function(d, di) {
 
 /* ═══════ MAP CONTROL FUNCTIONS ═══════ */
 function showOverviewMap() {
+  // Re-add all markers to cluster
+  clusterGroup.clearLayers();
   DAYS.forEach(function(d, di) {
     if (dayPolylines[di]) {
       dayPolylines[di].setStyle({ opacity: 0.7, weight: 3, color: dayColor(di) });
@@ -1472,7 +1538,7 @@ function showOverviewMap() {
     if (dayConnectors[di]) {
       dayConnectors[di].setStyle({ opacity: 0.2 });
     }
-    dayMarkers[di].forEach(function(m) { m.setOpacity(1); });
+    dayMarkers[di].forEach(function(m) { clusterGroup.addLayer(m); });
   });
   if (allBounds.length > 0) {
     map.flyToBounds(L.latLngBounds(allBounds).pad(0.1), { duration: 1.2 });
@@ -1482,6 +1548,8 @@ function showOverviewMap() {
 
 function showDayMap(dayIdx) {
   var d = DAYS[dayIdx];
+  // Replace cluster with only active day markers
+  clusterGroup.clearLayers();
   DAYS.forEach(function(_, di) {
     var isActive = di === dayIdx;
     if (dayPolylines[di]) {
@@ -1494,7 +1562,9 @@ function showDayMap(dayIdx) {
     if (dayConnectors[di]) {
       dayConnectors[di].setStyle({ opacity: isActive ? 0.3 : 0.05 });
     }
-    dayMarkers[di].forEach(function(m) { m.setOpacity(isActive ? 1 : 0.15); });
+    if (isActive) {
+      dayMarkers[di].forEach(function(m) { clusterGroup.addLayer(m); });
+    }
   });
 
   var coords = d.spots.map(function(s) { return [s.lat, s.lng]; });
@@ -1533,6 +1603,7 @@ function goToPage(idx) {
 
   document.querySelectorAll('.nav-btn').forEach(function(btn, i) {
     btn.classList.toggle('active', i === idx);
+    if (i === idx) btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   });
 
   document.querySelectorAll('.page').forEach(function(p) {
@@ -1584,7 +1655,6 @@ function runOverviewAnimations() {
   });
 
   var bars = document.querySelectorAll('.bar-rect');
-  var labels = document.querySelectorAll('.bar-label');
   var maxKm = Math.max.apply(null, KM);
   var chartH = 180;
   var padT = 30, padB = 24;
@@ -1596,20 +1666,11 @@ function runOverviewAnimations() {
     var targetY = parseFloat(bar.dataset.targetY);
     bar.setAttribute('height', '0');
     bar.setAttribute('y', baseY);
-    if (labels[i]) {
-      labels[i].setAttribute('y', baseY - 6);
-      labels[i].style.opacity = '0';
-    }
 
     setTimeout(function() {
       bar.style.transition = 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
       bar.setAttribute('height', targetH);
       bar.setAttribute('y', targetY);
-      if (labels[i]) {
-        labels[i].style.transition = 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
-        labels[i].setAttribute('y', targetY - 6);
-        labels[i].style.opacity = '1';
-      }
     }, 80 + i * 60);
   });
 }
@@ -1635,6 +1696,27 @@ function runOverviewAnimations() {
   container.addEventListener('mouseleave', function() {
     tooltip.classList.remove('visible');
   });
+
+  /* Touch: show tooltip anchored to bar top center */
+  container.addEventListener('touchstart', function(e) {
+    var bar = e.target.closest('.chart-bar');
+    if (!bar) { tooltip.classList.remove('visible'); return; }
+    var dayIdx = parseInt(bar.dataset.day);
+    tooltip.querySelector('.chart-tooltip-title').textContent = 'D' + (dayIdx + 1) + ' ' + DAY_TITLES[dayIdx];
+    tooltip.querySelector('.chart-tooltip-km').textContent = KM[dayIdx] + ' km';
+    tooltip.classList.add('visible');
+    var barRect = bar.querySelector('.bar-rect');
+    if (barRect) {
+      var cRect = container.getBoundingClientRect();
+      var bRect = barRect.getBoundingClientRect();
+      tooltip.style.left = (bRect.left - cRect.left + bRect.width / 2) + 'px';
+      tooltip.style.top = (bRect.top - cRect.top - 40) + 'px';
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchstart', function(e) {
+    if (!container.contains(e.target)) tooltip.classList.remove('visible');
+  }, { passive: true });
 
   container.addEventListener('click', function(e) {
     var bar = e.target.closest('.chart-bar');
@@ -1692,18 +1774,17 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-/* ═══════ TOUCH SWIPE ═══════ */
+/* ═══════ TOUCH SWIPE (content-pane + map-pane) ═══════ */
 (function() {
   var startX = 0, startY = 0, tracking = false;
-  contentPane.addEventListener('touchstart', function(e) {
+  function onTouchStart(e) {
     if (e.touches.length === 1) {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       tracking = true;
     }
-  }, { passive: true });
-
-  contentPane.addEventListener('touchend', function(e) {
+  }
+  function onTouchEnd(e) {
     if (!tracking) return;
     tracking = false;
     var endX = e.changedTouches[0].clientX;
@@ -1714,7 +1795,14 @@ document.addEventListener('keydown', function(e) {
       if (dx < 0) goToPage(Math.min(currentPage + 1, totalPages - 1));
       else goToPage(Math.max(currentPage - 1, 0));
     }
-  }, { passive: true });
+  }
+  contentPane.addEventListener('touchstart', onTouchStart, { passive: true });
+  contentPane.addEventListener('touchend', onTouchEnd, { passive: true });
+  var mapPane = document.querySelector('.map-pane');
+  if (mapPane) {
+    mapPane.addEventListener('touchstart', onTouchStart, { passive: true });
+    mapPane.addEventListener('touchend', onTouchEnd, { passive: true });
+  }
 })();
 
 /* ═══════ INIT ═══════ */
