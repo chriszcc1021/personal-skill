@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iceland Route Animation</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #08090a;
+  --accent: #4ECDC4;
+  --risk-low: #4ECDC4;
+  --risk-mid: #F5C542;
+  --risk-high: #FF6B6B;
+  --aurora: #B388FF;
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-cn: 'Noto Sans SC', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: #E8EDF2;
+  overflow: hidden;
+  width: 1920px;
+  height: 1080px;
+  font-family: var(--font-body);
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 1;
+  background: #0d1117;
+}
+
+/* Overlays */
+.overlay { position: absolute; z-index: 1000; pointer-events: none; }
+
+/* Title card - top left */
+.title-card {
+  top: 48px; left: 56px;
+}
+.title-main {
+  font-family: var(--font-display);
+  font-size: 96px;
+  font-weight: 700;
+  letter-spacing: 12px;
+  line-height: 0.9;
+  text-transform: uppercase;
+  opacity: 0;
+}
+.title-sub {
+  font-family: var(--font-cn);
+  font-size: 20px;
+  font-weight: 300;
+  color: rgba(232,237,242,0.6);
+  letter-spacing: 2px;
+  margin-top: 8px;
+  opacity: 0;
+}
+.title-line {
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  margin-top: 12px;
+}
+
+/* Day indicator - bottom left */
+.day-card {
+  bottom: 80px; left: 56px;
+}
+.day-num {
+  font-family: var(--font-display);
+  font-size: 140px;
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -4px;
+  opacity: 0;
+}
+.day-date {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: rgba(232,237,242,0.5);
+  opacity: 0;
+}
+.day-title {
+  font-family: var(--font-cn);
+  font-size: 26px;
+  font-weight: 500;
+  margin-top: 4px;
+  opacity: 0;
+  letter-spacing: 1px;
+}
+
+/* Spot popup */
+.spot-popup {
+  bottom: 80px; right: 56px;
+  text-align: right;
+  opacity: 0;
+}
+.spot-name-zh {
+  font-family: var(--font-cn);
+  font-size: 36px;
+  font-weight: 500;
+}
+.spot-name-en {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  color: rgba(232,237,242,0.5);
+  text-transform: uppercase;
+}
+
+/* Stats bar - top right */
+.stats-bar {
+  top: 48px; right: 56px;
+  display: flex;
+  gap: 40px;
+}
+.stat-item { text-align: right; opacity: 0; }
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+}
+.stat-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(232,237,242,0.4);
+  margin-top: 2px;
+}
+
+/* Progress bar - bottom */
+.progress-bar {
+  bottom: 40px; left: 56px; right: 56px;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(78,205,196,0.5);
+}
+
+/* Aurora gradient overlay */
+.aurora-overlay {
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(179,136,255,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(78,205,196,0.04) 0%, transparent 50%);
+  opacity: 0;
+  z-index: 500;
+}
+
+/* Vignette */
+.vignette {
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(8,9,10,0.7) 100%);
+  z-index: 499;
+}
+
+/* Risk indicator dot */
+.risk-dot-indicator {
+  top: 48px; right: 320px;
+  opacity: 0;
+}
+.risk-dot-inner {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.risk-text {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  vertical-align: middle;
+}
+
+/* Leaflet overrides */
+.leaflet-control-container { display: none !important; }
+.leaflet-control-attribution { display: none !important; }
+
+/* OSM fallback dark invert */
+.dark-invert .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.2); }
+
+/* Glowing dot marker */
+.glow-dot {
+  width: 16px; height: 16px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(78,205,196,0.8), 0 0 40px rgba(78,205,196,0.4), 0 0 60px rgba(78,205,196,0.2);
+  border: 2px solid rgba(255,255,255,0.6);
+}
+
+/* Ending card */
+.end-card {
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  opacity: 0;
+}
+.end-title {
+  font-family: var(--font-display);
+  font-size: 80px;
+  font-weight: 700;
+  letter-spacing: 8px;
+}
+.end-sub {
+  font-family: var(--font-cn);
+  font-size: 24px;
+  font-weight: 300;
+  color: rgba(232,237,242,0.6);
+  margin-top: 8px;
+}
+.end-stats {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  margin-top: 32px;
+}
+.end-stat-val {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.end-stat-label {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: rgba(232,237,242,0.4);
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="overlay vignette"></div>
+<div class="overlay aurora-overlay" id="aurora-overlay"></div>
+
+<div class="overlay title-card" id="title-card">
+  <div class="title-main" id="title-main">ICELAND</div>
+  <div class="title-sub" id="title-sub">冰与火的国度 · 11天环岛自驾</div>
+  <div class="title-line" id="title-line"></div>
+</div>
+
+<div class="overlay day-card" id="day-card">
+  <div class="day-num" id="day-num">01</div>
+  <div class="day-date" id="day-date">9/21 SUN</div>
+  <div class="day-title" id="day-title">到达雷克雅未克</div>
+</div>
+
+<div class="overlay spot-popup" id="spot-popup">
+  <div class="spot-name-zh" id="spot-zh"></div>
+  <div class="spot-name-en" id="spot-en"></div>
+</div>
+
+<div class="overlay stats-bar" id="stats-bar">
+  <div class="stat-item" id="stat-km"><div class="stat-value" id="stat-km-val">0</div><div class="stat-label">KM TOTAL</div></div>
+  <div class="stat-item" id="stat-spots"><div class="stat-value" id="stat-spots-val">0</div><div class="stat-label">SPOTS</div></div>
+</div>
+
+<div class="overlay risk-dot-indicator" id="risk-indicator">
+  <span class="risk-dot-inner" id="risk-dot"></span>
+  <span class="risk-text" id="risk-text">LOW RISK</span>
+</div>
+
+<div class="overlay progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+<div class="overlay end-card" id="end-card">
+  <div class="end-title">ICELAND</div>
+  <div class="end-sub">2026.9.21 — 10.1 · 环岛完成</div>
+  <div class="end-stats">
+    <div><div class="end-stat-val">2,127</div><div class="end-stat-label">KILOMETERS</div></div>
+    <div><div class="end-stat-val">11</div><div class="end-stat-label">DAYS</div></div>
+    <div><div class="end-stat-val">40+</div><div class="end-stat-label">SPOTS</div></div>
+  </div>
+</div>
+
+<script>
+/* ═══════ ROUTE DATA ═══════ */
+var ROUTE = [
+  {
+    day: 1, date: '9/21 SUN', title: '到达雷克雅未克', risk: 'low', km: 50,
+    spots: [
+      { zh: '凯夫拉维克机场', en: 'Keflavik Airport', lat: 63.9850, lng: -22.6056 },
+      { zh: '哈尔格林姆斯大教堂', en: 'Hallgrimskirkja', lat: 64.1417, lng: -21.9267 }
+    ]
+  },
+  {
+    day: 2, date: '9/22 MON', title: '雷克雅未克 Citywalk', risk: 'low', km: 19,
+    spots: [
+      { zh: 'Harpa音乐厅', en: 'Harpa Concert Hall', lat: 64.1505, lng: -21.9326 },
+      { zh: '彩虹街', en: 'Skolavordustigur', lat: 64.1430, lng: -21.9275 },
+      { zh: '太阳航海者', en: 'Sun Voyager', lat: 64.1478, lng: -21.9223 }
+    ]
+  },
+  {
+    day: 3, date: '9/23 TUE', title: '斯奈山半岛 Day 1', risk: 'mid', km: 240,
+    spots: [
+      { zh: 'Budir黑教堂', en: 'Budakirkja', lat: 64.8210, lng: -23.3870 },
+      { zh: '黑卵石沙滩', en: 'Djupalonssandur', lat: 64.7539, lng: -23.9091 },
+      { zh: '草帽山', en: 'Kirkjufell', lat: 64.9426, lng: -23.3072 }
+    ]
+  },
+  {
+    day: 4, date: '9/24 WED', title: '斯奈山半岛 Day 2', risk: 'low', km: 230,
+    spots: [
+      { zh: 'Arnarstapi渔村', en: 'Arnarstapi', lat: 64.7668, lng: -23.6258 },
+      { zh: 'Hellnar海蚀洞', en: 'Hellnar', lat: 64.7565, lng: -23.6468 }
+    ]
+  },
+  {
+    day: 5, date: '9/25 THU', title: '黄金圈', risk: 'low', km: 230,
+    spots: [
+      { zh: '辛格维利尔国家公园', en: 'Thingvellir', lat: 64.2559, lng: -21.1290 },
+      { zh: '盖歇尔间歇泉', en: 'Strokkur', lat: 64.3104, lng: -20.3024 },
+      { zh: '黄金瀑布', en: 'Gullfoss', lat: 64.3271, lng: -20.1199 },
+      { zh: 'Kerid火山口湖', en: 'Kerid Crater', lat: 64.0412, lng: -20.8853 }
+    ]
+  },
+  {
+    day: 6, date: '9/26 FRI', title: '南岸 → 维克镇', risk: 'high', km: 211,
+    spots: [
+      { zh: '塞里雅兰瀑布', en: 'Seljalandsfoss', lat: 63.6156, lng: -19.9886 },
+      { zh: '斯科加瀑布', en: 'Skogafoss', lat: 63.5321, lng: -19.5113 },
+      { zh: '黑沙滩', en: 'Reynisfjara', lat: 63.4048, lng: -19.0443 }
+    ]
+  },
+  {
+    day: 7, date: '9/27 SAT', title: '南岸 → 霍芬', risk: 'mid', km: 275,
+    spots: [
+      { zh: '苔藓熔岩地', en: 'Eldhraun', lat: 63.6500, lng: -18.3500 },
+      { zh: '冰河湖', en: 'Jokulsarlon', lat: 64.0482, lng: -16.1794 },
+      { zh: '钻石沙滩', en: 'Diamond Beach', lat: 64.0440, lng: -16.1780 }
+    ]
+  },
+  {
+    day: 8, date: '9/28 SUN', title: '冰川徒步 + 蝙蝠山', risk: 'high', km: 248,
+    spots: [
+      { zh: 'Skaftafell冰川', en: 'Skaftafell Glacier', lat: 64.0150, lng: -16.9710 },
+      { zh: '蝙蝠山', en: 'Vestrahorn', lat: 64.2556, lng: -15.0081 }
+    ]
+  },
+  {
+    day: 9, date: '9/29 MON', title: '霍芬 → 回程', risk: 'mid', km: 450,
+    spots: [
+      { zh: '羽毛峡谷', en: 'Fjadrargljufur', lat: 63.7711, lng: -18.1725 }
+    ]
+  },
+  {
+    day: 10, date: '9/30 TUE', title: '观鲸 + 休整', risk: 'low', km: 108,
+    spots: [
+      { zh: '观鲸出海', en: 'Whale Watching', lat: 64.1515, lng: -21.9393 },
+      { zh: 'Perlan博物馆', en: 'Perlan', lat: 64.1283, lng: -21.9175 }
+    ]
+  },
+  {
+    day: 11, date: '10/1 WED', title: '蓝湖 + 离开', risk: 'low', km: 66,
+    spots: [
+      { zh: '蓝湖温泉', en: 'Blue Lagoon', lat: 63.8803, lng: -22.4495 },
+      { zh: '凯夫拉维克机场', en: 'Keflavik Airport', lat: 63.9850, lng: -22.6056 }
+    ]
+  }
+];
+
+var RISK_COLORS = { low: '#4ECDC4', mid: '#F5C542', high: '#FF6B6B' };
+var RISK_LABELS = { low: 'LOW RISK', mid: 'MODERATE', high: 'HIGH RISK' };
+
+/* ═══════ MAP SETUP ═══════ */
+var map = L.map('map', {
+  center: [64.5, -19.0], zoom: 6,
+  zoomControl: false, attributionControl: false,
+  scrollWheelZoom: false, dragging: false,
+  doubleClickZoom: false, keyboard: false
+});
+
+/* Tile fallback chain: CARTO dark → Stadia dark → pure background */
+var tileSources = [
+  { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', opts: { subdomains: 'abcd', maxZoom: 19 } },
+  { url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', opts: { maxZoom: 20 } },
+  { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', opts: { maxZoom: 19, className: 'dark-invert' } }
+];
+var currentTileIdx = 0;
+var currentTileLayer = null;
+function loadTileSource(idx) {
+  if (idx >= tileSources.length) return;
+  currentTileIdx = idx;
+  var src = tileSources[idx];
+  currentTileLayer = L.tileLayer(src.url, src.opts).addTo(map);
+  var errorCount = 0;
+  currentTileLayer.on('tileerror', function() {
+    errorCount++;
+    if (errorCount > 3 && idx + 1 < tileSources.length) {
+      currentTileLayer.remove();
+      loadTileSource(idx + 1);
+    }
+  });
+}
+loadTileSource(0);
+
+/* Glowing dot marker */
+var dotIcon = L.divIcon({
+  className: '', html: '<div class="glow-dot"></div>',
+  iconSize: [16, 16], iconAnchor: [8, 8]
+});
+var firstSpot = ROUTE[0].spots[0];
+var dotMarker = L.marker([firstSpot.lat, firstSpot.lng], { icon: dotIcon, zIndexOffset: 9999 }).addTo(map);
+
+/* ═══════ HELPER: Draw polyline segment animated ═══════ */
+function getAllCoords() {
+  var coords = [];
+  ROUTE.forEach(function(day) {
+    day.spots.forEach(function(s) {
+      coords.push([s.lat, s.lng]);
+    });
+  });
+  return coords;
+}
+
+/* ═══════ GSAP MASTER TIMELINE ═══════ */
+var master = gsap.timeline({ paused: true });
+
+// Cumulative counters
+var state = { km: 0, spots: 0 };
+/* --- Intro: 0s - 4s --- */
+master.to('#title-main', { opacity: 1, y: 0, duration: 1.5, ease: 'power3.out' }, 0.5);
+master.from('#title-main', { y: 40 }, 0.5);
+master.to('#title-sub', { opacity: 1, duration: 1, ease: 'power2.out' }, 1.2);
+master.to('#title-line', { width: 120, duration: 0.8, ease: 'power2.inOut' }, 1.5);
+master.to('.stat-item', { opacity: 1, stagger: 0.2, duration: 0.6 }, 2);
+master.to('#aurora-overlay', { opacity: 1, duration: 2 }, 1);
+
+// Zoom to overview
+master.call(function() {
+  var allCoords = getAllCoords();
+  map.flyToBounds(L.latLngBounds(allCoords).pad(0.15), { duration: 2, easeLinearity: 0.25 });
+}, null, 2);
+
+/* --- Day sequences: each day ~4s --- */
+var dayStartTime = 5;
+var PER_DAY = 4.5; // seconds per day
+var cumKm = 0;
+var cumSpots = 0;
+
+/* Single continuous trail polyline */
+var trailCoords = [[ROUTE[0].spots[0].lat, ROUTE[0].spots[0].lng]];
+var trailLine = L.polyline(trailCoords, {
+  color: '#4ECDC4', weight: 3.5, opacity: 0.85,
+  lineCap: 'round', lineJoin: 'round'
+}).addTo(map);
+
+/* Pre-compute flat waypoint list with correct prev coords */
+var allWP = [];
+(function() {
+  var pLat = ROUTE[0].spots[0].lat, pLng = ROUTE[0].spots[0].lng;
+  ROUTE.forEach(function(day, di) {
+    day.spots.forEach(function(spot, si) {
+      allWP.push({ prevLat: pLat, prevLng: pLng });
+      pLat = spot.lat;
+      pLng = spot.lng;
+    });
+  });
+})();
+var wpCounter = 0;
+
+ROUTE.forEach(function(day, di) {
+  var t = dayStartTime + di * PER_DAY;
+  var riskColor = RISK_COLORS[day.risk];
+  var dayPadded = String(day.day).padStart(2, '0');
+
+  // --- Update day card ---
+  master.call(function(d, dp, rc) {
+    return function() {
+      document.getElementById('day-num').textContent = dp;
+      document.getElementById('day-num').style.color = rc;
+      document.getElementById('day-date').textContent = d.date;
+      document.getElementById('day-title').textContent = d.title;
+      document.getElementById('risk-dot').style.background = rc;
+      document.getElementById('risk-dot').style.boxShadow = '0 0 12px ' + rc;
+      document.getElementById('risk-text').textContent = RISK_LABELS[d.risk];
+      document.getElementById('risk-text').style.color = rc;
+    };
+  }(day, dayPadded, riskColor), null, t);
+
+  // Fade in day info
+  if (di === 0) {
+    master.to('#day-num', { opacity: 1, duration: 0.5 }, t);
+    master.to('#day-date', { opacity: 1, duration: 0.4 }, t + 0.1);
+    master.to('#day-title', { opacity: 1, duration: 0.4 }, t + 0.2);
+    master.to('#risk-indicator', { opacity: 1, duration: 0.4 }, t + 0.1);
+  } else {
+    // Quick flash transition
+    master.to('#day-num', { opacity: 0, duration: 0.15 }, t - 0.3);
+    master.to('#day-date', { opacity: 0, duration: 0.15 }, t - 0.3);
+    master.to('#day-title', { opacity: 0, duration: 0.15 }, t - 0.3);
+    master.to('#day-num', { opacity: 1, duration: 0.3 }, t + 0.1);
+    master.to('#day-date', { opacity: 1, duration: 0.3 }, t + 0.15);
+    master.to('#day-title', { opacity: 1, duration: 0.3 }, t + 0.2);
+  }
+
+  // Fade out title after day 1
+  if (di === 1) {
+    master.to('#title-main', { opacity: 0, duration: 0.8 }, t - 0.5);
+    master.to('#title-sub', { opacity: 0, duration: 0.6 }, t - 0.5);
+    master.to('#title-line', { opacity: 0, duration: 0.5 }, t - 0.5);
+  }
+
+  // --- Zoom map to day's route ---
+  master.call(function(d) {
+    return function() {
+      var coords = d.spots.map(function(s) { return [s.lat, s.lng]; });
+      if (coords.length === 1) {
+        map.flyTo(coords[0], 9, { duration: 1.5 });
+      } else {
+        map.flyToBounds(L.latLngBounds(coords).pad(0.5), { duration: 1.5 });
+      }
+    };
+  }(day), null, t);
+
+  // --- Animate dot through spots ---
+  var spotDuration = (PER_DAY - 1.2) / Math.max(day.spots.length, 1);
+
+  day.spots.forEach(function(spot, si) {
+    var spotTime = t + 0.8 + si * spotDuration;
+    cumSpots++;
+    var thisCumSpots = cumSpots;
+
+    // Use pre-computed prev coords to avoid closure bug
+    var wpI = wpCounter++;
+    var moveObj = { lat: allWP[wpI].prevLat, lng: allWP[wpI].prevLng };
+
+    master.to(moveObj, {
+      lat: spot.lat, lng: spot.lng,
+      duration: spotDuration * 0.7,
+      ease: 'power2.inOut',
+      onUpdate: function() {
+        dotMarker.setLatLng([moveObj.lat, moveObj.lng]);
+        // Extend continuous trail
+        var coords = trailLine.getLatLngs();
+        coords.push(L.latLng(moveObj.lat, moveObj.lng));
+        trailLine.setLatLngs(coords);
+      }
+    }, spotTime);
+
+    // Show spot name
+    master.call(function(s, cs) {
+      return function() {
+        document.getElementById('spot-zh').textContent = s.zh;
+        document.getElementById('spot-en').textContent = s.en;
+        document.getElementById('stat-spots-val').textContent = cs;
+      };
+    }(spot, thisCumSpots), null, spotTime + spotDuration * 0.3);
+
+    master.to('#spot-popup', { opacity: 1, duration: 0.25 }, spotTime + spotDuration * 0.3);
+    master.to('#spot-popup', { opacity: 0, duration: 0.2 }, spotTime + spotDuration * 0.85);
+  });
+
+  // Update cumulative km
+  cumKm += day.km;
+  var thisCumKm = cumKm;
+  master.call(function(ck) {
+    return function() {
+      document.getElementById('stat-km-val').textContent = ck.toLocaleString();
+    };
+  }(thisCumKm), null, t + PER_DAY - 0.5);
+
+  // Progress bar
+  var progress = ((di + 1) / ROUTE.length) * 100;
+  master.to('#progress-fill', { width: progress + '%', duration: PER_DAY * 0.8, ease: 'none' }, t + 0.5);
+
+  // Aurora glow on aurora nights (D3,D4,D7,D8,D9)
+  if ([2, 3, 6, 7, 8].indexOf(di) !== -1) {
+    master.to('#aurora-overlay', {
+      opacity: 0.8, duration: 1,
+      background: 'radial-gradient(ellipse at 30% 20%, rgba(179,136,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(78,205,196,0.08) 0%, transparent 50%)'
+    }, t + 1);
+    master.to('#aurora-overlay', { opacity: 0.3, duration: 1 }, t + PER_DAY - 1);
+  }
+
+});
+
+/* --- Ending: zoom out + end card --- */
+var endTime = dayStartTime + ROUTE.length * PER_DAY + 0.5;
+
+master.to('#day-num', { opacity: 0, duration: 0.5 }, endTime - 1);
+master.to('#day-date', { opacity: 0, duration: 0.5 }, endTime - 1);
+master.to('#day-title', { opacity: 0, duration: 0.5 }, endTime - 1);
+master.to('#risk-indicator', { opacity: 0, duration: 0.5 }, endTime - 1);
+master.to('.stat-item', { opacity: 0, duration: 0.5 }, endTime - 1);
+
+master.call(function() {
+  var allCoords = getAllCoords();
+  map.flyToBounds(L.latLngBounds(allCoords).pad(0.1), { duration: 2 });
+}, null, endTime);
+
+master.to('#end-card', { opacity: 1, duration: 1.5, ease: 'power2.out' }, endTime + 1.5);
+master.to('#aurora-overlay', { opacity: 1, duration: 2 }, endTime + 1);
+
+// Hold ending for 3s then fade
+master.to('#end-card', { opacity: 0, duration: 1 }, endTime + 6);
+master.to('#aurora-overlay', { opacity: 0, duration: 1.5 }, endTime + 6);
+master.to('#progress-fill', { opacity: 0, duration: 1 }, endTime + 6);
+
+/* ═══════ START ═══════ */
+// Wait for tiles to load
+setTimeout(function() {
+  master.play();
+}, 3000);
+
+// Expose for Playwright
+window.__animationDone = false;
+master.eventCallback('onComplete', function() {
+  window.__animationDone = true;
+});
+</script>
+</body>
+</html>

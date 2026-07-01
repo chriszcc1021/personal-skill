@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>冰岛环岛 11 天自驾路书</title>
-<meta name="description" content="2026年9月冰岛环岛11天自驾路书，含黄金圈、南岸、斯奈山、冰川徒步全攻略">
+<meta name="description" content="2026年9月冰岛11天自驾路书，含黄金圈、南岸、冰川徒步、蓝湖全攻略">
 <meta property="og:title" content="冰岛环岛 11 天自驾路书">
 <meta property="og:description" content="2026.9.21-10.1 / 4人环岛自驾 / 极光+冰川+瀑布">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇸</text></svg>">
@@ -86,7 +86,7 @@ body {
   height: calc(100dvh - 56px);
   z-index: 1;
 }
-#map { width: 100%; height: 100%; }
+#map { width: 100%; height: 100%; background: #0d1117; }
 
 .content-pane {
   position: fixed;
@@ -947,6 +947,9 @@ body {
 }
 .leaflet-control-attribution a { color: var(--text-secondary) !important; }
 
+/* OSM fallback dark invert */
+.dark-invert .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.2); }
+
 /* MarkerCluster dark override */
 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
   background: rgba(78,205,196,0.3) !important;
@@ -1021,35 +1024,35 @@ body {
 /* ═══════════════════════════════════════
    DATA
    ═══════════════════════════════════════ */
-var KM = [50, 19, 240, 230, 230, 211, 275, 248, 450, 108, 66];
-var RISKS = ['low','low','mid','low','low','high','mid','high','mid','low','low'];
-var AURORA = [false,false,true,true,false,false,true,true,true,false,false];
+var KM = [48, 3, 256, 210, 264, 295, 370, 110, 102, 0, 50];
+var RISKS = ['low','low','low','mid','mid','high','mid','low','low','low','low'];
+var AURORA = [false,false,false,false,false,true,true,false,false,false,false];
 var DAY_TITLES = [
-  '到达雷克雅未克','雷克雅未克 Citywalk','斯奈山半岛 Day 1','斯奈山半岛 Day 2',
-  '黄金圈','南岸上半段 -> 维克镇','南岸下半段 -> 霍芬','冰川徒步+蝙蝠山',
-  '霍芬 -> 回程南岸','观鲸+休整','蓝湖+离开'
+  '到达雷克雅未克','雷克雅未克 Citywalk','黄金圈','南岸 → 维克',
+  '维克 → 冰河湖 → 霍芬','蝙蝠山+冰川徒步','霍芬 → 瀑布 → Selfoss','回 RVK + 观鲸',
+  '蓝湖 Spa Day','自由日','离开冰岛'
 ];
 
 var DAYS = [
   {
-    day: 1, date: '9/21 周日', title: '到达雷克雅未克', risk: 'low', km: 50,
-    desc: ['凯夫拉维克机场 -> 雷克雅未克 (45min)','入住酒店调整时差'],
+    day: 1, date: '9/21 周一', title: '到达雷克雅未克', risk: 'low', km: 48,
+    desc: ['凯夫拉维克机场 → 雷克雅未克 (45min)','07:50 落地，入住休整调时差'],
     accommodation: '雷克雅未克 · Laugavegur 步行街附近',
     driveSegments: [{from:'凯夫拉维克机场', to:'雷克雅未克', duration:'45min'}],
     activities: [],
-    timeline: [{time:'抵达', event:'机场取车', type:'drive'}, {time:'~1h后', event:'入住酒店，调整时差', type:'stay'}],
+    timeline: [{time:'07:50', event:'落地取车', type:'drive'}, {time:'~09:00', event:'入住酒店，调整时差', type:'stay'}, {time:'下午', event:'哈尔格林姆斯大教堂打卡', type:'spot'}],
     spots: [
       { zh: '哈尔格林姆斯大教堂', en: 'Hallgrimskirkja', lat: 64.1417, lng: -21.9267 },
       { zh: '太阳航海者', en: 'Sun Voyager', lat: 64.1478, lng: -21.9223 }
     ]
   },
   {
-    day: 2, date: '9/22 周一', title: '雷克雅未克 Citywalk', risk: 'low', km: 19,
+    day: 2, date: '9/22 周二', title: '雷克雅未克 Citywalk', risk: 'low', km: 3,
     desc: ['城市漫步一日游','Sky Lagoon 备选体验'],
     accommodation: '雷克雅未克',
     driveSegments: [],
     activities: [{name:'Sky Lagoon（备选）', provider:'skylagoon.com', price:'~7,990 ISK/人（约¥400）', url:'https://www.skylagoon.com', note:'Pure Pass 含7步冰岛浴仪式'}],
-    timeline: [{time:'上午', event:'Citywalk：Harpa → 彩虹街 → 旧港 → Laugavegur', type:'walk'}, {time:'下午', event:'Sky Lagoon 备选', type:'activity'}, {time:'傍晚', event:'市区闲逛', type:'free'}],
+    timeline: [{time:'上午', event:'Citywalk：Harpa → 彩虹街 → 旧港 → Laugavegur', type:'walk'}, {time:'午餐', event:'Sjávargrillið 海鲜餐厅', type:'meal'}, {time:'下午', event:'Sky Lagoon 备选', type:'activity'}, {time:'晚餐', event:'Íslenski Barinn', type:'meal'}],
     spots: [
       { zh: 'Harpa音乐厅', en: 'Harpa Concert Hall', lat: 64.1505, lng: -21.9326 },
       { zh: '彩虹街', en: 'Skolavordustigur', lat: 64.1430, lng: -21.9275 },
@@ -1059,40 +1062,12 @@ var DAYS = [
     ]
   },
   {
-    day: 3, date: '9/23 周二', title: '斯奈山半岛 Day 1', risk: 'mid', km: 240,
-    desc: ['雷克雅未克 -> 斯奈山 (2.5h)','草帽山 -- 冰岛最标志性拍照点','秋分日极光翻倍'],
-    warn: { type: 'caution', text: '车程较长，建议 8:00 前出发' },
-    accommodation: '斯奈山 · Grundarfjörður 镇（草帽山旁，夜拍极光不用开车）',
-    driveSegments: [{from:'雷克雅未克', to:'Búðir黑教堂', duration:'2h'}, {from:'Búðir', to:'Djúpalónssandur', duration:'30min'}, {from:'Djúpalónssandur', to:'草帽山', duration:'1h'}],
-    activities: [],
-    timeline: [{time:'08:00', event:'出发，备干粮', type:'drive'}, {time:'10:00', event:'Búðir黑教堂', type:'spot'}, {time:'11:00', event:'Djúpalónssandur黑卵石沙滩', type:'spot'}, {time:'13:00', event:'午餐（沿途小镇）', type:'meal'}, {time:'15:00', event:'草帽山+Kirkjufellsfoss', type:'spot'}, {time:'17:00', event:'入住 Grundarfjörður', type:'stay'}, {time:'夜间', event:'极光观测（秋分日概率高）', type:'aurora'}],
-    spots: [
-      { zh: '草帽山', en: 'Kirkjufell', lat: 64.9426, lng: -23.3072 },
-      { zh: 'Kirkjufellsfoss瀑布', en: 'Kirkjufellsfoss', lat: 64.9394, lng: -23.3139 },
-      { zh: 'Budir黑教堂', en: 'Budakirkja', lat: 64.8210, lng: -23.3870 },
-      { zh: 'Djupalonssandur黑卵石沙滩', en: 'Djupalonssandur', lat: 64.7539, lng: -23.9091 }
-    ]
-  },
-  {
-    day: 4, date: '9/24 周三', title: '斯奈山半岛 Day 2', risk: 'low', km: 230,
-    desc: ['海岸线徒步 Arnarstapi -> Hellnar (2.5km单程)','下午返回雷克雅未克 (2.5h)'],
+    day: 3, date: '9/23 周三', title: '黄金圈', risk: 'low', km: 256,
+    desc: ['经典黄金圈一日游','Strokkur每5-10分钟喷发','当天往返雷克雅未克'],
     accommodation: '雷克雅未克',
-    driveSegments: [{from:'Grundarfjörður', to:'Arnarstapi', duration:'1h'}, {from:'Arnarstapi', to:'Hellnar', duration:'步行2.5km'}, {from:'Hellnar', to:'雷克雅未克', duration:'2.5h'}],
-    activities: [],
-    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'10:00', event:'Arnarstapi → Hellnar 海岸徒步（单程40min）', type:'hike'}, {time:'12:00', event:'Snæfellsjökull 国家公园', type:'spot'}, {time:'13:00', event:'午餐', type:'meal'}, {time:'14:00', event:'返回雷克雅未克', type:'drive'}, {time:'16:30', event:'抵达，休整', type:'free'}],
-    spots: [
-      { zh: 'Arnarstapi渔村', en: 'Arnarstapi', lat: 64.7668, lng: -23.6258 },
-      { zh: 'Hellnar海蚀洞', en: 'Hellnar', lat: 64.7565, lng: -23.6468 },
-      { zh: 'Snaefellsjokull国家公园', en: 'Snaefellsjokull NP', lat: 64.8000, lng: -23.7800 }
-    ]
-  },
-  {
-    day: 5, date: '9/25 周四', title: '黄金圈', risk: 'low', km: 230,
-    desc: ['经典黄金圈一日游','Strokkur每5-10分钟喷发'],
-    accommodation: '雷克雅未克',
-    driveSegments: [{from:'雷克雅未克', to:'辛格维利尔', duration:'47min'}, {from:'辛格维利尔', to:'间歇泉', duration:'50min'}, {from:'间歇泉', to:'黄金瀑布', duration:'10min'}, {from:'黄金瀑布', to:'Kerið', duration:'1h'}, {from:'Kerið', to:'雷克雅未克', duration:'1h'}],
+    driveSegments: [{from:'雷克雅未克', to:'辛格维利尔', duration:'47min'}, {from:'辛格维利尔', to:'间歇泉', duration:'50min'}, {from:'间歇泉', to:'黄金瀑布', duration:'10min'}, {from:'黄金瀑布', to:'Kerið', duration:'44min'}, {from:'Kerið', to:'雷克雅未克', duration:'1h'}],
     activities: [{name:'Kerið 火山口湖门票', provider:'kerid.is', price:'700 ISK/人（约¥35）', url:'https://kerid.is', note:'自助购票，不用预约'}],
-    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'10:00', event:'辛格维利尔国家公园（1.5h）', type:'spot'}, {time:'12:00', event:'盖歇尔间歇泉（每5-10min喷发，1h）', type:'spot'}, {time:'13:30', event:'黄金瀑布（1h）', type:'spot'}, {time:'15:00', event:'午餐（间歇泉游客中心）', type:'meal'}, {time:'16:00', event:'Kerið火山口湖', type:'spot'}, {time:'17:30', event:'返回雷克雅未克', type:'drive'}],
+    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'10:00', event:'辛格维利尔国家公园（2h）', type:'spot'}, {time:'12:00', event:'盖歇尔间歇泉（1h）', type:'spot'}, {time:'13:30', event:'黄金瀑布（1h）', type:'spot'}, {time:'14:30', event:'午餐（游客中心）', type:'meal'}, {time:'16:00', event:'Kerið火山口湖', type:'spot'}, {time:'17:00', event:'Menam 晚餐', type:'meal'}, {time:'18:30', event:'返回雷克雅未克', type:'drive'}],
     spots: [
       { zh: '辛格维利尔国家公园', en: 'Thingvellir', lat: 64.2559, lng: -21.1290 },
       { zh: '盖歇尔间歇泉', en: 'Geysir/Strokkur', lat: 64.3104, lng: -20.3024 },
@@ -1101,99 +1076,118 @@ var DAYS = [
     ]
   },
   {
-    day: 6, date: '9/26 周五', title: '南岸上半段 -> 维克镇', risk: 'high', km: 211,
-    desc: ['景点多+3h车程节奏紧','塞里雅兰瀑布可走到后面 (备雨衣)','斯科加瀑布60m可爬顶'],
-    warn: { type: 'danger', text: '黑沙滩 sneaker waves 极危险，永远不要背对大海! 建议 8:00 出发' },
+    day: 4, date: '9/24 周四', title: '南岸 → 维克', risk: 'mid', km: 210,
+    desc: ['南岸瀑布+黑沙滩精华段','飞机残骸徒步约40min单程','住维克镇，不赶路到霍芬'],
+    warn: { type: 'danger', text: '黑沙滩 sneaker waves 极危险，永远不要背对大海!' },
     accommodation: '维克镇 Vík',
-    driveSegments: [{from:'雷克雅未克', to:'塞里雅兰瀑布', duration:'2h'}, {from:'塞里雅兰瀑布', to:'斯科加瀑布', duration:'30min'}, {from:'斯科加瀑布', to:'黑沙滩', duration:'30min'}, {from:'黑沙滩', to:'维克镇', duration:'15min'}],
-    activities: [],
-    timeline: [{time:'08:00', event:'出发（今日景点密集）', type:'drive'}, {time:'10:00', event:'塞里雅兰瀑布（可走到瀑布后方，备雨衣）', type:'spot'}, {time:'11:30', event:'斯科加瀑布（60m，可爬顶）', type:'spot'}, {time:'13:00', event:'午餐（维克镇附近）', type:'meal'}, {time:'14:30', event:'Dyrhólaey海岬', type:'spot'}, {time:'15:30', event:'Reynisfjara黑沙滩', type:'spot'}, {time:'17:00', event:'维克镇教堂', type:'spot'}, {time:'18:00', event:'入住维克镇', type:'stay'}],
+    driveSegments: [{from:'雷克雅未克', to:'斯科加瀑布', duration:'2h10min'}, {from:'斯科加瀑布', to:'飞机残骸', duration:'15min'}, {from:'飞机残骸', to:'黑沙滩', duration:'20min'}, {from:'黑沙滩', to:'维克镇', duration:'15min'}],
+    activities: [{name:'黑沙滩 ATV 骑行', provider:'', price:'需预约 2.5h', url:'', note:'需提前预约'}],
+    timeline: [{time:'08:00', event:'出发，备干粮', type:'drive'}, {time:'10:10', event:'斯科加瀑布 Skógafoss（1h，可爬顶）', type:'spot'}, {time:'11:30', event:'飞机残骸 Sólheimasandur（徒步40min单程）', type:'hike'}, {time:'13:30', event:'午餐', type:'meal'}, {time:'14:30', event:'黑沙滩 ATV（2.5h 预约）', type:'activity'}, {time:'17:00', event:'维克教堂 Víkurkirkja', type:'spot'}, {time:'18:00', event:'Black Crust Pizzeria 晚餐', type:'meal'}, {time:'19:00', event:'入住维克镇', type:'stay'}],
     spots: [
-      { zh: '塞里雅兰瀑布', en: 'Seljalandsfoss', lat: 63.6156, lng: -19.9886 },
       { zh: '斯科加瀑布', en: 'Skogafoss', lat: 63.5321, lng: -19.5113 },
+      { zh: '飞机残骸', en: 'Solheimasandur Plane Wreck', lat: 63.4590, lng: -19.3647 },
       { zh: 'Reynisfjara黑沙滩', en: 'Reynisfjara', lat: 63.4048, lng: -19.0443 },
-      { zh: 'Dyrholaey海岬', en: 'Dyrholaey', lat: 63.3988, lng: -19.1266 },
       { zh: '维克镇教堂', en: 'Vik Church', lat: 63.4187, lng: -19.0060 }
     ]
   },
   {
-    day: 7, date: '9/27 周六', title: '南岸下半段 -> 霍芬', risk: 'mid', km: 275,
-    desc: ['维克 -> 霍芬 (3.5h)','冰河湖快艇游 (提前订)','极光观测开始 (霍芬3晚)'],
+    day: 5, date: '9/25 周五', title: '维克 → 冰河湖 → 霍芬', risk: 'mid', km: 264,
+    desc: ['维克出发往东','钻石沙滩+冰河湖快艇','Pakkhus 龙虾晚餐'],
     accommodation: '霍芬 Höfn',
-    driveSegments: [{from:'维克镇', to:'苔藓熔岩地', duration:'1h'}, {from:'苔藓熔岩地', to:'冰河湖', duration:'1.5h'}, {from:'冰河湖', to:'霍芬', duration:'1h'}],
-    activities: [{name:'冰河湖 Zodiac 快艇游', provider:'icelagoon.is', price:'~12,000 ISK/人（约¥600）Zodiac / 7,100 ISK 水陆两栖', url:'https://icelagoon.is', note:'Zodiac 更近距离看冰山，推荐；提前预约'}],
-    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'10:00', event:'Eldhraun苔藓熔岩地（路边停车拍照）', type:'spot'}, {time:'11:30', event:'Fjallsárlón冰湖', type:'spot'}, {time:'12:30', event:'杰古沙龙冰河湖 + Zodiac快艇（1h15min）', type:'activity'}, {time:'14:30', event:'钻石沙滩', type:'spot'}, {time:'15:30', event:'午餐', type:'meal'}, {time:'16:30', event:'前往霍芬', type:'drive'}, {time:'17:30', event:'入住霍芬', type:'stay'}, {time:'夜间', event:'极光观测', type:'aurora'}],
+    driveSegments: [{from:'维克镇', to:'钻石沙滩', duration:'2h30min'}, {from:'冰河湖', to:'霍芬', duration:'1h'}],
+    activities: [{name:'冰河湖 Zodiac 快艇游', provider:'icelagoon.is', price:'~12,000 ISK/人（约¥600）', url:'https://icelagoon.is', note:'Zodiac 更近距离看冰山，推荐；提前预约'}],
+    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'11:30', event:'钻石沙滩（1h）', type:'spot'}, {time:'12:30', event:'冰河湖 Jökulsárlón + Zodiac 快艇（1h15min）', type:'activity'}, {time:'14:00', event:'午餐', type:'meal'}, {time:'15:00', event:'前往霍芬', type:'drive'}, {time:'16:00', event:'入住霍芬', type:'stay'}, {time:'20:00', event:'Pakkhus Restaurant 龙虾晚餐 🦞', type:'meal'}, {time:'夜间', event:'极光观测', type:'aurora'}],
     spots: [
-      { zh: '苔藓熔岩地', en: 'Eldhraun Lava Field', lat: 63.6500, lng: -18.3500 },
-      { zh: 'Fjallsarlon冰湖', en: 'Fjallsarlon', lat: 64.0170, lng: -16.3750 },
-      { zh: '杰古沙龙冰河湖', en: 'Jokulsarlon', lat: 64.0482, lng: -16.1794 },
-      { zh: '钻石沙滩', en: 'Diamond Beach', lat: 64.0440, lng: -16.1780 }
+      { zh: '钻石沙滩', en: 'Diamond Beach', lat: 64.0440, lng: -16.1780 },
+      { zh: '杰古沙龙冰河湖', en: 'Jokulsarlon', lat: 64.0482, lng: -16.1794 }
     ]
   },
   {
-    day: 8, date: '9/28 周日', title: '冰川徒步+蝙蝠山', risk: 'high', km: 248,
-    desc: ['冰川徒步4h (需跟团含装备)','替代蓝冰洞的最佳冰川体验','蝙蝠山日落拍摄绝佳'],
-    warn: { type: 'danger', text: '体力消耗最大! 冰川上午出发，下午蝙蝠山看日落。带足水和能量棒，穿硬底登山鞋' },
+    day: 6, date: '9/26 周六', title: '蝙蝠山+冰川徒步', risk: 'high', km: 295,
+    desc: ['蝙蝠山早起拍照','冰川徒步4h需跟团含装备','体力消耗最大一天'],
+    warn: { type: 'danger', text: '体力消耗最大! 带足水和能量棒，穿硬底登山鞋' },
     accommodation: '霍芬 Höfn',
-    driveSegments: [{from:'霍芬', to:'Skaftafell', duration:'1h40min'}, {from:'Skaftafell', to:'霍芬', duration:'1h40min'}, {from:'霍芬', to:'蝙蝠山', duration:'15min'}],
-    activities: [{name:'Skaftafell 冰川徒步 3h', provider:'skaftafell.com (Troll Expeditions)', price:'9,900 ISK/人（约¥500）', url:'https://skaftafell.com/tour/skaftafell-glacier-hike-3-hour-expedition/', note:'含全套装备（冰爪+冰镐+头盔+安全带）+ 向导，提前2周订'}],
-    timeline: [{time:'08:00', event:'出发（体力日，带够水和能量棒）', type:'drive'}, {time:'09:40', event:'Skaftafell 集合点', type:'activity'}, {time:'10:00', event:'冰川徒步出发（3h）', type:'activity'}, {time:'13:00', event:'结束，午餐', type:'meal'}, {time:'14:30', event:'返回霍芬', type:'drive'}, {time:'16:10', event:'蝙蝠山 Vestrahorn（1h，看日落绝佳）', type:'spot'}, {time:'18:00', event:'返回霍芬', type:'stay'}, {time:'夜间', event:'极光观测', type:'aurora'}],
+    driveSegments: [{from:'霍芬', to:'蝙蝠山', duration:'15min'}, {from:'蝙蝠山', to:'Skaftafell', duration:'2h30min'}, {from:'Skaftafell', to:'霍芬', duration:'1h40min'}],
+    activities: [{name:'Skaftafell 冰川徒步 4h', provider:'Troll Expeditions', price:'~9,900 ISK/人（约¥500）', url:'https://skaftafell.com/tour/skaftafell-glacier-hike-3-hour-expedition/', note:'含全套装备（冰爪+冰镐+头盔）+ 向导，提前2周订'}],
+    timeline: [{time:'07:30', event:'蝙蝠山日出（7:30开门）', type:'spot'}, {time:'09:00', event:'前往 Skaftafell', type:'drive'}, {time:'11:30', event:'Skaftafell 集合', type:'activity'}, {time:'12:00', event:'冰川徒步出发（4h）', type:'activity'}, {time:'16:00', event:'结束，Fancy Sheep 餐车午餐', type:'meal'}, {time:'17:00', event:'返回霍芬', type:'drive'}, {time:'18:40', event:'Otto Matur 晚餐', type:'meal'}, {time:'夜间', event:'极光观测', type:'aurora'}],
     spots: [
-      { zh: 'Skaftafell冰川徒步', en: 'Skaftafell Glacier Hike', lat: 64.0150, lng: -16.9710 },
-      { zh: 'Vestrahorn蝙蝠山', en: 'Vestrahorn (Batman Mt.)', lat: 64.2556, lng: -15.0081 }
+      { zh: '蝙蝠山', en: 'Vestrahorn (Batman Mt.)', lat: 64.2556, lng: -15.0081 },
+      { zh: 'Skaftafell冰川徒步', en: 'Skaftafell Glacier Hike', lat: 64.0150, lng: -16.9710 }
     ]
   },
   {
-    day: 9, date: '9/29 周一', title: '霍芬 -> 回程南岸', risk: 'mid', km: 450,
-    desc: ['霍芬 -> 南岸 (1号公路)','羽毛峡谷徒步30min','6h总车程 / 住Hella/Selfoss'],
-    warn: { type: 'caution', text: '赶路日，多休息，沿途加油' },
-    accommodation: 'Hella 或 Selfoss（南岸中间点，离 RVK 约 1h）',
-    driveSegments: [{from:'霍芬', to:'羽毛峡谷', duration:'2h30min'}, {from:'羽毛峡谷', to:'Hella', duration:'3h30min'}],
+    day: 7, date: '9/27 周日', title: '霍芬 → 瀑布 → Selfoss', risk: 'mid', km: 370,
+    desc: ['回程日，沿途打卡瀑布','羽毛峡谷+塞里雅兰瀑布+秘密瀑布','住 Selfoss 不赶回 RVK'],
+    warn: { type: 'caution', text: '今天车程较长(5h)，多休息，沿途加油' },
+    accommodation: 'Selfoss / Hella（离 RVK 约 1h）',
+    driveSegments: [{from:'霍芬', to:'羽毛峡谷', duration:'2h30min'}, {from:'羽毛峡谷', to:'塞里雅兰瀑布', duration:'1h40min'}, {from:'塞里雅兰瀑布', to:'Selfoss', duration:'1h'}],
     activities: [],
-    timeline: [{time:'08:00', event:'出发（赶路日，备好干粮）', type:'drive'}, {time:'10:30', event:'羽毛峡谷 Fjaðrárgljúfur（徒步30min）', type:'spot'}, {time:'11:30', event:'继续赶路', type:'drive'}, {time:'13:00', event:'Kirkjubæjarklaustur 休息/加油', type:'rest'}, {time:'15:00', event:'继续赶路', type:'drive'}, {time:'17:00', event:'抵达 Hella/Selfoss', type:'stay'}],
+    timeline: [{time:'08:00', event:'出发，备好干粮', type:'drive'}, {time:'10:30', event:'羽毛峡谷 Fjaðrárgljúfur（徒步30min）', type:'spot'}, {time:'11:30', event:'继续赶路', type:'drive'}, {time:'13:00', event:'午餐（路边小镇）', type:'meal'}, {time:'14:30', event:'塞里雅兰瀑布 Seljalandsfoss（可走到瀑布后方，备雨衣）', type:'spot'}, {time:'15:30', event:'秘密瀑布 Gljúfrabúi', type:'spot'}, {time:'16:30', event:'前往 Selfoss', type:'drive'}, {time:'17:30', event:'入住 Selfoss', type:'stay'}, {time:'19:30', event:'Messinn 晚餐', type:'meal'}],
     spots: [
-      { zh: '羽毛峡谷', en: 'Fjadrargljufur', lat: 63.7711, lng: -18.1725 }
+      { zh: '羽毛峡谷', en: 'Fjadrargljufur', lat: 63.7711, lng: -18.1725 },
+      { zh: '塞里雅兰瀑布', en: 'Seljalandsfoss', lat: 63.6156, lng: -19.9886 },
+      { zh: '秘密瀑布', en: 'Gljufrabui', lat: 63.6210, lng: -19.9862 }
     ]
   },
   {
-    day: 10, date: '9/30 周二', title: '观鲸+休整', risk: 'low', km: 108,
-    desc: ['观鲸3h出海 (提前订)','Perlan顶楼360度观景','轻松休整日'],
+    day: 8, date: '9/28 周一', title: '回 RVK + 观鲸', risk: 'low', km: 110,
+    desc: ['上午轻松回雷克雅未克','下午观鲸出海3h'],
     accommodation: '雷克雅未克',
-    driveSegments: [{from:'Hella', to:'雷克雅未克', duration:'1.5h'}],
-    activities: [{name:'观鲸出海 3h', provider:'Special Tours (specialtours.is)', price:'13,990 ISK/人（约¥700）Classic 3h / 12,490 ISK Express 2h', url:'https://specialtours.is', note:'Classic 推荐，船大稳；10:30 码头集合'}],
-    timeline: [{time:'08:00', event:'出发前往雷克雅未克', type:'drive'}, {time:'09:30', event:'抵达市区', type:'free'}, {time:'10:30', event:'旧港码头集合', type:'activity'}, {time:'11:00', event:'观鲸出海（3h）', type:'activity'}, {time:'14:00', event:'午餐（Grandi 美食街区）', type:'meal'}, {time:'15:30', event:'Perlan 博物馆（360°观景）', type:'spot'}, {time:'17:00', event:'休整', type:'free'}],
+    driveSegments: [{from:'Selfoss', to:'雷克雅未克', duration:'1h'}],
+    activities: [{name:'观鲸出海 3h', provider:'Elding', price:'~13,990 ISK/人（约¥700）', url:'https://elding.is', note:'10:30 码头集合；Classic 推荐，船大稳'}],
+    timeline: [{time:'08:00', event:'出发前往雷克雅未克', type:'drive'}, {time:'09:00', event:'抵达市区', type:'free'}, {time:'10:30', event:'旧港码头集合', type:'activity'}, {time:'11:00', event:'观鲸出海 Elding（3h）', type:'activity'}, {time:'14:00', event:'午餐（Grandi 美食街区）', type:'meal'}, {time:'下午', event:'市区休闲/购物', type:'free'}, {time:'19:30', event:'Messinn 晚餐', type:'meal'}],
     spots: [
       { zh: '雷克雅未克观鲸', en: 'Whale Watching', lat: 64.1515, lng: -21.9393 },
-      { zh: 'Perlan博物馆', en: 'Perlan Museum', lat: 64.1283, lng: -21.9175 },
       { zh: 'Grandi美食街区', en: 'Grandi Matholl', lat: 64.1535, lng: -21.9440 }
     ]
   },
   {
-    day: 11, date: '10/1 周三', title: '蓝湖+离开', risk: 'low', km: 66,
-    desc: ['蓝湖温泉泡汤','蓝湖 -> 机场 (20min)','完美收官'],
+    day: 9, date: '9/29 周二', title: '蓝湖 Spa Day', risk: 'low', km: 102,
+    desc: ['一整天蓝湖温泉♨️','不赶不挤，彻底放松'],
     warn: { type: 'caution', text: '蓝湖必须提前2-3周预约!' },
-    accommodation: '无（离开）',
-    driveSegments: [{from:'雷克雅未克', to:'蓝湖', duration:'45min'}, {from:'蓝湖', to:'凯夫拉维克机场', duration:'20min'}],
+    accommodation: '雷克雅未克',
+    driveSegments: [{from:'雷克雅未克', to:'蓝湖', duration:'45min'}, {from:'蓝湖', to:'雷克雅未克', duration:'45min'}],
     activities: [{name:'蓝湖温泉', provider:'bluelagoon.com', price:'9,990 ISK 起/人（约¥500）Comfort 套餐', url:'https://www.bluelagoon.com', note:'必须提前2-3周预约！动态定价'}],
-    timeline: [{time:'08:00', event:'退房，出发', type:'drive'}, {time:'08:45', event:'蓝湖温泉（2-3h）', type:'activity'}, {time:'11:30', event:'前往机场', type:'drive'}, {time:'12:00', event:'机场还车+值机', type:'flight'}],
+    timeline: [{time:'09:00', event:'出发', type:'drive'}, {time:'09:45', event:'蓝湖温泉 Spa（2-3h）♨️', type:'activity'}, {time:'12:30', event:'蓝湖餐厅午餐', type:'meal'}, {time:'14:00', event:'返回雷克雅未克', type:'drive'}, {time:'下午', event:'市区闲逛/购物', type:'free'}],
     spots: [
       { zh: '蓝湖温泉', en: 'Blue Lagoon', lat: 63.8803, lng: -22.4495 }
     ]
+  },
+  {
+    day: 10, date: '9/30 周三', title: '自由日', risk: 'low', km: 0,
+    desc: ['雷克雅未克自由安排','购物/博物馆/补打卡/休息','Buffer 日，按心情来'],
+    accommodation: '雷克雅未克',
+    driveSegments: [],
+    activities: [],
+    timeline: [{time:'全天', event:'自由安排：购物/Perlan博物馆/补打卡/休息', type:'free'}],
+    spots: [
+      { zh: 'Perlan博物馆', en: 'Perlan Museum', lat: 64.1283, lng: -21.9175 },
+      { zh: 'Laugavegur购物街', en: 'Laugavegur', lat: 64.1447, lng: -21.9264 }
+    ]
+  },
+  {
+    day: 11, date: '10/1 周四', title: '离开冰岛', risk: 'low', km: 50,
+    desc: ['收拾行李','14:00 前到机场还车','17:15 起飞'],
+    accommodation: '无（离开）',
+    driveSegments: [{from:'雷克雅未克', to:'凯夫拉维克机场', duration:'45min'}],
+    activities: [],
+    timeline: [{time:'上午', event:'收拾行李，退房', type:'free'}, {time:'14:00', event:'抵达机场还车+值机', type:'flight'}, {time:'17:15', event:'✈️ 起飞回上海', type:'flight'}],
+    spots: []
   }
 ];
 
 var COLLAPSE_DATA = [
   {
     title: '极光观测指南',
-    items: ['9/23 秋分极光翻倍','最佳观测: 霍芬 3 晚 (D7-D9)','斯奈山 (D3-D4) 也有机会','推荐 App: Aurora Forecast, Vedur.is','KP>=3 出门看']
+    items: ['最佳观测: 霍芬 2 晚 (D5-D6)','推荐 App: Aurora Forecast, Vedur.is','KP>=3 出门看','霍芬光污染低，观测条件好']
   },
   {
     title: '9 月冰岛注意事项',
-    items: ['日照 12h，气温 5-12 C','蓝冰洞 9 月不可行 (需 11-3 月)，替代: 冰川徒步 D8','4 人一台中型 SUV 足够','加油站间距长 (东部 100km+)','蓝湖提前 2-3 周预约','黑沙滩 sneaker waves 致命']
+    items: ['日照 12h，气温 5-12 C','蓝冰洞 9 月不可行 (需 11-3 月)，替代: 冰川徒步 D6','4 人一台中型 SUV 足够','加油站间距长 (东部 100km+)','蓝湖提前 2-3 周预约','黑沙滩 sneaker waves 致命']
   },
   {
     title: '蓝冰洞替代方案',
-    items: ['冰川徒步 (D8 已安排) -- 最佳替代','Katla 冰洞 (火山灰冰洞) 全年可去','Langjokull 人工冰隧道全年开放']
+    items: ['冰川徒步 (D6 已安排) -- 最佳替代','Katla 冰洞 (火山灰冰洞) 全年可去','Langjokull 人工冰隧道全年开放']
   },
   {
     title: '4 人预算参考',
@@ -1293,13 +1287,13 @@ var totalPages = 13; // 0=overview, 1-11=days, 12=info
       '<div class="overview-hero-bg"></div>' +
       '<div class="overview-hero-content">' +
         '<div class="overview-title">ICELAND</div>' +
-        '<div class="overview-sub">2026.9.21 -- 10.1 / 4人 / 环岛自驾</div>' +
+        '<div class="overview-sub">2026.9.21 -- 10.1 / 4人 / V1.0 Chill版自驾</div>' +
       '</div>' +
     '</div>' +
     '<div class="section-label">行程数据</div>' +
     '<div class="kpi-grid">' +
-      '<div class="kpi-card"><div class="kpi-value" data-count="2127" data-prefix="" data-suffix="">0<span class="kpi-unit">KM</span></div><div class="kpi-label">总里程</div></div>' +
-      '<div class="kpi-card"><div class="kpi-value" data-count="28" data-prefix="~" data-suffix="">0<span class="kpi-unit">H</span></div><div class="kpi-label">总驾驶</div></div>' +
+      '<div class="kpi-card"><div class="kpi-value" data-count="1708" data-prefix="" data-suffix="">0<span class="kpi-unit">KM</span></div><div class="kpi-label">总里程</div></div>' +
+      '<div class="kpi-card"><div class="kpi-value" data-count="22" data-prefix="~" data-suffix="">0<span class="kpi-unit">H</span></div><div class="kpi-label">总驾驶</div></div>' +
       '<div class="kpi-card"><div class="kpi-value" data-count="11" data-prefix="" data-suffix="">0<span class="kpi-unit">天10晚</span></div><div class="kpi-label">行程</div></div>' +
       '<div class="kpi-card"><div class="kpi-value" data-count="40" data-prefix="" data-suffix="+">0<span class="kpi-unit"></span></div><div class="kpi-label">景点</div></div>' +
     '</div>' +
@@ -1457,17 +1451,27 @@ NAV_LABELS.forEach(function(label, idx) {
 /* ═══════ LEAFLET MAP ═══════ */
 var map = L.map('map', { center: [64.5, -19.0], zoom: 6, zoomControl: true, scrollWheelZoom: true });
 
-var darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd', maxZoom: 19
-});
-darkTiles.addTo(map);
-
-var osmFallback = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; <a href="https://stadiamaps.com/">Stadia</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-  maxZoom: 20
-});
-darkTiles.on('tileerror', function() { osmFallback.addTo(map); darkTiles.remove(); });
+/* Tile fallback chain: CARTO dark → Stadia dark → OSM inverted */
+var tileSources = [
+  { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', opts: { subdomains: 'abcd', maxZoom: 19 } },
+  { url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', opts: { maxZoom: 20 } },
+  { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', opts: { maxZoom: 19, className: 'dark-invert' } }
+];
+var currentTileIdx = 0;
+function loadTileSource(idx) {
+  if (idx >= tileSources.length) return;
+  var src = tileSources[idx];
+  var layer = L.tileLayer(src.url, Object.assign({ attribution: '&copy; OSM' }, src.opts)).addTo(map);
+  var errorCount = 0;
+  layer.on('tileerror', function() {
+    errorCount++;
+    if (errorCount > 3 && idx + 1 < tileSources.length) {
+      layer.remove();
+      loadTileSource(idx + 1);
+    }
+  });
+}
+loadTileSource(0);
 
 /* Build route polylines + markers per day */
 var dayPolylines = [];
