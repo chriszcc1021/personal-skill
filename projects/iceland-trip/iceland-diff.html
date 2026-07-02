@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冰岛行程方案对比：原版 vs 优化版</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap');
+:root {
+  --bg: #08090a; --surface: #111316; --surface2: #161a1e; --border: rgba(255,255,255,0.06);
+  --text: #E8EDF2; --dim: #6B7A8D; --accent-old: #FF6B6B; --accent-new: #4ECDC4;
+  --warn: #F5C542; --green: #48BB78;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Inter','Noto Sans SC',sans-serif; line-height:1.6; padding:40px 20px; }
+.container { max-width:1080px; margin:0 auto; }
+h1 { font-family:'Barlow Condensed',sans-serif; font-size:36px; font-weight:700; text-align:center; letter-spacing:3px; }
+.subtitle { text-align:center; color:var(--dim); font-size:13px; letter-spacing:1px; margin:6px 0 32px; }
+.legend { display:flex; gap:28px; justify-content:center; margin-bottom:28px; font-size:13px; }
+.legend span { display:flex; align-items:center; gap:6px; }
+.dot { width:10px; height:10px; border-radius:50%; }
+.dot-old { background:var(--accent-old); }
+.dot-new { background:var(--accent-new); }
+
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead th {
+  font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--dim);
+  padding:10px 12px; text-align:left; border-bottom:2px solid var(--border);
+  position:sticky; top:0; background:var(--bg); z-index:10;
+}
+thead th:nth-child(1) { width:60px; }
+thead th:nth-child(2),thead th:nth-child(4) { width:60px; text-align:right; }
+
+tbody tr { border-bottom:1px solid var(--border); transition:background 0.15s; }
+tbody tr:hover { background:rgba(255,255,255,0.02); }
+tbody tr.changed { background:rgba(78,205,196,0.03); }
+tbody tr.changed:hover { background:rgba(78,205,196,0.06); }
+
+tbody td { padding:10px 12px; vertical-align:top; }
+tbody td:first-child {
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:18px;
+  color:var(--warn); text-align:center;
+}
+td.km { text-align:right; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:600; white-space:nowrap; }
+td.km-old { color:var(--accent-old); }
+td.km-new { color:var(--accent-new); }
+
+.diff-tag {
+  display:inline-block; font-size:10px; font-weight:700; letter-spacing:1px;
+  padding:2px 6px; border-radius:3px; margin-left:6px; vertical-align:middle;
+}
+.tag-same { background:rgba(255,255,255,0.04); color:var(--dim); }
+.tag-changed { background:rgba(78,205,196,0.12); color:var(--accent-new); }
+.tag-better { background:rgba(72,187,120,0.12); color:var(--green); }
+.tag-worse { background:rgba(245,197,66,0.12); color:var(--warn); }
+
+.spots { color:var(--dim); font-size:12px; margin-top:4px; line-height:1.5; }
+.highlight { color:var(--accent-new); font-weight:500; }
+.removed { color:var(--accent-old); text-decoration:line-through; opacity:0.6; }
+.added { color:var(--accent-new); font-weight:500; }
+
+.summary {
+  margin-top:32px; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:16px;
+}
+.sum-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:20px; text-align:center;
+}
+.sum-label { font-size:11px; color:var(--dim); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:4px; }
+.sum-old { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:700; color:var(--accent-old); }
+.sum-new { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:700; color:var(--accent-new); }
+.sum-arrow { color:var(--dim); font-size:18px; margin:0 6px; }
+.sum-row { display:flex; align-items:baseline; justify-content:center; gap:4px; }
+.sum-delta { font-size:12px; color:var(--green); margin-top:4px; }
+
+.note { margin-top:28px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 24px; }
+.note h3 { font-size:14px; margin-bottom:8px; }
+.note ul { padding-left:20px; font-size:13px; color:var(--dim); }
+.note li { margin-bottom:6px; }
+.note strong { color:var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🇮🇸 行程方案对比</h1>
+<p class="subtitle">原版（11天）vs 优化版（11天）· 逐日差异 + 里程对比</p>
+<div class="legend">
+  <span><div class="dot dot-old"></div>原版方案</span>
+  <span><div class="dot dot-new"></div>优化版方案</span>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>日</th>
+<th colspan="3" style="color:var(--accent-old)">V1.0 原版</th>
+<th colspan="3" style="color:var(--accent-new)">优化版</th>
+<th>变化</th>
+</tr>
+<tr>
+<th></th>
+<th style="color:var(--accent-old);font-size:10px">城市路线</th>
+<th style="color:var(--accent-old);font-size:10px">公里</th>
+<th style="color:var(--accent-old);font-size:10px">开车</th>
+<th style="color:var(--accent-new);font-size:10px">城市路线</th>
+<th style="color:var(--accent-new);font-size:10px">公里</th>
+<th style="color:var(--accent-new);font-size:10px">开车</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:rgba(255,255,255,0.015)">
+<td>D1</td>
+<td><strong>凯夫拉维克 → 雷克雅未克</strong><br><span style="color:var(--dim);font-size:12px">凯夫拉维克机场 → 哈尔格林姆斯大教堂 · 市区酒店</span></td>
+<td>50</td>
+<td>~45min</td>
+<td><strong>凯夫拉维克 → 雷克雅未克</strong><br><span style="color:var(--dim);font-size:12px">凯夫拉维克机场 → 哈尔格林姆斯大教堂 · 市区酒店</span></td>
+<td>50</td>
+<td>~45min</td>
+<td><span style="color:var(--green);font-size:11px">★ 不变</span></td>
+</tr>
+<tr style="background:rgba(255,255,255,0.015)">
+<td>D2</td>
+<td><strong>雷克雅未克（市内）</strong><br><span style="color:var(--dim);font-size:12px">Harpa 音乐厅 · 彩虹街 · 太阳航海者</span></td>
+<td>19</td>
+<td>~20min</td>
+<td><strong>雷克雅未克（市内）</strong><br><span style="color:var(--dim);font-size:12px">Harpa 音乐厅 · 彩虹街 · 太阳航海者</span></td>
+<td>19</td>
+<td>~20min</td>
+<td><span style="color:var(--green);font-size:11px">★ 不变</span></td>
+</tr>
+<tr style="background:rgba(255,255,255,0.015)">
+<td>D3</td>
+<td><strong>雷克雅未克 → 斯奈山半岛</strong><br><span style="color:var(--dim);font-size:12px">Búðir 黑教堂 · 黑卵石沙滩 · 草帽山</span></td>
+<td>240</td>
+<td>~3h</td>
+<td><strong>雷克雅未克 → 斯奈山半岛</strong><br><span style="color:var(--dim);font-size:12px">Búðir 黑教堂 · 黑卵石沙滩 · 草帽山</span></td>
+<td>240</td>
+<td>~3h</td>
+<td><span style="color:var(--green);font-size:11px">★ 不变</span></td>
+</tr>
+<tr style="background:rgba(255,255,255,0.015)">
+<td>D4</td>
+<td><strong>斯奈山半岛（环线）</strong><br><span style="color:var(--dim);font-size:12px">Arnarstapi 渔村 · Hellnar 海蚀洞</span></td>
+<td>230</td>
+<td>~3.5h</td>
+<td><strong>斯奈山半岛（环线）</strong><br><span style="color:var(--dim);font-size:12px">Arnarstapi 渔村 · Hellnar 海蚀洞</span></td>
+<td>230</td>
+<td>~3.5h</td>
+<td><span style="color:var(--green);font-size:11px">★ 不变</span></td>
+</tr>
+<tr style="background:rgba(255,255,255,0.015)">
+<td>D5</td>
+<td><strong>斯奈山 → 黄金圈</strong><br><span style="color:var(--dim);font-size:12px">辛格维利尔 · 间歇泉 · 黄金瀑布 · Kerið 火山口</span></td>
+<td>230</td>
+<td>~3.5h</td>
+<td><strong>斯奈山 → 黄金圈</strong><br><span style="color:var(--dim);font-size:12px">辛格维利尔 · 间歇泉 · 黄金瀑布 · Kerið 火山口</span></td>
+<td>230</td>
+<td>~3.5h</td>
+<td><span style="color:var(--green);font-size:11px">★ 不变</span></td>
+</tr>
+<tr style="background:rgba(255,255,255,0.015)">
+<td>D6</td>
+<td><strong>黄金圈 → 维克镇</strong><br><span style="color:var(--dim);font-size:12px">塞里雅兰瀑布 · 斯科加瀑布 · 黑沙滩</span></td>
+<td>211</td>
+<td>~3h</td>
+<td><strong>黄金圈 → 维克镇</strong><br><span style="color:var(--dim);font-size:12px">塞里雅兰瀑布 · 斯科加瀑布 · 黑沙滩</span></td>
+<td>211</td>
+<td>~3h</td>
+<td><span style="color:var(--green);font-size:11px">★ 不变</span></td>
+</tr>
+<tr style="background:rgba(245,197,66,0.04)">
+<td>D7</td>
+<td><strong>维克镇 → 霍芬</strong><br><span style="color:var(--dim);font-size:12px">苔藓熔岩地 · 冰河湖 · 钻石沙滩</span></td>
+<td>275</td>
+<td>~4h</td>
+<td><strong>维克镇 → 霍芬</strong><br><span style="color:var(--dim);font-size:12px">苔藓熔岩地 · 冰河湖 · 钻石沙滩 + 蝙蝠山日落（+40min）</span></td>
+<td>275</td>
+<td>~4h</td>
+<td><span style="color:var(--warn);font-size:11px">微调</span></td>
+</tr>
+<tr style="background:rgba(78,205,196,0.06)">
+<td>D8</td>
+<td><strong>霍芬（当日返回）</strong><br><span style="color:var(--dim);font-size:12px">Skaftafell 冰川徒步 · 蝙蝠山<br>住宿：霍芬</span></td>
+<td>248</td>
+<td>~4h</td>
+<td><strong>霍芬 → Kirkjubæjarklaustur</strong><br><span style="color:var(--dim);font-size:12px">Skaftafell 冰川徒步<br>住宿：Kirkjubæjarklaustur（西移180km）</span></td>
+<td>200</td>
+<td>~3h</td>
+<td><span style="color:var(--accent-new);font-size:11px;font-weight:600">优化 ↓48km</span></td>
+</tr>
+<tr style="background:rgba(78,205,196,0.06)">
+<td>D9</td>
+<td><strong>霍芬 → Hella</strong><br><span style="color:var(--dim);font-size:12px">从霍芬出发 · 羽毛峡谷<br>⚠️ 全程最累一天</span></td>
+<td>450</td>
+<td>~6.5h ⚠️</td>
+<td><strong>Kirkju → Hella</strong><br><span style="color:var(--dim);font-size:12px">羽毛峡谷 · 沿途轻松停留<br>✅ 里程减 42%</span></td>
+<td>260</td>
+<td>~3.5h ✅</td>
+<td><span style="color:var(--accent-new);font-size:11px;font-weight:600">优化 ↓190km</span></td>
+</tr>
+<tr style="background:rgba(255,255,255,0.015)">
+<td>D10</td>
+<td><strong>Hella → 雷克雅未克</strong><br><span style="color:var(--dim);font-size:12px">观鲸出海 · Perlan 博物馆</span></td>
+<td>108</td>
+<td>~1.5h</td>
+<td><strong>Hella → 雷克雅未克</strong><br><span style="color:var(--dim);font-size:12px">观鲸出海 · Perlan 博物馆</span></td>
+<td>108</td>
+<td>~1.5h</td>
+<td><span style="color:var(--green);font-size:11px">★ 不变</span></td>
+</tr>
+<tr style="background:rgba(255,255,255,0.015)">
+<td>D11</td>
+<td><strong>雷克雅未克 → 凯夫拉维克</strong><br><span style="color:var(--dim);font-size:12px">蓝湖温泉 · 凯夫拉维克机场</span></td>
+<td>66</td>
+<td>~50min</td>
+<td><strong>雷克雅未克 → 凯夫拉维克</strong><br><span style="color:var(--dim);font-size:12px">蓝湖温泉 · 凯夫拉维克机场</span></td>
+<td>66</td>
+<td>~50min</td>
+<td><span style="color:var(--green);font-size:11px">★ 不变</span></td>
+</tr>
+</tbody>
+</table>
+
+<div class="summary">
+  <div class="sum-card">
+    <div class="sum-label">总里程</div>
+    <div class="sum-row">
+      <span class="sum-old">2,127</span>
+      <span class="sum-arrow">→</span>
+      <span class="sum-new">1,889</span>
+      <span style="font-size:13px;color:var(--dim)">km</span>
+    </div>
+    <div class="sum-delta">↓ 238 km（-11%）</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">最长单日</div>
+    <div class="sum-row">
+      <span class="sum-old">450</span>
+      <span class="sum-arrow">→</span>
+      <span class="sum-new">275</span>
+      <span style="font-size:13px;color:var(--dim)">km</span>
+    </div>
+    <div class="sum-delta">↓ 175 km（-39%）</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">变动天数</div>
+    <div class="sum-row">
+      <span class="sum-new" style="font-size:36px">2</span>
+      <span style="font-size:13px;color:var(--dim)">/11 天</span>
+    </div>
+    <div class="sum-delta">D8 + D9 调整</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">景点数</div>
+    <div class="sum-row">
+      <span class="sum-old">26</span>
+      <span class="sum-arrow">→</span>
+      <span class="sum-new">26</span>
+    </div>
+    <div class="sum-delta">一个没少，蝙蝠山移到 D7 傍晚</div>
+  </div>
+</div>
+
+<div class="note">
+  <h3>📝 优化核心逻辑</h3>
+  <ul>
+    <li><strong>D7 傍晚加蝙蝠山日落：</strong>到霍芬后距蝙蝠山仅 40min，傍晚光线正好拍照，比 D8 白天去更出片</li>
+    <li><strong>D8 住宿西移 180km：</strong>冰川徒步完不再住霍芬（东边），改住 Kirkjubæjarklaustur（西边），提前吃掉回程里程</li>
+    <li><strong>D9 从 450km 降到 260km：</strong>从「全天赶路」变成「半天开车+半天休息」，不再是体力黑洞</li>
+    <li><strong>其余 9 天完全不动：</strong>D1-D7 和 D10-D11 原封不动，只改最小范围</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>
