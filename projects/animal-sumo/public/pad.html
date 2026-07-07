@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Animal Sumo — 手柄</title>
+<style>
+  :root { --bg:#0d1117; --ink:#e6edf3; --accent:#ffcf33; --danger:#ff4d4d; --ok:#3fb950; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:-apple-system,"Segoe UI",system-ui,sans-serif; touch-action:none; }
+  #app { height:100%; display:flex; flex-direction:column; }
+  #top { padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
+    background:rgba(255,255,255,.05); }
+  #top .badge { font-weight:800; letter-spacing:.05em; }
+  #top .state { font-size:12px; letter-spacing:.12em; text-transform:uppercase; opacity:.75; }
+  #play { flex:1; position:relative; }
+  /* left analog stick */
+  #stickBase { position:absolute; left:6%; bottom:12%; width:44vw; height:44vw; max-width:230px; max-height:230px;
+    border-radius:50%; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.12); }
+  #stickThumb { position:absolute; left:50%; top:50%; width:40%; height:40%; margin:-20% 0 0 -20%;
+    border-radius:50%; background:rgba(255,207,51,.85); box-shadow:0 6px 18px rgba(0,0,0,.4); }
+  /* dash button */
+  #dash { position:absolute; right:7%; bottom:15%; width:32vw; height:32vw; max-width:170px; max-height:170px;
+    border-radius:50%; background:radial-gradient(circle at 40% 35%, #ff7a3d, #d63a1e);
+    color:#fff; font-weight:800; font-size:5.5vw; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 10px 26px rgba(214,58,30,.5); }
+  #dash.cool { filter:grayscale(.7) brightness(.6); }
+  #overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:14px; text-align:center; padding:30px;
+    background:rgba(13,17,23,.92); }
+  #overlay h2 { font-size:24px; } #overlay p { opacity:.7; font-size:14px; }
+  #nameForm { display:flex; flex-direction:column; gap:14px; width:100%; max-width:320px; }
+  #nameForm input { padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,.2);
+    background:#161b22; color:var(--ink); font-size:18px; text-align:center; }
+  #nameForm button { padding:15px; border-radius:12px; border:none; background:var(--accent);
+    color:#111; font-weight:800; font-size:17px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <span class="badge" id="who">—</span>
+    <span class="state" id="state">连接中</span>
+  </div>
+  <div id="play">
+    <div id="stickBase"><div id="stickThumb"></div></div>
+    <div id="dash">冲刺</div>
+    <div id="overlay">
+      <form id="nameForm">
+        <h2>🐾 加入擂台</h2>
+        <p>起个名字，扫码入场把对手挤下台</p>
+        <input id="nameInput" placeholder="你的名字" maxlength="12" autocomplete="off" />
+        <button type="submit">加入</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script type="module" src="/pad.js"></script>
+</body>
+</html>

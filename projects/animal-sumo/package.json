@@ -1,0 +1,16 @@
+{
+  "name": "animal-sumo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "8-player animal sumo battle royale — server-authoritative Matter.js physics, phone gamepads, big-screen render.",
+  "scripts": {
+    "start": "node server/index.mjs",
+    "dev": "node server/index.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "matter-js": "^0.20.0",
+    "ws": "^8.18.0"
+  }
+}
