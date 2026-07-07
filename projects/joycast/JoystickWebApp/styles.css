@@ -1,0 +1,119 @@
+/* Copyright (c) 2024 Zenin Easa Panthakkalakath */
+
+html, body {
+    background-color: #000000;
+    overflow: hidden;
+    touch-action: manipulation;
+    -ms-touch-action: manipulation;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    font-family: Helvetica, sans-serif;
+}
+
+/* To ensure that the joystick is rendered like in landscape mode */
+@media screen and (orientation: portrait) {
+    html {
+        transform: rotate(-90deg);
+        transform-origin: left top;
+        width: 100vh;
+        height: 100vw;
+        overflow-x: hidden;
+        position: absolute;
+        top: 100%;
+        left: 0;
+    }
+}
+
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url(images/joycast.svg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain, cover;
+    opacity: 0.1;
+    filter: invert(100%);
+}
+
+.content {
+    background-color: rgba(0, 180, 255, 0.5);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* For direction buttons */
+
+.direction {
+    background-color: rgba(255, 255, 255, 0.8);
+    width: 14em;
+    height: 14em;
+    border-radius: 50%;
+    align-items: center;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    margin-right: 5em;
+}
+
+.direction .buttonContainer {
+    color: #000;
+    display: table;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+}
+
+.direction .button {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.direction .active {
+    color: #00faff;
+}
+
+/* For actions buttons */
+
+.action {
+    align-items: center;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    margin-left: 5em;
+}
+
+.action .button {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    color: #000;
+    padding: 2em;
+    margin: 0.5em;
+    text-align: center;
+}
+
+.action .active {
+    color: #00faff;
+}
+
+.playerID {
+    writing-mode: vertical-rl;
+    text-orientation: sideways;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.bottom {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.8);
+}

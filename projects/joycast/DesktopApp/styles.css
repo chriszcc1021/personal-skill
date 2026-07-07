@@ -1,0 +1,163 @@
+/* Copyright (c) 2024 Zenin Easa Panthakkalakath */
+
+html, body {
+    font-family: Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    background-color: rgba(0, 180, 255, 0.5);
+    color: #fff;
+    width: 100%;
+    height: 100%;
+}
+
+body > * {
+    z-index: 999;
+}
+
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url(images/joycast.svg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain, cover;
+    opacity: 0.05;
+}
+
+/* For scrollbar */
+
+::-webkit-scrollbar {
+    width: 0.5em;
+}
+::-webkit-scrollbar-track {
+    border-radius: 0.5em;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 0.5em;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Custom titlebar at the top */
+
+#titleBar {
+    position: fixed;
+    -webkit-app-region: drag;
+    width: 100%;
+    height: 2em;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#titleBar .title {
+    padding: 0.5em;
+    font-size: 0.8em;
+}
+#titleBar button {
+    -webkit-app-region: no-drag;
+    background: none;
+    border: none;
+    color: white;
+    padding: 0 1em;
+    cursor: pointer;
+    font-size: 1em;
+    height: 2em;
+    line-height: 2em;
+}
+#titleBar button:hover {
+    background-color: #555;
+}
+#titleBar img {
+    height: 1em;
+    filter: invert(1);
+    vertical-align: text-top;
+}
+/* Content in the UI */
+
+#content {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    overflow-y: auto;
+}
+#content .grid {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+#content .grid > * {
+    width: 100%;
+    height: 100%;
+    display: table;
+}
+#content .grid > *:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+#content .grid > *:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+}
+#content .grid > * > * {
+    display: table-cell;
+    vertical-align: middle;
+}
+#content .grid img {
+    width: 12em;
+    height: 12em;
+}
+#content .grid .playerID {
+    writing-mode: vertical-rl;
+    text-orientation: sideways;
+    padding-right: 2em;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+#content .grid .config {
+    padding: 4em;
+    padding-right: 0em;
+}
+#content .grid .config .keyVal {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 2em;
+    padding-right: 2em;
+    text-align: center;
+}
+#content .grid .config .keyVal:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+#waitForKeyInput {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
+    display: none; /* table; */
+    color: #000;
+    font-size: 4em;
+}
+#waitForKeyInput > * {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
+
+#bottom {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}

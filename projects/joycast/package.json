@@ -1,0 +1,52 @@
+{
+    "name": "joycast",
+    "version": "1.0.5",
+    "description": "Turn your phones into joysticks; play single and multiplayer games!",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/zenineasa/joycast.git"
+    },
+    "type": "module",
+    "main": "index.mjs",
+    "scripts": {
+        "start": "electron .",
+        "package": "electron-forge package",
+        "make": "electron-forge make",
+        "publish": "electron-forge publish"
+    },
+    "bin": {
+        "my-startup-command": "./npx.js"
+    },
+    "keywords": [
+        "joycast",
+        "virtual",
+        "joystick",
+        "phone",
+        "gaming",
+        "multiplayer",
+        "electron"
+    ],
+    "author": "zenineasa",
+    "license": "AGPLV3",
+    "dependencies": {
+        "@meadowsjared/robotjs": "^0.6.26",
+        "ejs": "^3.1.10",
+        "express": "^4.19.2",
+        "electron": "^32.0.1",
+        "qrcode": "^1.5.4",
+        "update-electron-app": "^3.0.0"
+    },
+    "devDependencies": {
+        "@electron-forge/cli": "^7.4.0",
+        "@electron-forge/maker-deb": "^7.4.0",
+        "@electron-forge/maker-dmg": "^7.4.0",
+        "@electron-forge/maker-rpm": "^7.4.0",
+        "@electron-forge/maker-squirrel": "^7.4.0",
+        "@electron-forge/maker-zip": "^7.4.0",
+        "@electron-forge/publisher-github": "^7.4.0",
+        "copyright-header": "^0.4.6",
+        "eslint": "^9.9.1",
+        "eslint-config-google": "^0.14.0"
+    },
+    "homepage": "https://www.gameagora.com/"
+}

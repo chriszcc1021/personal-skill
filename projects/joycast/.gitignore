@@ -1,0 +1,7 @@
+### Copyright (c) 2024 Zenin Easa Panthakkalakath ###
+
+node_modules
+package-lock.json
+**/.DS_Store
+**/.vscode
+out
