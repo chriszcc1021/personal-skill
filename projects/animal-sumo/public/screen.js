@@ -16,7 +16,29 @@ const ANIMALS = ["brazil","argentina","england","france","germany","portugal","s
 const imgs = {};
 for (const a of ANIMALS) { const im = new Image(); im.src = `/portraits/${a}.png`; imgs[a] = im; }
 
+// stadium background (drawn behind the arena)
+const bgImg = new Image(); bgImg.src = "/assets/ui/bg-stadium.png";
+
+// ── sound effects (unlocked on first click; browsers block autoplay) ──
+const sfx = {};
+function loadSfx(name, file, vol = 1) { const a = new Audio(`/assets/audio/${file}`); a.volume = vol; sfx[name] = a; }
+loadSfx("whistle", "whistle_kickoff.mp3", 0.7);
+loadSfx("end", "whistle_fulltime.mp3", 0.7);
+loadSfx("cheer", "goal_cheer.mp3", 0.8);
+loadSfx("out", "ball_bounce.mp3", 0.9);
+loadSfx("click", "ui_click.mp3", 0.6);
+const crowd = new Audio("/assets/audio/crowd_ambience.mp3"); crowd.loop = true; crowd.volume = 0.25;
+let soundOn = false;
+function play(name) { if (!soundOn) return; const a = sfx[name]; if (a) { try { a.currentTime = 0; a.play().catch(() => {}); } catch {} } }
+const soundHint = document.getElementById("soundHint");
+if (soundHint) soundHint.addEventListener("click", () => {
+  soundOn = true; soundHint.classList.add("hidden");
+  try { crowd.play().catch(() => {}); } catch {}
+  play("click");
+});
+
 let snap = null;
+let lastPhase = null; // to fire phase-transition sounds
 const flashes = []; // transient KO/dash markers {x,y,t,kind}
 
 // ── QR + join URL ──
@@ -36,8 +58,15 @@ function connect() {
   ws.onopen = () => ws.send(JSON.stringify({ t: "hello", role: "screen" }));
   ws.onmessage = (ev) => {
     let m; try { m = JSON.parse(ev.data); } catch { return; }
-    if (m.t === "snap") { snap = m.s; renderSide(); }
-    else if (m.t === "out") flashes.push({ kind: "out", name: m.name, t: performance.now() });
+    if (m.t === "snap") {
+      snap = m.s; renderSide();
+      if (snap.phase !== lastPhase) {
+        if (snap.phase === "playing") play("whistle");
+        else if (snap.phase === "roundover") { play("end"); play("cheer"); }
+        lastPhase = snap.phase;
+      }
+    }
+    else if (m.t === "out") { flashes.push({ kind: "out", name: m.name, t: performance.now() }); play("out"); }
     else if (m.t === "roundover") { /* banner handled by phase in snap */ }
   };
   ws.onclose = () => setTimeout(connect, 500);
@@ -45,12 +74,24 @@ function connect() {
 }
 connect();
 
-// ── coordinate transform: world (0,0 centre) -> canvas ──
-function toScreen(x, y) { return [cv.width / 2 + x, cv.height / 2 + y]; }
+// world (0,0 centre) -> canvas. Nudge the arena down a touch so the top-centre
+// wood-sign logo doesn't overlap players near the top edge.
+const Y_OFFSET = 70;
+function toScreen(x, y) { return [cv.width / 2 + x, cv.height / 2 + y + Y_OFFSET]; }
 
 function draw() {
   requestAnimationFrame(draw);
   ctx.clearRect(0, 0, cv.width, cv.height);
+
+  // stadium backdrop (cover-fit the square canvas)
+  if (bgImg.complete && bgImg.naturalWidth) {
+    const s = Math.max(cv.width / bgImg.naturalWidth, cv.height / bgImg.naturalHeight);
+    const w = bgImg.naturalWidth * s, h = bgImg.naturalHeight * s;
+    ctx.drawImage(bgImg, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+    ctx.fillStyle = "rgba(10,14,22,.28)"; ctx.fillRect(0, 0, cv.width, cv.height);
+  } else {
+    ctx.fillStyle = "#1a2233"; ctx.fillRect(0, 0, cv.width, cv.height);
+  }
   if (!snap) return;
 
   const [cx, cy] = toScreen(0, 0);
@@ -123,6 +164,13 @@ function renderSide() {
     const row = document.createElement("div");
     row.className = "prow" + (p.alive ? "" : " dead");
     row.innerHTML = `<span class="dot"></span><span>${escapeHtml(p.name)}</span>`;
+    playersEl.appendChild(row);
+  }
+  // show remaining empty slots as placeholders (up to 8)
+  for (let i = snap.players.length; i < 8; i++) {
+    const row = document.createElement("div");
+    row.className = "prow";
+    row.innerHTML = `<span class="dot" style="background:#c9b389;box-shadow:none"></span><span class="empty-slot">空位 · waiting…</span>`;
     playersEl.appendChild(row);
   }
 }
