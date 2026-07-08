@@ -144,18 +144,35 @@ export function createGame({ onSnapshot, onEvent } = {}) {
     });
   }
 
-  // top up with bots so a lone human (or none) can still start a match
+  function humanCount() {
+    let n = 0;
+    for (const p of players.values()) if (!p.bot) n++;
+    return n;
+  }
+  function clearBots() {
+    for (const p of [...players.values()]) if (p.bot) removePlayer(p.id);
+  }
+
+  // top up with bots so a lone human can play — but ONLY when a human is
+  // present. No humans => no bots, no auto-start (bots must never play alone).
   function fillBots() {
     if (phase === "playing") return;
+    if (humanCount() < 1) { clearBots(); return; }
     while (players.size < BOT_FILL_TO) addBot();
   }
 
   function removePlayer(id) {
     const p = players.get(id);
     if (!p) return;
+    const wasHuman = !p.bot;
     if (p.body) Composite.remove(engine.world, p.body);
     players.delete(id);
     if (phase === "playing") checkWin();
+    // last human left -> tear down bots and idle (bots never play alone)
+    if (wasHuman && humanCount() === 0) {
+      clearBots();
+      if (phase !== "waiting") { phase = "waiting"; phaseUntil = 0; emit({ t: "phase", phase }); }
+    }
   }
 
   function setInput(id, d) {
@@ -288,10 +305,10 @@ export function createGame({ onSnapshot, onEvent } = {}) {
     // phase transitions
     if (phase === "countdown" && now >= phaseUntil) startRound();
     else if (phase === "roundover" && now >= phaseUntil) {
-      // next round: keep connected players, top up bots, reopen joining
+      // next round only if a human is still here; top up bots, reopen joining
       fillBots();
-      if (players.size >= 2) startCountdown();
-      else { phase = "waiting"; emit({ t: "phase", phase }); }
+      if (humanCount() >= 1 && players.size >= 2) startCountdown();
+      else { clearBots(); phase = "waiting"; emit({ t: "phase", phase }); }
     }
 
     // heartbeat cleanup: drop humans who've gone silent (zombie WS)
