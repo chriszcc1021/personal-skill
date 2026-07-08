@@ -127,12 +127,14 @@ function draw() {
     const r = snap.playerR;
     const st = pstateFor(p);
 
-    // smooth toward the authoritative position; derive velocity for effects
+    // smooth toward the authoritative position; derive velocity for effects.
+    // Per-frame lerp = interpolation that hides the 30Hz snapshot cadence and
+    // public-latency jitter (optimization #5).
     const nx = sx, ny = sy;
-    st.vx = st.vx * 0.6 + (nx - st.x) * 0.4;
-    st.vy = st.vy * 0.6 + (ny - st.y) * 0.4;
-    st.x = st.x + (nx - st.x) * 0.5;
-    st.y = st.y + (ny - st.y) * 0.5;
+    st.vx = st.vx * 0.7 + (nx - st.x) * 0.3;
+    st.vy = st.vy * 0.7 + (ny - st.y) * 0.3;
+    st.x = st.x + (nx - st.x) * 0.3;
+    st.y = st.y + (ny - st.y) * 0.3;
     const dx = st.x, dy = st.y;
     const speed = Math.hypot(st.vx, st.vy);
     const ang = speed > 0.3 ? Math.atan2(st.vy, st.vx) : 0;

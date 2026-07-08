@@ -102,11 +102,21 @@ function endStick(e) {
   input.vx = 0; input.vy = 0;
 }
 
-// ── dash ──
+// ── dash: press to start charging, release to fire (tap = short, hold = lunge) ──
 dashBtn.addEventListener("pointerdown", (e) => {
   e.preventDefault();
-  if (ws && ws.readyState === 1 && joined && dashReady) ws.send(JSON.stringify({ t: "dash" }));
+  if (ws && ws.readyState === 1 && joined && dashReady) {
+    ws.send(JSON.stringify({ t: "dashDown" }));
+    dashBtn.classList.add("charging");
+  }
 });
+function releaseDash(e) {
+  if (e) e.preventDefault();
+  dashBtn.classList.remove("charging");
+  if (ws && ws.readyState === 1 && joined) ws.send(JSON.stringify({ t: "dashUp" }));
+}
+dashBtn.addEventListener("pointerup", releaseDash);
+dashBtn.addEventListener("pointercancel", releaseDash);
 
 // lock scrolling
 document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });

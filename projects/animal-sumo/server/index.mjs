@@ -88,7 +88,8 @@ wss.on("connection", (ws) => {
 
     if (ws.__role !== "pad" || !ws.__id) return;
     if (msg.t === "input") game.setInput(ws.__id, msg.d || {});
-    else if (msg.t === "dash") game.dash(ws.__id);
+    else if (msg.t === "dashDown") game.dashDown(ws.__id);
+    else if (msg.t === "dashUp") game.dashUp(ws.__id);
   });
 
   ws.on("close", () => {
