@@ -41,6 +41,16 @@ let snap = null;
 let lastPhase = null; // to fire phase-transition sounds
 const flashes = []; // transient KO/dash markers {x,y,t,kind}
 
+// per-player render state (client-side only; derived from snapshots, never sent
+// back). Gives us velocity for squash&stretch + dash trails without touching
+// the authoritative server. id -> { x,y,vx,vy, trail:[{x,y,a}], t0 }
+const pstate = new Map();
+function pstateFor(p) {
+  let s = pstate.get(p.id);
+  if (!s) { s = { x: p.x, y: p.y, vx: 0, vy: 0, trail: [], t0: performance.now() }; pstate.set(p.id, s); }
+  return s;
+}
+
 // ── QR + join URL ──
 fetch("/config").then((r) => r.json()).then((cfg) => {
   const url = `${cfg.padBase}/pad`;
@@ -110,31 +120,86 @@ function draw() {
   ctx.restore();
 
   // players
+  const nowT = performance.now();
   for (const p of snap.players) {
-    if (!p.alive) continue;
+    if (!p.alive) { pstate.delete(p.id); continue; }
     const [sx, sy] = toScreen(p.x, p.y);
     const r = snap.playerR;
-    // shadow
-    ctx.beginPath(); ctx.arc(sx, sy + 4, r, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fill();
-    // circular portrait
-    ctx.save();
-    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
-    const im = imgs[p.animal];
-    if (im && im.complete) {
-      // portraits are 512 half-body; bias upward so the face sits in the circle
-      ctx.drawImage(im, sx - r, sy - r * 1.15, r * 2, r * 2 * 1.2);
-    } else {
-      ctx.fillStyle = "#889"; ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+    const st = pstateFor(p);
+
+    // smooth toward the authoritative position; derive velocity for effects
+    const nx = sx, ny = sy;
+    st.vx = st.vx * 0.6 + (nx - st.x) * 0.4;
+    st.vy = st.vy * 0.6 + (ny - st.y) * 0.4;
+    st.x = st.x + (nx - st.x) * 0.5;
+    st.y = st.y + (ny - st.y) * 0.5;
+    const dx = st.x, dy = st.y;
+    const speed = Math.hypot(st.vx, st.vy);
+    const ang = speed > 0.3 ? Math.atan2(st.vy, st.vx) : 0;
+    const dashing = speed > 6; // fast = dash boost
+
+    // dash trail: fading ghost copies of the body while moving fast
+    if (speed > 6) st.trail.push({ x: dx, y: dy, a: 0.4 });
+    while (st.trail.length > 6) st.trail.shift();
+    for (const g of st.trail) {
+      g.a *= 0.8;
+      if (g.a < 0.04) continue;
+      ctx.save();
+      ctx.globalAlpha = g.a * 0.6;
+      ctx.beginPath(); ctx.arc(g.x, g.y, r * 0.88, 0, Math.PI * 2); ctx.clip();
+      const gi = imgs[p.animal];
+      if (gi && gi.complete) ctx.drawImage(gi, g.x - r, g.y - r * 1.15, r * 2, r * 2 * 1.2);
+      ctx.restore();
     }
+
+    // squash & stretch: subtle stretch along motion; gentle breathing when idle
+    const stretch = 1 + Math.min(0.18, speed * 0.016);
+    const squash = 1 / stretch;
+    const breathe = speed < 0.6 ? 1 + Math.sin((nowT - st.t0) / 420) * 0.03 : 1;
+
+    // ground shadow (fixed ellipse, not rotated)
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(dx, dy + r * 0.86, r * 0.82, r * 0.34, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,0,0,.32)"; ctx.fill();
     ctx.restore();
-    // ring (green if dash ready)
-    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2);
-    ctx.lineWidth = 3; ctx.strokeStyle = p.dashReady ? "#3fb950" : "rgba(255,255,255,.5)"; ctx.stroke();
-    // name
-    ctx.font = "bold 14px system-ui"; ctx.textAlign = "center";
-    ctx.fillStyle = "#fff"; ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 3;
-    ctx.strokeText(p.name, sx, sy - r - 6); ctx.fillText(p.name, sx, sy - r - 6);
+
+    // body: rotate to motion, apply squash/stretch, draw a 3D-ish ball
+    ctx.save();
+    ctx.translate(dx, dy);
+    ctx.rotate(ang);
+    ctx.scale(stretch * breathe, squash * breathe);
+    ctx.rotate(-ang); // keep the portrait upright after stretching the frame
+
+    // base sphere with radial shading (gives volume vs. flat sticker)
+    const bg = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.2, 0, 0, r);
+    bg.addColorStop(0, "#ffffff"); bg.addColorStop(0.55, "#f3e6c6"); bg.addColorStop(1, "#b98d52");
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = bg; ctx.fill();
+
+    // clipped portrait on the upper body
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0, 0, r - 1, 0, Math.PI * 2); ctx.clip();
+    const im = imgs[p.animal];
+    if (im && im.complete) ctx.drawImage(im, -r, -r * 1.15, r * 2, r * 2 * 1.2);
+    ctx.restore();
+
+    // top-left glossy highlight for the "rounded" look
+    ctx.beginPath(); ctx.arc(-r * 0.32, -r * 0.38, r * 0.32, 0, Math.PI * 2);
+    const hl = ctx.createRadialGradient(-r * 0.32, -r * 0.38, 0, -r * 0.32, -r * 0.38, r * 0.32);
+    hl.addColorStop(0, "rgba(255,255,255,.55)"); hl.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = hl; ctx.fill();
+
+    // rim: green when dash is ready, gold otherwise; brighter while dashing
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.lineWidth = dashing ? 5 : 3.5;
+    ctx.strokeStyle = dashing ? "#fff2a8" : (p.dashReady ? "#3fb950" : "#8a6a3a");
+    ctx.stroke();
+    ctx.restore();
+
+    // name (upright, not affected by squash)
+    ctx.font = "bold 15px system-ui"; ctx.textAlign = "center";
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = "rgba(0,0,0,.65)"; ctx.lineWidth = 3.5;
+    ctx.strokeText(p.name, dx, dy - r - 8); ctx.fillText(p.name, dx, dy - r - 8);
   }
 
   drawBanner();
