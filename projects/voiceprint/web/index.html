@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>声纹歌手匹配 · Voiceprint</title>
+<style>
+  :root{
+    --bg:#121212; --bg2:#181818; --card:#1e1e1e; --card-hover:#282828;
+    --green:#1DB954; --green-dark:#169c46; --ink:#ffffff; --sub:#b3b3b3;
+    --muted:#727272; --line:#2a2a2a;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--font);}
+  body{max-width:480px;margin:0 auto;min-height:100vh;position:relative;overflow-x:hidden;}
+  .screen{display:none;flex-direction:column;min-height:100vh;padding:24px 20px 40px;}
+  .screen.active{display:flex;}
+
+  /* ---------- 通用 ---------- */
+  .brand{display:flex;align-items:center;gap:8px;font-size:13px;letter-spacing:.14em;color:var(--sub);text-transform:uppercase;font-weight:700;}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--green);}
+  .btn{border:none;border-radius:999px;font-family:var(--font);font-weight:700;cursor:pointer;transition:transform .1s ease,background .2s ease;}
+  .btn:active{transform:scale(.97);}
+  .btn-green{background:var(--green);color:#000;padding:16px 40px;font-size:16px;letter-spacing:.02em;}
+  .btn-green:hover{background:#1ed760;}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid #535353;padding:12px 28px;font-size:14px;}
+  .btn-ghost:hover{border-color:var(--ink);}
+
+  /* ---------- Landing ---------- */
+  #landing{justify-content:center;align-items:center;text-align:center;gap:0;}
+  #landing .hero-title{font-size:34px;font-weight:800;line-height:1.15;margin:28px 0 14px;letter-spacing:-.01em;}
+  #landing .hero-title span{color:var(--green);}
+  #landing .hero-sub{color:var(--sub);font-size:15px;line-height:1.6;max-width:300px;margin-bottom:44px;}
+  .mic-wrap{position:relative;width:180px;height:180px;display:flex;align-items:center;justify-content:center;margin-bottom:40px;}
+  .mic-btn{width:120px;height:120px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;z-index:2;box-shadow:0 8px 30px rgba(29,185,84,.4);transition:transform .12s ease;}
+  .mic-btn:active{transform:scale(.94);}
+  .mic-btn svg{width:52px;height:52px;fill:#000;}
+  .mic-ring{position:absolute;border-radius:50%;border:2px solid var(--green);opacity:0;}
+  .recording .mic-ring{animation:ring 1.8s ease-out infinite;}
+  .recording .r2{animation-delay:.6s;}
+  .recording .r3{animation-delay:1.2s;}
+  @keyframes ring{0%{width:120px;height:120px;opacity:.7;}100%{width:180px;height:180px;opacity:0;}}
+  .mic-hint{color:var(--muted);font-size:13px;letter-spacing:.03em;}
+  .rec-timer{display:none;font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--green);margin-bottom:8px;}
+  .recording .rec-timer{display:block;}
+  .recording .mic-hint-idle{display:none;}
+  .rec-actions{display:none;gap:12px;margin-top:28px;}
+  .recording .rec-actions{display:flex;}
+  .tips{margin-top:auto;padding-top:30px;color:var(--muted);font-size:12px;line-height:1.7;}
+  .tips b{color:var(--sub);}
+
+  /* ---------- Loading ---------- */
+  #loading{justify-content:center;align-items:center;text-align:center;}
+  .loader{width:64px;height:64px;border:5px solid var(--line);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:32px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #loading .load-title{font-size:22px;font-weight:800;margin-bottom:10px;}
+  #loading .load-sub{color:var(--sub);font-size:14px;min-height:20px;}
+
+  /* ---------- Result ---------- */
+  .res-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .res-title{font-size:13px;letter-spacing:.14em;color:var(--sub);text-transform:uppercase;font-weight:700;}
+  .res-hero{margin:20px 0 28px;}
+  .res-hero .lead{color:var(--sub);font-size:14px;margin-bottom:6px;}
+  .res-hero .top-name{font-size:40px;font-weight:800;letter-spacing:-.01em;line-height:1.1;}
+  .res-hero .top-name em{font-style:normal;color:var(--green);}
+  .res-hero .top-pct{display:inline-block;margin-top:12px;background:var(--green);color:#000;font-weight:800;font-size:15px;padding:5px 16px;border-radius:999px;}
+
+  .section-label{font-size:12px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;font-weight:700;margin:26px 2px 14px;}
+
+  /* 音色卡片横滑 */
+  .tone-scroll{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+  .tone-scroll::-webkit-scrollbar{display:none;}
+  .singer-card{flex:0 0 148px;background:var(--card);border-radius:14px;padding:16px;scroll-snap-align:start;transition:background .2s ease;}
+  .singer-card:hover{background:var(--card-hover);}
+  .singer-card .cover{width:116px;height:116px;border-radius:10px;background:linear-gradient(135deg,#333,#1a1a1a);margin-bottom:12px;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:800;color:var(--muted);overflow:hidden;}
+  .singer-card .cover img{width:100%;height:100%;object-fit:cover;}
+  .singer-card .s-name{font-size:15px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .singer-card .s-region{font-size:11px;color:var(--muted);margin-bottom:10px;}
+  .bar{height:5px;background:#333;border-radius:3px;overflow:hidden;margin-bottom:6px;}
+  .bar i{display:block;height:100%;background:var(--green);border-radius:3px;}
+  .singer-card .s-pct{font-size:13px;font-weight:800;color:var(--green);}
+  .singer-card .s-note{font-size:11px;color:var(--sub);margin-top:8px;line-height:1.4;}
+
+  /* 音域模块 */
+  .range-box{background:var(--card);border-radius:16px;padding:22px 20px;}
+  .range-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .range-metric .rm-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+  .range-metric .rm-val{font-size:26px;font-weight:800;}
+  .range-metric .rm-val small{font-size:14px;color:var(--sub);font-weight:600;}
+  .voice-type{background:var(--green);color:#000;font-weight:800;font-size:13px;padding:6px 14px;border-radius:999px;}
+  .keyboard{display:flex;height:52px;border-radius:8px;overflow:hidden;margin:6px 0 16px;position:relative;background:#0d0d0d;}
+  .keyboard .kseg{flex:1;border-right:1px solid #000;}
+  .keyboard .kfill{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(29,185,84,.25),rgba(29,185,84,.55));border-left:2px solid var(--green);border-right:2px solid var(--green);}
+  .range-match{font-size:13px;color:var(--sub);line-height:1.6;}
+  .range-match b{color:var(--ink);}
+
+  .res-foot{margin-top:30px;display:flex;flex-direction:column;gap:12px;}
+  .disclaimer{margin-top:22px;color:var(--muted);font-size:11px;line-height:1.6;text-align:center;}
+
+  .demo-switch{position:fixed;top:10px;right:10px;z-index:99;display:flex;gap:6px;}
+  .demo-switch button{background:#000;color:var(--muted);border:1px solid #333;border-radius:6px;font-size:10px;padding:4px 7px;cursor:pointer;}
+  .demo-switch button:hover{color:var(--green);border-color:var(--green);}
+</style>
+</head>
+<body>
+
+<!-- 演示切换（开发用，正式版删） -->
+<div class="demo-switch">
+  <button onclick="show('landing')">1录音</button>
+  <button onclick="show('loading')">2分析</button>
+  <button onclick="show('result')">3结果</button>
+</div>
+
+<!-- ========== 1. Landing / 录音 ========== -->
+<section id="landing" class="screen active">
+  <div class="brand"><span class="dot"></span>VOICEPRINT</div>
+  <h1 class="hero-title">测测你的歌声<br>像<span>哪个歌手</span></h1>
+  <p class="hero-sub">清唱一段 15-30 秒，AI 分析你的音色与音域，匹配全球 50 位歌手</p>
+
+  <div class="rec-timer" id="timer">00:00</div>
+  <div class="mic-wrap" id="micWrap">
+    <div class="mic-ring r1"></div>
+    <div class="mic-ring r2"></div>
+    <div class="mic-ring r3"></div>
+    <div class="mic-btn" id="micBtn" onclick="toggleRec()">
+      <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2z"/></svg>
+    </div>
+  </div>
+  <div class="mic-hint mic-hint-idle">点击麦克风开始清唱</div>
+
+  <div class="rec-actions">
+    <button class="btn btn-ghost" onclick="resetRec()">重录</button>
+    <button class="btn btn-green" onclick="submitRec()">完成分析</button>
+  </div>
+
+  <div class="tips">
+    <b>小贴士</b> · 安静环境、清唱副歌效果最佳 · 唱一段而非说话<br>
+    仅供娱乐，声纹相似度为参考
+  </div>
+</section>
+
+<!-- ========== 2. Loading ========== -->
+<section id="loading" class="screen">
+  <div class="loader"></div>
+  <div class="load-title">正在分析你的歌声</div>
+  <div class="load-sub" id="loadSub">提取声纹特征…</div>
+</section>
+
+<!-- ========== 3. Result ========== -->
+<section id="result" class="screen">
+  <div class="res-head">
+    <div class="res-title">你的声音报告</div>
+    <div class="brand"><span class="dot"></span>VOICEPRINT</div>
+  </div>
+
+  <div class="res-hero">
+    <div class="lead">你的音色最像</div>
+    <div class="top-name">周杰伦 <em>87%</em></div>
+    <div class="top-pct">音色低沉磁性 · 气声接近</div>
+  </div>
+
+  <div class="section-label">音色匹配 · TONE MATCH</div>
+  <div class="tone-scroll" id="toneScroll"></div>
+
+  <div class="section-label">音域分析 · VOCAL RANGE</div>
+  <div class="range-box">
+    <div class="range-row">
+      <div class="range-metric">
+        <div class="rm-label">你的音域</div>
+        <div class="rm-val">F2 <small>—</small> G4</div>
+      </div>
+      <div class="range-metric" style="text-align:right;">
+        <div class="rm-label">声部</div>
+        <div style="margin-top:4px;"><span class="voice-type">男中音 Baritone</span></div>
+      </div>
+    </div>
+    <div class="keyboard" id="keyboard"></div>
+    <div class="range-match">音域最接近 <b>林俊杰</b>、<b>陈奕迅</b> —— 你们能驾驭的音高范围高度重合</div>
+  </div>
+
+  <div class="res-foot">
+    <button class="btn btn-green" onclick="shareCard()">生成分享卡片</button>
+    <button class="btn btn-ghost" onclick="show('landing');resetRec()">再测一次</button>
+  </div>
+  <div class="disclaimer">本工具仅供娱乐，声纹相似度为参考，不构成任何专业鉴定<br>录音仅用于本次分析，不会保存</div>
+</section>
+
+<script>
+// ===== Mock 数据（后端接上后替换为 /match 返回）=====
+const MOCK = {
+  top: {name:"周杰伦", pct:87, note:"音色低沉磁性 · 气声接近"},
+  tone_matches:[
+    {name:"周杰伦", region:"台湾", pct:87, note:"音色低沉磁性，气声比例接近", emoji:"🎤"},
+    {name:"林俊杰", region:"新加坡", pct:81, note:"共鸣位置相似，中高音亮", emoji:"🎹"},
+    {name:"陈奕迅", region:"香港", pct:76, note:"胸腔共鸣厚实", emoji:"🎧"},
+    {name:"VAUNDY", region:"日本", pct:72, note:"松弛感与颗粒质地接近", emoji:"🎸"},
+    {name:"李荣浩", region:"内地", pct:68, note:"沙哑颗粒感相似", emoji:"🎶"},
+  ],
+  range:{low:"F2", high:"G4", type:"男中音 Baritone", lowIdx:0.12, highIdx:0.58, match:"林俊杰、陈奕迅"}
+};
+
+function renderResult(d){
+  // 顶部
+  document.querySelector('.top-name').innerHTML = `${d.top.name} <em>${d.top.pct}%</em>`;
+  document.querySelector('.top-pct').textContent = d.top.note;
+  // 音色卡片
+  const wrap = document.getElementById('toneScroll');
+  wrap.innerHTML = d.tone_matches.map(s=>`
+    <div class="singer-card">
+      <div class="cover">${s.emoji||s.name[0]}</div>
+      <div class="s-name">${s.name}</div>
+      <div class="s-region">${s.region}</div>
+      <div class="bar"><i style="width:${s.pct}%"></i></div>
+      <div class="s-pct">${s.pct}%</div>
+      <div class="s-note">${s.note}</div>
+    </div>`).join('');
+  // 音域键盘条
+  const kb = document.getElementById('keyboard');
+  let segs=''; for(let i=0;i<24;i++)segs+='<div class="kseg"></div>';
+  const l=d.range.lowIdx*100, w=(d.range.highIdx-d.range.lowIdx)*100;
+  kb.innerHTML = segs + `<div class="kfill" style="left:${l}%;width:${w}%"></div>`;
+}
+
+// ===== 屏幕切换 =====
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='result') renderResult(MOCK);
+  window.scrollTo(0,0);
+}
+
+// ===== 录音（前端交互 mock，真实录音 Batch4 接 MediaRecorder）=====
+let recTimer=null, recSec=0;
+function toggleRec(){
+  const w=document.getElementById('micWrap').parentElement;
+  if(document.body.classList.contains('recording')){ return; }
+  document.body.classList.add('recording');
+  recSec=0; updTimer();
+  recTimer=setInterval(()=>{recSec++;updTimer(); if(recSec>=30)stopRec();},1000);
+}
+function updTimer(){
+  const m=String(Math.floor(recSec/60)).padStart(2,'0');
+  const s=String(recSec%60).padStart(2,'0');
+  document.getElementById('timer').textContent=`${m}:${s}`;
+}
+function stopRec(){ clearInterval(recTimer); }
+function resetRec(){
+  stopRec(); recSec=0; updTimer();
+  document.body.classList.remove('recording');
+}
+function submitRec(){
+  stopRec();
+  if(recSec<15){ alert('录音太短啦，请清唱满 15 秒'); return; }
+  document.body.classList.remove('recording');
+  show('loading');
+  const steps=['提取声纹特征…','分析音高与音域…','比对 50 位歌手…','生成你的声音报告…'];
+  let i=0; const sub=document.getElementById('loadSub');
+  const t=setInterval(()=>{ sub.textContent=steps[i++]||steps[3]; if(i>steps.length){clearInterval(t);show('result');} },700);
+}
+function shareCard(){ alert('分享卡片功能开发中 · Spotify Wrapped 风格'); }
+</script>
+</body>
+</html>
