@@ -97,4 +97,54 @@ Batch0(探针) ──放行──> Batch1(后端) ┐
 3. **建库独立**:体力活,可并行/可外包,不卡技术线
 4. **子agent分工**:各管一摊边界清晰,主agent只做验证+协调,不当瓶颈
 
-— 牛子哥 v2026.7.19 · 01:33 SGT
+---
+
+## 🛡️ 防丢 + 分工机制（固化 · 张鱼哥 2026-07-19 要求）
+
+> 目的:主 session 上下文一满,后面 Batch 全崩。用"文件即记忆 + 子agent隔离"防爆防丢。
+
+### 原则1:文件即记忆,git 是唯一真相源
+- 所有规划文档 + 代码 + 声纹库元数据全部落盘 git(chriszcc1021/personal-skill/projects/voiceprint)
+- 主 session 上下文丢光/重启也不怕:**读一遍 README 总索引即可完整恢复项目状态**
+- 任何进度节点必须 commit + push,不留在内存里
+
+### 原则2:主 session 只做"协调+验收+记账",保持轻
+- 主 agent **不写具体业务代码**(后端/建库/前端的实现)
+- 主 agent 只负责:跑探针(Batch0)、派活、收子agent摘要、验收 Gate、联调上线(Batch4)、记账
+- 严禁把三大块的代码/日志/报错倒进主 session → 那是上下文爆炸的根源
+
+### 原则3:每个子agent独立干净上下文,自带边界
+| 子agent | 管 | 输入(读) | 产出(写+commit) |
+|---|---|---|---|
+| A · backend | Batch1 后端 | api-spec.md + scoring.md | 后端代码 + API文档 |
+| B · library | Batch2 建库 | singer-library.md + material-source.md + pipeline脚本 | 声纹库 + 建库脚本 |
+| C · frontend | Batch3 前端接口 | api-spec.md + 现有 web/index.html | 真API对接的前端 |
+
+### 原则4:每个子任务必须自闭环(三步铁律)
+1. **开工先读**:README 总索引 + 对应 docs(恢复上下文,不依赖主session口述)
+2. **干完立即** commit + push(成果落盘,防丢)
+3. **回主session只报摘要**(几百字完成报告,不倒几万行过程)
+→ 好处:哪个子agent中途挂了,重开一个读 git 接着干,进度零丢失
+
+### 原则5:探针不派子agent,主agent亲跑
+- Batch0 要跟张鱼哥互动(录清唱样本),且是全项目风险闸门,主 agent 亲自在主session跑
+- 探针过了 → 冻结 api-spec + pipeline 脚本 → 才派 A/B/C 三个子agent并行
+
+### 执行顺序(固化)
+```
+[主agent] Batch0 探针(亲跑,需张鱼哥录音)
+    │ 过Gate → 冻结 api-spec + pipeline
+    ▼
+[并行] 子agent A(后端) ∥ 子agent B(建库) ∥ 子agent C(前端)
+    │ 各自:读docs → 干活 → commit → 报摘要
+    ▼
+[主agent] Batch4 联调+部署+真人验收
+    ▼
+[主agent] Batch5 小程序(验证OK再启动)
+```
+
+### 上下文水位红线
+- 主 session 到 ~60% 主动做记忆刷写(写 memory + 确认 git 已 push),必要时压缩
+- 派子agent前先确认本轮成果已落盘,再卸载
+
+— 牛子哥 v2026.7.19 · 01:46 SGT
